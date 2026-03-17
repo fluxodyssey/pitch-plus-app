@@ -148,13 +148,19 @@ export function TeamBrowser() {
 
       <div className="team-grid">
         {sorted.map((t, idx) => {
-          const color = gradeColor(t.avgPitchPlus);
+          const displayScore = (sortBy === 'pitch_plus' || sortBy === 'team_name')
+            ? t.avgPitchPlus
+            : t.dimAverages[sortBy as DimensionKey];
+          const displayColor = gradeColor(displayScore);
+          const displayLabel = (sortBy === 'pitch_plus' || sortBy === 'team_name')
+            ? 'Pitch+'
+            : DIMENSION_LABELS[sortBy as DimensionKey];
           return (
             <div
               key={t.abbrev}
               className="team-card"
               onClick={() => navigate(`/team/${t.abbrev}`)}
-              style={{ borderTop: `3px solid ${color}` }}
+              style={{ borderTop: `3px solid ${displayColor}` }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
@@ -177,10 +183,10 @@ export function TeamBrowser() {
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ color, fontSize: 22, fontWeight: 800 }}>
-                    {Math.round(t.avgPitchPlus)}
+                  <div style={{ color: displayColor, fontSize: 22, fontWeight: 800 }}>
+                    {Math.round(displayScore)}
                   </div>
-                  <div style={{ color: '#606080', fontSize: 10 }}>Pitch+</div>
+                  <div style={{ color: '#606080', fontSize: 10 }}>{displayLabel}</div>
                 </div>
               </div>
 

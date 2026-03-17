@@ -11,6 +11,7 @@ type SortKey =
   | 'pitcher_team'
   | 'pitch_plus'
   | 'n_pitches'
+  | 'ip'
   | 'n_games'
   | DimensionKey
   | 'pt_usage'
@@ -93,8 +94,11 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
       av = a.pitch_plus;
       bv = b.pitch_plus;
     } else if (sortKey === 'n_pitches') {
-      av = a.n_pitches;
-      bv = b.n_pitches;
+      av = pitchTypeFilter ? (getPitchTypeRow(a.pitcher_id)?.n ?? 0) : a.n_pitches;
+      bv = pitchTypeFilter ? (getPitchTypeRow(b.pitcher_id)?.n ?? 0) : b.n_pitches;
+    } else if (sortKey === 'ip') {
+      av = a.ip ?? 0;
+      bv = b.ip ?? 0;
     } else if (sortKey === 'n_games') {
       av = a.n_games;
       bv = b.n_games;
@@ -239,6 +243,7 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
               ))
             )}
             <SortHeader label="Pitches" col="n_pitches" />
+            <SortHeader label="IP" col="ip" title="Innings Pitched" />
             <SortHeader label="G" col="n_games" title="Games" />
           </tr>
         </thead>
@@ -332,7 +337,10 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
                   })
                 )}
                 <td style={{ padding: '6px 10px', color: '#a0a0b8', textAlign: 'right' }}>
-                  {p.n_pitches.toLocaleString()}
+                  {pitchTypeFilter ? (ptRow?.n.toLocaleString() ?? '—') : p.n_pitches.toLocaleString()}
+                </td>
+                <td style={{ padding: '6px 10px', color: '#a0a0b8', textAlign: 'right' }}>
+                  {p.ip != null ? p.ip.toFixed(1) : '—'}
                 </td>
                 <td style={{ padding: '6px 10px', color: '#a0a0b8', textAlign: 'center' }}>
                   {p.n_games}

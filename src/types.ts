@@ -65,6 +65,7 @@ export interface Pitcher {
   pitch_plus: number;
   n_pitches: number;
   n_games: number;
+  ip?: number;  // season total innings pitched (baseball notation: 185.2)
   dimensions: Record<DimensionKey, DimensionScore>;
   metric_grades: Record<MetricKey, MetricGrade>;
 }
@@ -345,6 +346,23 @@ export interface GameAppearance {
   strikeouts: number;
   walks: number;
   hits: number;
+  homeRuns: number;
+  runs: number;
+}
+
+export interface GameLogEntry {
+  game_id: number;
+  date: string;
+  opp: string;
+  home: boolean;
+  p: number;    // pitches
+  ip: number;   // innings pitched (baseball notation: 6.2)
+  k: number;
+  bb: number;
+  h: number;
+  hr: number;
+  r: number;    // runs
+  er?: number;  // earned runs
 }
 
 export interface ScoringConfig {

@@ -63,9 +63,11 @@ function MetricsTable({ pitchers }: { pitchers: Pitcher[] }) {
   );
 
   const stickyTh = {
-    borderBottom: '2px solid #1e1e2e', background: '#14141f',
+    borderBottom: '2px solid #1e1e2e', background: '#0f0f1a',
     position: 'sticky' as const, top: 0, zIndex: 1,
-    padding: '8px 10px', whiteSpace: 'nowrap' as const,
+    padding: '10px 12px', whiteSpace: 'nowrap' as const,
+    textTransform: 'uppercase' as const, letterSpacing: 0.5,
+    fontSize: 11,
   };
 
   function SortTh({ k, label }: { k: MetricKey | 'pitch_plus'; label: string }) {
@@ -115,22 +117,23 @@ function MetricsTable({ pitchers }: { pitchers: Pitcher[] }) {
             {sorted.map((p, i) => (
               <tr key={p.pitcher_id} onClick={() => navigate(`/player/${p.pitcher_id}`)}
                 className="table-row-hover"
-                style={{ borderBottom: '1px solid #1e1e2e', cursor: 'pointer' }}>
-                <td style={{ padding: '7px 10px', color: '#606080', textAlign: 'center' }}>{i + 1}</td>
-                <td style={{ padding: '7px 10px', color: '#e0e0e8', fontWeight: 500, whiteSpace: 'nowrap' }}>{p.pitcher_name}</td>
-                <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'center' }}>{p.pitcher_team}</td>
-                <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'center' }}>{p.pitcher_hand}</td>
-                <td style={{ padding: '7px 8px', textAlign: 'center' }}>
+                style={{ borderBottom: '1px solid #1e1e2e', cursor: 'pointer', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                <td style={{ padding: '8px 12px', color: '#606080', textAlign: 'center' }}>{i + 1}</td>
+                <td style={{ padding: '8px 12px', color: '#e0e0e8', fontWeight: 500, whiteSpace: 'nowrap' }}>{p.pitcher_name}</td>
+                <td style={{ padding: '8px 12px', color: '#a0a0b8', textAlign: 'center' }}>{p.pitcher_team}</td>
+                <td style={{ padding: '8px 12px', color: '#a0a0b8', textAlign: 'center' }}>{p.pitcher_hand}</td>
+                <td style={{ padding: '8px 12px', textAlign: 'center' }}>
                   <GradeBadge score={p.pitch_plus} size="sm" />
                 </td>
                 {metrics.map(mk => {
                   const mg = p.metric_grades[mk];
-                  if (!mg) return <td key={mk} style={{ padding: '7px 10px', textAlign: 'center', color: '#606080' }}>—</td>;
+                  if (!mg) return <td key={mk} style={{ padding: '8px 12px', textAlign: 'center', color: '#606080', borderRight: '1px solid #151520' }}>—</td>;
                   return (
-                    <td key={mk} style={{ padding: '7px 10px', textAlign: 'center', background: scoreColor(mg.grade), color: mg.grade >= 105 ? '#0a0a0f' : '#e0e0e8', fontFamily: 'monospace', fontSize: 12 }}>
-                      <span title={`Grade: ${Math.round(mg.grade)}`}>
+                    <td key={mk} style={{ padding: '8px 12px', textAlign: 'center', fontFamily: 'monospace', fontSize: 12, borderRight: '1px solid #151520' }}>
+                      <span title={`Grade: ${Math.round(mg.grade)}`} style={{ color: '#e0e0e8' }}>
                         {formatMetric(mk, mg.raw)}
                       </span>
+                      <span style={{ display: 'block', height: 2, borderRadius: 1, marginTop: 2, background: scoreColor(mg.grade) }} />
                     </td>
                   );
                 })}

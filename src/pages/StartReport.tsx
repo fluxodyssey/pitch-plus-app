@@ -19,6 +19,7 @@ import {
   ResponsiveContainer, ScatterChart, Scatter, Cell, Legend,
 } from 'recharts';
 import { usePitchData } from '../data/usePitchData';
+import { useData } from '../data/useData';
 import { pitchColor, PITCH_TYPE_COLORS } from '../data/constants';
 import type { RawPitch } from '../types';
 
@@ -71,6 +72,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export function StartReport() {
   const { id, gameId } = useParams<{ id: string; gameId: string }>();
   const { loadForPitcher, pitches: allPitches, games, loading } = usePitchData();
+  const { data: appData } = useData();
+  const seasonPitchTypes = appData?.pitchTypes.pitchers[id!] ?? null;
 
   useEffect(() => {
     if (id) loadForPitcher(Number(id));
@@ -215,19 +218,32 @@ export function StartReport() {
       {/* ── Pitch Mix ── */}
       <Section title="Pitch Mix">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {pitchTypes.map(pt => (
-            <div key={pt.pt} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 60px 70px 70px 70px 70px', gap: 8, alignItems: 'center' }}>
-              <Pill color={pitchColor(pt.pt)} label={pName(pt.pt)} />
-              <div style={{ height: 8, background: '#1e1e2e', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ width: `${pt.pct}%`, height: '100%', background: pitchColor(pt.pt), borderRadius: 4 }} />
+          {pitchTypes.map(pt => {
+            const seasonPt = seasonPitchTypes?.find(s => s.pitch_type === pt.pt);
+            const veloDelta = seasonPt != null && Math.abs(pt.avgVelo - seasonPt.velo) >= 0.1
+              ? pt.avgVelo - seasonPt.velo : null;
+            const whiffDelta = seasonPt != null && Math.abs(pt.whiffRate - seasonPt.whiff_rate) >= 0.01
+              ? pt.whiffRate - seasonPt.whiff_rate : null;
+            return (
+              <div key={pt.pt} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 60px 90px 70px 90px 70px', gap: 8, alignItems: 'center' }}>
+                <Pill color={pitchColor(pt.pt)} label={pName(pt.pt)} />
+                <div style={{ height: 8, background: '#1e1e2e', borderRadius: 4, overflow: 'hidden' }}>
+                  <div style={{ width: `${pt.pct}%`, height: '100%', background: pitchColor(pt.pt), borderRadius: 4 }} />
+                </div>
+                <span style={{ color: '#e0e0e8', fontSize: 13, textAlign: 'right' }}>{pt.pct}%</span>
+                <span style={{ color: '#a0a0b8', fontSize: 12, textAlign: 'right' }}>
+                  {pt.avgVelo.toFixed(1)} mph
+                  {veloDelta != null && <span style={{ fontSize: 10, color: veloDelta > 0 ? '#69f0ae' : '#c85a5a', marginLeft: 3 }}>{veloDelta > 0 ? '+' : ''}{veloDelta.toFixed(1)}</span>}
+                </span>
+                <span style={{ color: '#a0a0b8', fontSize: 12, textAlign: 'right' }}>{Math.round(pt.avgSpin)} rpm</span>
+                <span style={{ color: '#a0a0b8', fontSize: 12, textAlign: 'right' }}>
+                  Whiff {(pt.whiffRate*100).toFixed(0)}%
+                  {whiffDelta != null && <span style={{ fontSize: 10, color: whiffDelta > 0 ? '#69f0ae' : '#c85a5a', marginLeft: 3 }}>{whiffDelta > 0 ? '+' : ''}{(whiffDelta*100).toFixed(1)}</span>}
+                </span>
+                <span style={{ color: '#606080', fontSize: 11, textAlign: 'right' }}>{pt.n} pitches</span>
               </div>
-              <span style={{ color: '#e0e0e8', fontSize: 13, textAlign: 'right' }}>{pt.pct}%</span>
-              <span style={{ color: '#a0a0b8', fontSize: 12, textAlign: 'right' }}>{pt.avgVelo.toFixed(1)} mph</span>
-              <span style={{ color: '#a0a0b8', fontSize: 12, textAlign: 'right' }}>{Math.round(pt.avgSpin)} rpm</span>
-              <span style={{ color: '#a0a0b8', fontSize: 12, textAlign: 'right' }}>Whiff {(pt.whiffRate*100).toFixed(0)}%</span>
-              <span style={{ color: '#606080', fontSize: 11, textAlign: 'right' }}>{pt.n} pitches</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Section>
 
@@ -312,6 +328,13 @@ export function StartReport() {
                 const chaseRate = ozPs.length > 0 ? ozPs.filter(p => p.sw).length / ozPs.length : 0;
                 const cswRate = ps.length > 0
                   ? (ps.filter(p => p.wh).length + ps.filter(p => p.desc === 'Called Strike').length) / ps.length : 0;
+                const seasonPt = seasonPitchTypes?.find(s => s.pitch_type === pt.pt);
+                function delta(game: number, season: number | undefined, invert = false) {
+                  if (season == null || Math.abs(game - season) < 0.1) return null;
+                  const d = game - season;
+                  const good = invert ? d < 0 : d > 0;
+                  return <span style={{ fontSize: 10, color: good ? '#69f0ae' : '#c85a5a', marginLeft: 4 }}>{d > 0 ? '+' : ''}{d.toFixed(1)}</span>;
+                }
                 return (
                   <tr key={pt.pt} style={{ borderBottom: '1px solid #1a1a2e' }}>
                     <td style={{ padding: '7px 10px' }}>
@@ -319,12 +342,25 @@ export function StartReport() {
                     </td>
                     <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'right' }}>{pt.n}</td>
                     <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'right' }}>{pt.pct}%</td>
-                    <td style={{ padding: '7px 10px', color: '#e0e0e8', textAlign: 'right', fontFamily: 'monospace' }}>{pt.avgVelo.toFixed(1)}</td>
-                    <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'right', fontFamily: 'monospace' }}>{Math.round(pt.avgSpin).toLocaleString()}</td>
-                    <td style={{ padding: '7px 10px', color: pitchColor(pt.pt), textAlign: 'right', fontFamily: 'monospace' }}>{pt.avgIvb.toFixed(1)}</td>
-                    <td style={{ padding: '7px 10px', color: pitchColor(pt.pt), textAlign: 'right', fontFamily: 'monospace' }}>{pt.avgHb.toFixed(1)}</td>
+                    <td style={{ padding: '7px 10px', color: '#e0e0e8', textAlign: 'right', fontFamily: 'monospace' }}>
+                      {pt.avgVelo.toFixed(1)}{delta(pt.avgVelo, seasonPt?.velo)}
+                    </td>
+                    <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'right', fontFamily: 'monospace' }}>
+                      {Math.round(pt.avgSpin).toLocaleString()}{delta(pt.avgSpin, seasonPt?.spin)}
+                    </td>
+                    <td style={{ padding: '7px 10px', color: pitchColor(pt.pt), textAlign: 'right', fontFamily: 'monospace' }}>
+                      {pt.avgIvb.toFixed(1)}{delta(pt.avgIvb, seasonPt?.ivb)}
+                    </td>
+                    <td style={{ padding: '7px 10px', color: pitchColor(pt.pt), textAlign: 'right', fontFamily: 'monospace' }}>
+                      {pt.avgHb.toFixed(1)}{delta(pt.avgHb, seasonPt?.hb)}
+                    </td>
                     <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'monospace', color: pt.whiffRate >= 0.35 ? '#d44040' : pt.whiffRate >= 0.25 ? '#c85a5a' : '#a0a0b8' }}>
                       {(pt.whiffRate * 100).toFixed(1)}%
+                      {seasonPt != null && Math.abs(pt.whiffRate - seasonPt.whiff_rate) >= 0.01 && (
+                        <span style={{ fontSize: 10, color: pt.whiffRate > seasonPt.whiff_rate ? '#69f0ae' : '#c85a5a', marginLeft: 4 }}>
+                          {pt.whiffRate > seasonPt.whiff_rate ? '+' : ''}{((pt.whiffRate - seasonPt.whiff_rate) * 100).toFixed(1)}
+                        </span>
+                      )}
                     </td>
                     <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'right', fontFamily: 'monospace' }}>
                       {(chaseRate * 100).toFixed(1)}%

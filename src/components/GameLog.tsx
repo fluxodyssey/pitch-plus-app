@@ -11,7 +11,7 @@ interface Props {
   onSelectGame: (gameId: number | null) => void;
 }
 
-type SortCol = 'date' | 'pitchCount' | 'innings' | 'strikeouts' | 'walks' | 'hits';
+type SortCol = 'date' | 'pitchCount' | 'innings' | 'strikeouts' | 'walks' | 'hits' | 'homeRuns' | 'runs';
 
 export function computeGameLog(
   pitches: RawPitch[],
@@ -46,6 +46,8 @@ export function computeGameLog(
         hits: events.filter((p) =>
           ['single', 'double', 'triple', 'home_run'].includes(p.et ?? '')
         ).length,
+        homeRuns: events.filter((p) => p.et === 'home_run').length,
+        runs: 0, // not computable from pitch data alone
       };
     })
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -77,6 +79,12 @@ export function GameLog({ pitches, games, pitcherTeam, pitcherId, selectedGameId
         break;
       case 'hits':
         cmp = a.hits - b.hits;
+        break;
+      case 'homeRuns':
+        cmp = a.homeRuns - b.homeRuns;
+        break;
+      case 'runs':
+        cmp = a.runs - b.runs;
         break;
     }
     return sortAsc ? cmp : -cmp;
@@ -154,6 +162,9 @@ export function GameLog({ pitches, games, pitcherTeam, pitcherId, selectedGameId
               <th style={{ ...thStyle('hits'), textAlign: 'right' }} onClick={() => handleSort('hits')}>
                 H{sortIndicator('hits')}
               </th>
+              <th style={{ ...thStyle('homeRuns'), textAlign: 'right' }} onClick={() => handleSort('homeRuns')}>
+                HR{sortIndicator('homeRuns')}
+              </th>
               <th style={{ ...thStyle('date') }}>Report</th>
             </tr>
           </thead>
@@ -189,6 +200,9 @@ export function GameLog({ pitches, games, pitcherTeam, pitcherId, selectedGameId
                   </td>
                   <td style={{ padding: '7px 10px', textAlign: 'right', color: '#a0a0b8' }}>
                     {app.hits}
+                  </td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: app.homeRuns > 0 ? '#c85a5a' : '#a0a0b8' }}>
+                    {app.homeRuns}
                   </td>
                   <td style={{ padding: '7px 10px' }} onClick={(e) => e.stopPropagation()}>
                     <Link

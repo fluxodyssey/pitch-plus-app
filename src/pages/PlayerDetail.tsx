@@ -17,6 +17,7 @@ import { RollingChart } from '../components/RollingChart';
 import { PercentilePanel } from '../components/PercentilePanel';
 import { SkeletonPage } from '../components/Skeleton';
 import { PitchArsenal } from '../components/PitchArsenal';
+import { SequenceMatrix } from '../components/SequenceMatrix';
 import { VelocityDistribution } from '../components/VelocityDistribution';
 import { SeasonHistory } from '../components/SeasonHistory';
 import { StuffDNA } from '../components/StuffDNA';
@@ -849,6 +850,9 @@ function PlayerDetailInner({
           }}
         />
       </div>
+
+      {/* Pitch Sequence Matrix */}
+      <SequenceMatrix pitcherId={pitcher.pitcher_id} />
 
       {/* Velocity Distribution */}
       {filteredPitches.length > 30 && (

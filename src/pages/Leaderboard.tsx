@@ -36,16 +36,55 @@ export function Leaderboard() {
   const navigate = useNavigate();
   const [selectedMetric, setSelectedMetric] = useState('pitch_plus');
   const [minPitches, setMinPitches] = useState(0);
+  const [handFilter, setHandFilter] = useState('All');
+  const [teamFilter, setTeamFilter] = useState('All');
+  const [roleFilter, setRoleFilter] = useState<'All' | 'Starter' | 'Reliever'>('All');
+  const [pitchTypeFilter, setPitchTypeFilter] = useState('All');
+
+  const teams = useMemo(() => {
+    if (!data) return [];
+    const s = new Set(data.pitchers.pitchers.map((p) => p.pitcher_team));
+    return ['All', ...Array.from(s).sort()];
+  }, [data]);
+
+  const allPitchTypes = useMemo(() => {
+    if (!data) return [];
+    const s = new Set<string>();
+    Object.values(data.pitchTypes.pitchers).forEach((types) =>
+      types.forEach((t) => s.add(t.pitch_type))
+    );
+    return Array.from(s).sort();
+  }, [data]);
+
+  const starterIds = useMemo(() => {
+    if (!data) return new Set<number>();
+    const ids = new Set<number>();
+    Object.values(data.rotations.teams).forEach((t) =>
+      t.rotation_ids.forEach((id) => ids.add(id))
+    );
+    return ids;
+  }, [data]);
 
   const sorted = useMemo(() => {
     if (!data) return [];
-    const pitchers = data.pitchers.pitchers.filter((p) => p.n_pitches >= minPitches);
+    const pitchers = data.pitchers.pitchers.filter((p) => {
+      if (p.n_pitches < minPitches) return false;
+      if (handFilter !== 'All' && p.pitcher_hand !== handFilter) return false;
+      if (teamFilter !== 'All' && p.pitcher_team !== teamFilter) return false;
+      if (roleFilter === 'Starter' && !starterIds.has(p.pitcher_id)) return false;
+      if (roleFilter === 'Reliever' && starterIds.has(p.pitcher_id)) return false;
+      if (pitchTypeFilter !== 'All') {
+        const types = data.pitchTypes.pitchers[String(p.pitcher_id)] ?? [];
+        if (!types.some((t) => t.pitch_type === pitchTypeFilter)) return false;
+      }
+      return true;
+    });
     return [...pitchers].sort((a, b) => {
       const av = getMetricValue(a, selectedMetric).grade;
       const bv = getMetricValue(b, selectedMetric).grade;
       return bv - av;
     });
-  }, [data, selectedMetric, minPitches]);
+  }, [data, selectedMetric, minPitches, handFilter, teamFilter, roleFilter, starterIds, pitchTypeFilter]);
 
   if (loading) return <SkeletonPage />;
   if (error) return <div className="error">Error: {error}</div>;
@@ -126,6 +165,46 @@ export function Leaderboard() {
           </select>
         </div>
 
+        <select className="filter-select" value={handFilter} onChange={(e) => setHandFilter(e.target.value)}>
+          <option value="All">All Hands</option>
+          <option value="R">Right</option>
+          <option value="L">Left</option>
+        </select>
+
+        <select className="filter-select" value={teamFilter} onChange={(e) => setTeamFilter(e.target.value)}>
+          {teams.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+
+        <div style={{ display: 'flex', gap: 2 }}>
+          {(['All', 'Starter', 'Reliever'] as const).map((role) => (
+            <button
+              key={role}
+              onClick={() => setRoleFilter(role)}
+              style={{
+                padding: '5px 12px',
+                fontSize: 12,
+                fontWeight: roleFilter === role ? 600 : 400,
+                border: `1px solid ${roleFilter === role ? '#4a9eff' : '#2a2a3e'}`,
+                borderRadius: role === 'All' ? '4px 0 0 4px' : role === 'Reliever' ? '0 4px 4px 0' : '0',
+                background: roleFilter === role ? 'rgba(74,158,255,0.15)' : '#0f0f1a',
+                color: roleFilter === role ? '#4a9eff' : '#a0a0b8',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {role}
+            </button>
+          ))}
+        </div>
+
+        <select className="filter-select" value={pitchTypeFilter} onChange={(e) => setPitchTypeFilter(e.target.value)}>
+          <option value="All">All Pitch Types</option>
+          {allPitchTypes.map((pt) => (
+            <option key={pt} value={pt}>{data.pitchTypes.pitch_names[pt] ?? pt}</option>
+          ))}
+        </select>
+
         <div className="slider-group">
           <label>
             Min Pitches: <strong>{minPitches}</strong>
@@ -161,7 +240,7 @@ export function Leaderboard() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr>
-                {['#', 'Name', 'Team', 'Hand', selectedOption?.label ?? 'Value', 'Grade', 'Pitches', 'Games'].map(
+                {['#', 'Name', 'Team', 'Hand', selectedOption?.label ?? 'Value', 'Grade', 'Pitches', 'IP', 'Games'].map(
                   (h) => (
                     <th
                       key={h}
@@ -223,6 +302,9 @@ export function Leaderboard() {
                     </td>
                     <td style={{ padding: '7px 12px', color: '#a0a0b8', textAlign: 'right' }}>
                       {pitcher.n_pitches.toLocaleString()}
+                    </td>
+                    <td style={{ padding: '7px 12px', color: '#a0a0b8', textAlign: 'right' }}>
+                      {pitcher.ip != null ? pitcher.ip.toFixed(1) : '—'}
                     </td>
                     <td style={{ padding: '7px 12px', color: '#a0a0b8', textAlign: 'right' }}>
                       {pitcher.n_games}
