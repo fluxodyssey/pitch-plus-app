@@ -22,7 +22,7 @@ export function MetricBar({ grade, invertDirection = false }: Props) {
       style={{
         width: '100%',
         height: 8,
-        background: '#1e1e2e',
+        background: 'var(--border)',
         borderRadius: 4,
         position: 'relative',
         overflow: 'hidden',
@@ -36,7 +36,7 @@ export function MetricBar({ grade, invertDirection = false }: Props) {
           top: 0,
           bottom: 0,
           width: 1,
-          background: '#3a3a5a',
+          background: 'var(--border-plus)',
         }}
       />
       {/* Bar */}

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, NavLink, Link } from 'react-router-dom';
 import { lazy, Suspense, useState, useEffect } from 'react';
 import { SEASON_LABELS, AVAILABLE_SEASONS, DEFAULT_SEASON, getGlobalSeason, setGlobalSeason, preloadSeason, useData } from './data/useData';
 import { SearchAutocomplete } from './components/SearchAutocomplete';
+import { CommandPaletteProvider } from './components/CommandPalette';
 import type { Season } from './data/useData';
 
 // Code-split every page — only the current route's bundle is loaded
@@ -13,6 +14,9 @@ const Leaderboard    = lazy(() => import('./pages/Leaderboard').then(m => ({ def
 const BatterBrowser  = lazy(() => import('./pages/BatterBrowser').then(m => ({ default: m.BatterBrowser })));
 const AdvancedSearch = lazy(() => import('./pages/AdvancedSearch').then(m => ({ default: m.AdvancedSearch })));
 const StartReport    = lazy(() => import('./pages/StartReport').then(m => ({ default: m.StartReport })));
+const ComparePage      = lazy(() => import('./pages/Compare').then(m => ({ default: m.Compare })));
+const SpringTraining   = lazy(() => import('./pages/SpringTraining').then(m => ({ default: m.SpringTraining })));
+const PitchDesign      = lazy(() => import('./pages/PitchDesign').then(m => ({ default: m.PitchDesign })));
 
 function PageLoader() {
   return <div className="loading">Loading…</div>;
@@ -44,13 +48,14 @@ function SeasonPicker() {
       value={season}
       onChange={handleChange}
       style={{
-        background: '#1a1a2e',
-        border: '1px solid #2a2a3e',
-        color: '#e0e0e8',
-        borderRadius: 6,
+        background: 'var(--bg-input)',
+        border: '1px solid var(--border-plus)',
+        color: 'var(--text-1)',
+        borderRadius: 'var(--radius-sm)',
         padding: '5px 10px',
-        fontSize: 13,
+        fontSize: 12,
         cursor: 'pointer',
+        fontFamily: 'var(--sans)',
       }}
     >
       {[...AVAILABLE_SEASONS].reverse().map((yr) => (
@@ -70,7 +75,7 @@ function Nav() {
     <nav className="nav">
       <div className="nav-inner">
         <Link to="/" className="nav-brand">
-          <span>Pitch<span style={{ color: '#4a9eff' }}>+</span></span>
+          Pitch<span style={{ color: 'var(--accent)', fontWeight: 600 }}>+</span>
         </Link>
         <div className="nav-links">
           <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
@@ -88,9 +93,26 @@ function Nav() {
           <NavLink to="/search" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
             Search
           </NavLink>
+          <NavLink to="/compare" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+            Compare
+          </NavLink>
+          <NavLink to="/design" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+            Design Lab
+          </NavLink>
+          <NavLink to="/spring" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'} style={{ position: 'relative' }}>
+            Spring
+            <sup style={{ color: '#ef4444', fontSize: 8, fontWeight: 700, marginLeft: 2 }}>TEST</sup>
+          </NavLink>
         </div>
         {pitchers.length > 0 && (
-          <SearchAutocomplete pitchers={pitchers} compact placeholder="Search..." />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <SearchAutocomplete pitchers={pitchers} compact placeholder="Search..." />
+            <kbd style={{
+              fontSize: 9, color: 'var(--text-4)', background: 'var(--bg-input)',
+              border: '1px solid var(--border)', borderRadius: 3, padding: '2px 5px',
+              fontFamily: 'var(--mono)', whiteSpace: 'nowrap', letterSpacing: '0.05em',
+            }}>⌘K</kbd>
+          </div>
         )}
         <SeasonPicker />
       </div>
@@ -103,6 +125,7 @@ function Nav() {
 export default function App() {
   return (
     <BrowserRouter>
+      <CommandPaletteProvider>
       <Nav />
       <main className="main-content">
         <Suspense fallback={<PageLoader />}>
@@ -115,9 +138,15 @@ export default function App() {
             <Route path="/team/:abbrev"                  element={<TeamDetail />} />
             <Route path="/leaderboard"                   element={<Leaderboard />} />
             <Route path="/search"                        element={<AdvancedSearch />} />
+            <Route path="/compare"                       element={<ComparePage />} />
+            <Route path="/compare/:id1"                  element={<ComparePage />} />
+            <Route path="/compare/:id1/:id2"             element={<ComparePage />} />
+            <Route path="/spring"                        element={<SpringTraining />} />
+            <Route path="/design"                        element={<PitchDesign />} />
           </Routes>
         </Suspense>
       </main>
+      </CommandPaletteProvider>
     </BrowserRouter>
   );
 }

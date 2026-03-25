@@ -38,6 +38,8 @@ const QUICK_PRESETS = [
   { label: 'vs RHH', apply: (f: PitchFilters): PitchFilters => ({ ...f, batterHand: 'R' }) },
   { label: 'Behind', apply: (f: PitchFilters): PitchFilters => ({ ...f, counts: ['1-0', '2-0', '2-1', '3-0', '3-1'] }) },
   { label: 'Chase', apply: (f: PitchFilters): PitchFilters => ({ ...f, zone: 'chase' }) },
+  { label: 'High Leverage', apply: (f: PitchFilters): PitchFilters => ({ ...f, innings: [7, 8, 9] }) },
+  { label: 'Offspeed', apply: (f: PitchFilters): PitchFilters => ({ ...f, pitchTypes: ['CH', 'FS', 'SC', 'FO'] }) },
 ];
 
 export function FilterPanel({

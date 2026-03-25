@@ -15,6 +15,78 @@ import type { Pitcher, MetricKey, DimensionKey } from '../types';
 interface RangeFilter { min: string; max: string }
 type SortField = 'pitch_plus' | MetricKey | DimensionKey;
 
+// ── Trait Presets ─────────────────────────────────────────────────────────────
+
+interface TraitPreset {
+  label: string;
+  color: string;
+  description: string;
+  dimFilters: Partial<Record<DimensionKey, { min?: number; max?: number }>>;
+  metricFilters: Partial<Record<MetricKey, RangeFilter>>;
+}
+
+const TRAIT_PRESETS: TraitPreset[] = [
+  {
+    label: 'Power Arm',
+    color: '#f87171',
+    description: 'Elite Stuff, high K%',
+    dimFilters: { stuff: { min: 110 } },
+    metricFilters: { k_rate: { min: '0.25', max: '' } },
+  },
+  {
+    label: 'Command Artist',
+    color: 'var(--accent)',
+    description: 'Elite Command, low BB%',
+    dimFilters: { command: { min: 110 } },
+    metricFilters: { bb_rate: { min: '', max: '0.07' } },
+  },
+  {
+    label: 'Deception Master',
+    color: '#a78bfa',
+    description: 'Elite Deception, high Whiff%',
+    dimFilters: { deception: { min: 110 } },
+    metricFilters: { in_zone_whiff_rate: { min: '0.28', max: '' } },
+  },
+  {
+    label: 'Ground Ball Specialist',
+    color: '#34d399',
+    description: 'Strong Outcomes, high GB%',
+    dimFilters: { outcomes: { min: 105 } },
+    metricFilters: { gb_rate: { min: '0.45', max: '' } },
+  },
+  {
+    label: 'FIP-Beater',
+    color: '#fbbf24',
+    description: 'Strong Command, suppresses wRC+',
+    dimFilters: { command: { min: 108 } },
+    metricFilters: { wrc_plus_against: { min: '', max: '90' } },
+  },
+  {
+    label: 'Stuff Only',
+    color: '#f97316',
+    description: 'High Stuff but average Outcomes (stuff not translating)',
+    dimFilters: { stuff: { min: 110 }, outcomes: { max: 100 } },
+    metricFilters: {},
+  },
+  {
+    label: 'Deep Arsenal',
+    color: '#06b6d4',
+    description: 'Elite Arsenal, many pitch types',
+    dimFilters: { arsenal: { min: 110 } },
+    metricFilters: { n_pitch_types: { min: '4', max: '' } },
+  },
+  {
+    label: 'Elite All-Around',
+    color: 'var(--text-1)',
+    description: 'All 6 dimensions above 105',
+    dimFilters: {
+      stuff: { min: 105 }, command: { min: 105 }, deception: { min: 105 },
+      outcomes: { min: 105 }, arsenal: { min: 105 },
+    },
+    metricFilters: {},
+  },
+];
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function metricRaw(p: Pitcher, key: MetricKey): number | null {
@@ -36,13 +108,13 @@ const SORTABLE_DIMS = Object.keys(DIMENSION_LABELS) as DimensionKey[];
 const SORTABLE_METRICS = (Object.keys(METRIC_LABELS) as MetricKey[]).slice(0, 20); // top metrics
 
 const SEL_STYLE = {
-  background: '#1a1a2e', border: '1px solid #2a2a3e',
-  color: '#e0e0e8', borderRadius: 6, padding: '7px 10px', fontSize: 13,
+  background: 'var(--bg-elevated)', border: '1px solid #2a2a3e',
+  color: 'var(--text-1)', borderRadius: 6, padding: '7px 10px', fontSize: 13,
 };
 
 const INPUT_STYLE = {
-  background: '#1a1a2e', border: '1px solid #2a2a3e',
-  color: '#e0e0e8', borderRadius: 6, padding: '7px 10px', fontSize: 13,
+  background: 'var(--bg-elevated)', border: '1px solid #2a2a3e',
+  color: 'var(--text-1)', borderRadius: 6, padding: '7px 10px', fontSize: 13,
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -68,6 +140,9 @@ export function AdvancedSearch() {
 
   // Metric range filters
   const [rangeFilters,   setRangeFilters]   = useState<Partial<Record<MetricKey, RangeFilter>>>({});
+  // Dimension score range filters (for trait presets)
+  const [dimFilters, setDimFilters] = useState<Partial<Record<DimensionKey, { min?: number; max?: number }>>>({});
+  const [activePreset, setActivePreset] = useState<string | null>(null);
 
   const teams = useMemo(() => {
     if (!data) return ['All'];
@@ -81,7 +156,8 @@ export function AdvancedSearch() {
     return ['All', ...Array.from(s).sort()];
   }, [data]);
 
-  const filtered = useMemo(() => {
+  // Filtering separated from sorting so sort changes don't re-run the full filter pass
+  const filteredUnsorted = useMemo(() => {
     if (!data) return [];
     let ps = data.pitchers.pitchers;
 
@@ -96,7 +172,12 @@ export function AdvancedSearch() {
       });
     }
 
-    // Range filters
+    for (const [dk, range] of Object.entries(dimFilters)) {
+      const dimKey = dk as DimensionKey;
+      if (range?.min != null) ps = ps.filter(p => dimScore(p, dimKey) >= range.min!);
+      if (range?.max != null) ps = ps.filter(p => dimScore(p, dimKey) <= range.max!);
+    }
+
     for (const [mk, range] of Object.entries(rangeFilters)) {
       const metricKey = mk as MetricKey;
       const lo = range?.min !== '' ? parseFloat(range!.min) : -Infinity;
@@ -111,8 +192,11 @@ export function AdvancedSearch() {
       }
     }
 
-    // Sort
-    return [...ps].sort((a, b) => {
+    return ps;
+  }, [data, search, teamFilter, handFilter, minPitches, pitchTypeFilter, rangeFilters, dimFilters]);
+
+  const filtered = useMemo(() => {
+    return [...filteredUnsorted].sort((a, b) => {
       let av = 0, bv = 0;
       if (sortField === 'pitch_plus') { av = a.pitch_plus; bv = b.pitch_plus; }
       else if (SORTABLE_DIMS.includes(sortField as DimensionKey)) {
@@ -124,7 +208,7 @@ export function AdvancedSearch() {
       }
       return sortAsc ? av - bv : bv - av;
     });
-  }, [data, search, teamFilter, handFilter, minPitches, pitchTypeFilter, rangeFilters, sortField, sortAsc]);
+  }, [filteredUnsorted, sortField, sortAsc]);
 
   function handleSortField(f: SortField) {
     if (f === sortField) setSortAsc(a => !a);
@@ -143,7 +227,7 @@ export function AdvancedSearch() {
   if (!data)   return null;
 
   const stickyTh = {
-    background: '#14141f', borderBottom: '2px solid #1e1e2e',
+    background: 'var(--bg-surface)', borderBottom: '2px solid #1e1e2e',
     position: 'sticky' as const, top: 0, zIndex: 2,
     padding: '8px 10px', whiteSpace: 'nowrap' as const, userSelect: 'none' as const,
   };
@@ -153,7 +237,7 @@ export function AdvancedSearch() {
     return (
       <th onClick={() => handleSortField(field)} title={title} style={{
         ...stickyTh, cursor: 'pointer',
-        color: active ? '#4a9eff' : '#a0a0b8',
+        color: active ? 'var(--accent)' : '#a0a0b8',
         fontWeight: active ? 700 : 500,
       }}>
         {label}{active ? (sortAsc ? ' ▲' : ' ▼') : ''}
@@ -170,6 +254,61 @@ export function AdvancedSearch() {
           {data.pitchers.metadata.n_pitches.toLocaleString()} pitches ·{' '}
           {String(season).replace('spring_', 'Spring ').replace('_', ' ')}
         </p>
+      </div>
+
+      {/* ── Trait Presets ── */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ color: '#a0a0b8', fontSize: 11, marginBottom: 8, fontWeight: 600, letterSpacing: 1 }}>
+          PITCHER ARCHETYPES
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {TRAIT_PRESETS.map(preset => {
+            const isActive = activePreset === preset.label;
+            return (
+              <button
+                key={preset.label}
+                title={preset.description}
+                onClick={() => {
+                  if (isActive) {
+                    setActivePreset(null);
+                    setDimFilters({});
+                    setRangeFilters({});
+                  } else {
+                    setActivePreset(preset.label);
+                    setDimFilters(preset.dimFilters);
+                    setRangeFilters(preset.metricFilters as any);
+                  }
+                }}
+                style={{
+                  padding: '5px 14px', fontSize: 12, fontWeight: 600, borderRadius: 20,
+                  border: `1px solid ${isActive ? preset.color : 'var(--border)'}`,
+                  background: isActive ? `${preset.color}22` : 'transparent',
+                  color: isActive ? preset.color : 'var(--text-3)',
+                  cursor: 'pointer', transition: 'all 0.15s',
+                }}
+              >
+                {preset.label}
+              </button>
+            );
+          })}
+          {activePreset && (
+            <button
+              onClick={() => { setActivePreset(null); setDimFilters({}); setRangeFilters({}); }}
+              style={{
+                padding: '5px 12px', fontSize: 11, borderRadius: 20,
+                border: '1px solid var(--text-4)', background: 'transparent',
+                color: 'var(--text-3)', cursor: 'pointer',
+              }}
+            >
+              Clear ×
+            </button>
+          )}
+        </div>
+        {activePreset && (
+          <div style={{ color: 'var(--text-4)', fontSize: 11, marginTop: 6 }}>
+            {TRAIT_PRESETS.find(p => p.label === activePreset)?.description}
+          </div>
+        )}
       </div>
 
       {/* ── Filters ── */}
@@ -229,7 +368,7 @@ export function AdvancedSearch() {
 
       {/* ── Metric range filters ── */}
       <details style={{ color: '#a0a0b8', fontSize: 13 }}>
-        <summary style={{ cursor: 'pointer', color: '#4a9eff', fontWeight: 600, marginBottom: 10 }}>
+        <summary style={{ cursor: 'pointer', color: 'var(--accent)', fontWeight: 600, marginBottom: 10 }}>
           + Metric Range Filters
         </summary>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8, paddingTop: 8 }}>
@@ -257,9 +396,9 @@ export function AdvancedSearch() {
           <button key={mk} onClick={() => setShownMetric(prev => prev === mk ? null : mk)}
             style={{
               padding: '3px 10px', fontSize: 11, border: '1px solid',
-              borderColor: shownMetric === mk ? '#4a9eff' : '#2a2a3e',
+              borderColor: shownMetric === mk ? 'var(--accent)' : '#2a2a3e',
               background: shownMetric === mk ? 'rgba(74,158,255,0.15)' : 'transparent',
-              color: shownMetric === mk ? '#4a9eff' : '#606080',
+              color: shownMetric === mk ? 'var(--accent)' : '#606080',
               borderRadius: 4, cursor: 'pointer',
             }}>
             {METRIC_LABELS[mk]}
@@ -272,7 +411,7 @@ export function AdvancedSearch() {
         {filtered.length.toLocaleString()} results
         {Object.values(rangeFilters).some(r => r?.min || r?.max) && (
           <button onClick={() => setRangeFilters({})}
-            style={{ marginLeft: 12, color: '#4a9eff', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12 }}>
+            style={{ marginLeft: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12 }}>
             Clear range filters ×
           </button>
         )}
@@ -306,7 +445,7 @@ export function AdvancedSearch() {
                   className="table-row-hover"
                   style={{ borderBottom: '1px solid #1e1e2e', cursor: 'pointer' }}>
                   <td style={{ padding: '6px 10px', color: '#606080', textAlign: 'center' }}>{i + 1}</td>
-                  <td style={{ padding: '6px 10px', color: '#e0e0e8', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '6px 10px', color: 'var(--text-1)', fontWeight: 500, whiteSpace: 'nowrap' }}>
                     {p.pitcher_name}
                   </td>
                   <td style={{ padding: '6px 10px', color: '#a0a0b8', textAlign: 'center' }}>{p.pitcher_team}</td>

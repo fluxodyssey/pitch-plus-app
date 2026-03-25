@@ -12,15 +12,19 @@
  *   6. Whiff / Contact table per pitch type
  *   7. Pitch Log — every pitch in sequence with result
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { exportToPng, copyToClipboard } from '../data/exportImage';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ScatterChart, Scatter, Cell, Legend,
 } from 'recharts';
 import { usePitchData } from '../data/usePitchData';
 import { useData } from '../data/useData';
+import { useScoringConfig } from '../data/useScoringConfig';
 import { pitchColor, PITCH_TYPE_COLORS } from '../data/constants';
+import { computePitchTypeGrades } from '../data/computePitchTypeGrades';
+import { PitchTypeGradeTable } from '../components/PitchTypeGradeTable';
 import type { RawPitch } from '../types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -73,6 +77,7 @@ export function StartReport() {
   const { id, gameId } = useParams<{ id: string; gameId: string }>();
   const { loadForPitcher, pitches: allPitches, games, loading } = usePitchData();
   const { data: appData } = useData();
+  const { config: scoringConfig } = useScoringConfig();
   const seasonPitchTypes = appData?.pitchTypes.pitchers[id!] ?? null;
 
   useEffect(() => {
@@ -163,6 +168,39 @@ export function StartReport() {
     }).filter(r => r.n > 0);
   }, [pitches]);
 
+  // Per-pitch-type grades
+  const ptGrades = useMemo(() => {
+    if (!pitches.length || !scoringConfig) return [];
+    return computePitchTypeGrades(pitches, scoringConfig.league_averages as Record<string, any>);
+  }, [pitches, scoringConfig]);
+
+  // Split pitches by batter hand for location charts
+  const pitchesVsLHH = useMemo(() => pitches.filter(p => p.bh === 'L'), [pitches]);
+  const pitchesVsRHH = useMemo(() => pitches.filter(p => p.bh === 'R'), [pitches]);
+
+  // HBP count
+  const hbpCount = useMemo(() =>
+    pitches.filter(p => p.et === 'hit_by_pitch' || p.desc?.toLowerCase().includes('hit by pitch')).length,
+  [pitches]);
+
+  // Export ref
+  const exportRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async (mode: 'png' | 'clipboard') => {
+    if (!exportRef.current) return;
+    setExporting(true);
+    try {
+      const filename = `${pitcherName.replace(/\s+/g, '_')}_${gameDate}.png`;
+      if (mode === 'png') await exportToPng(exportRef.current, filename);
+      else await copyToClipboard(exportRef.current);
+    } catch (err) {
+      console.error('Export failed:', err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   if (loading) return <div className="loading">Loading pitch data…</div>;
@@ -183,15 +221,15 @@ export function StartReport() {
   const opponent    = gameInfo ? `${gameInfo.away} @ ${gameInfo.home}` : '';
 
   return (
-    <div className="page">
+    <div className="page" ref={exportRef}>
 
       {/* ── Header ── */}
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Link to={`/player/${id}`} style={{ color: '#4a9eff', fontSize: 13 }}>← Profile</Link>
-              <span style={{ color: '#2a2a3e' }}>|</span>
+              <Link to={`/player/${id}`} style={{ color: '#4a9eff', fontSize: 13 }} className="no-export">← Profile</Link>
+              <span style={{ color: '#2a2a3e' }} className="no-export">|</span>
               <span style={{ color: '#606080', fontSize: 13 }}>{gameDate}</span>
               {opponent && <span style={{ color: '#606080', fontSize: 13 }}>· {opponent}</span>}
             </div>
@@ -210,8 +248,36 @@ export function StartReport() {
               <StatBox label="Whiff%" value={(summary.whiffRate * 100).toFixed(1) + '%'} />
               <StatBox label="CSW%" value={(summary.csw * 100).toFixed(1) + '%'} />
               <StatBox label="Inn" value={summary.innings} />
+              {hbpCount > 0 && <StatBox label="HBP" value={hbpCount} />}
             </div>
           )}
+        </div>
+        {/* Export buttons */}
+        <div className="no-export" style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+          <button
+            onClick={() => handleExport('png')}
+            disabled={exporting}
+            style={{
+              padding: '5px 12px', fontSize: 11, fontWeight: 600,
+              border: '1px solid #2a2a3e', borderRadius: 5,
+              background: 'rgba(74,158,255,0.08)', color: '#4a9eff',
+              cursor: exporting ? 'wait' : 'pointer',
+            }}
+          >
+            {exporting ? 'Exporting…' : 'Export PNG'}
+          </button>
+          <button
+            onClick={() => handleExport('clipboard')}
+            disabled={exporting}
+            style={{
+              padding: '5px 12px', fontSize: 11, fontWeight: 600,
+              border: '1px solid #2a2a3e', borderRadius: 5,
+              background: 'transparent', color: '#a0a0b8',
+              cursor: exporting ? 'wait' : 'pointer',
+            }}
+          >
+            Copy to Clipboard
+          </button>
         </div>
       </div>
 
@@ -267,114 +333,62 @@ export function StartReport() {
         </Section>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      {/* ── Split Location Scatter (LHH | Pitch Breaks | RHH) ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+        <Section title={`Locations vs LHH (${pitchesVsLHH.length})`}>
+          <LocationScatter pitches={pitchesVsLHH} ptList={pitchTypes} height={280} />
+        </Section>
 
-        {/* ── Location scatter ── */}
-        <Section title="Pitch Locations">
-          <ResponsiveContainer width="100%" height={320}>
+        <Section title="Pitch Breaks (iVB vs HB)">
+          <ResponsiveContainer width="100%" height={280}>
             <ScatterChart margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" />
-              <XAxis type="number" dataKey="px" domain={[-2.5, 2.5]} tick={{ fill: '#606080', fontSize: 10 }}
-                stroke="#2a2a3e" label={{ value: 'Horizontal (ft)', position: 'insideBottom', offset: -10, fill: '#606080', fontSize: 10 }} />
-              <YAxis type="number" dataKey="pz" domain={[0, 5]} tick={{ fill: '#606080', fontSize: 10 }}
-                stroke="#2a2a3e" label={{ value: 'Height (ft)', angle: -90, position: 'insideLeft', fill: '#606080', fontSize: 10 }} />
+              <XAxis type="number" dataKey="hb" tick={{ fill: '#606080', fontSize: 10 }} stroke="#2a2a3e"
+                label={{ value: 'HB (in)', position: 'insideBottom', offset: -10, fill: '#606080', fontSize: 10 }} />
+              <YAxis type="number" dataKey="ivb" tick={{ fill: '#606080', fontSize: 10 }} stroke="#2a2a3e"
+                label={{ value: 'iVB (in)', angle: -90, position: 'insideLeft', fill: '#606080', fontSize: 10 }} />
               <Tooltip cursor={false}
                 contentStyle={{ background: '#16162a', border: '1px solid #2a2a3e', borderRadius: 6, fontSize: 12 }}
-                formatter={(_, name, props) => [
-                  `${pName(props.payload.pt)} — ${props.payload.desc}`,
-                  props.payload.v?.toFixed(1) + ' mph',
+                formatter={(_, __, props) => [
+                  `${pName(props.payload.pt)} · ${props.payload.v.toFixed(1)} mph`,
+                  `iVB ${props.payload.ivb.toFixed(1)} · HB ${props.payload.hb.toFixed(1)}`,
                 ]} />
               {pitchTypes.map(pt => (
                 <Scatter key={pt.pt} name={pName(pt.pt)}
-                  data={pitches.filter(p => p.pt === pt.pt).map(p => ({ px: p.px, pz: p.pz, pt: p.pt, v: p.v, desc: p.desc }))}
+                  data={pitches.filter(p => p.pt === pt.pt && p.ivb != null && p.hb != null)
+                    .map(p => ({ hb: p.hb, ivb: p.ivb, pt: p.pt, v: p.v }))}
                   fill={pitchColor(pt.pt)} fillOpacity={0.7} r={4} />
               ))}
-              {/* Strike zone box */}
             </ScatterChart>
           </ResponsiveContainer>
         </Section>
 
-        {/* ── Count distribution ── */}
-        <Section title="Count Profile">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-            {countData.map(c => (
-              <div key={c.count} style={{
-                background: '#1a1a2e', borderRadius: 6, padding: '8px 10px', textAlign: 'center',
-                border: `1px solid ${c.count === '0-0' ? '#4a9eff44' : '#2a2a3e'}`,
-              }}>
-                <div style={{ color: '#4a9eff', fontSize: 12, fontWeight: 600 }}>{c.count}</div>
-                <div style={{ color: '#e0e0e8', fontSize: 18, fontWeight: 700 }}>{c.n}</div>
-              </div>
-            ))}
-          </div>
+        <Section title={`Locations vs RHH (${pitchesVsRHH.length})`}>
+          <LocationScatter pitches={pitchesVsRHH} ptList={pitchTypes} height={280} />
         </Section>
       </div>
 
-      {/* ── Whiff / Contact table ── */}
-      <Section title="Results by Pitch Type">
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #1e1e2e' }}>
-                {['Pitch', '#', 'Usage', 'Avg Velo', 'Avg Spin', 'IVB', 'HB', 'Whiff%', 'Chase%', 'CSW%'].map(h => (
-                  <th key={h} style={{ padding: '7px 10px', color: '#a0a0b8', fontWeight: 500, textAlign: h === 'Pitch' ? 'left' : 'right' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {pitchTypes.map(pt => {
-                const ps  = pitches.filter(p => p.pt === pt.pt);
-                const ozPs = ps.filter(p => p.z > 9);
-                const chaseRate = ozPs.length > 0 ? ozPs.filter(p => p.sw).length / ozPs.length : 0;
-                const cswRate = ps.length > 0
-                  ? (ps.filter(p => p.wh).length + ps.filter(p => p.desc === 'Called Strike').length) / ps.length : 0;
-                const seasonPt = seasonPitchTypes?.find(s => s.pitch_type === pt.pt);
-                function delta(game: number, season: number | undefined, invert = false) {
-                  if (season == null || Math.abs(game - season) < 0.1) return null;
-                  const d = game - season;
-                  const good = invert ? d < 0 : d > 0;
-                  return <span style={{ fontSize: 10, color: good ? '#69f0ae' : '#c85a5a', marginLeft: 4 }}>{d > 0 ? '+' : ''}{d.toFixed(1)}</span>;
-                }
-                return (
-                  <tr key={pt.pt} style={{ borderBottom: '1px solid #1a1a2e' }}>
-                    <td style={{ padding: '7px 10px' }}>
-                      <Pill color={pitchColor(pt.pt)} label={pName(pt.pt)} />
-                    </td>
-                    <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'right' }}>{pt.n}</td>
-                    <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'right' }}>{pt.pct}%</td>
-                    <td style={{ padding: '7px 10px', color: '#e0e0e8', textAlign: 'right', fontFamily: 'monospace' }}>
-                      {pt.avgVelo.toFixed(1)}{delta(pt.avgVelo, seasonPt?.velo)}
-                    </td>
-                    <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'right', fontFamily: 'monospace' }}>
-                      {Math.round(pt.avgSpin).toLocaleString()}{delta(pt.avgSpin, seasonPt?.spin)}
-                    </td>
-                    <td style={{ padding: '7px 10px', color: pitchColor(pt.pt), textAlign: 'right', fontFamily: 'monospace' }}>
-                      {pt.avgIvb.toFixed(1)}{delta(pt.avgIvb, seasonPt?.ivb)}
-                    </td>
-                    <td style={{ padding: '7px 10px', color: pitchColor(pt.pt), textAlign: 'right', fontFamily: 'monospace' }}>
-                      {pt.avgHb.toFixed(1)}{delta(pt.avgHb, seasonPt?.hb)}
-                    </td>
-                    <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'monospace', color: pt.whiffRate >= 0.35 ? '#d44040' : pt.whiffRate >= 0.25 ? '#c85a5a' : '#a0a0b8' }}>
-                      {(pt.whiffRate * 100).toFixed(1)}%
-                      {seasonPt != null && Math.abs(pt.whiffRate - seasonPt.whiff_rate) >= 0.01 && (
-                        <span style={{ fontSize: 10, color: pt.whiffRate > seasonPt.whiff_rate ? '#69f0ae' : '#c85a5a', marginLeft: 4 }}>
-                          {pt.whiffRate > seasonPt.whiff_rate ? '+' : ''}{((pt.whiffRate - seasonPt.whiff_rate) * 100).toFixed(1)}
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'right', fontFamily: 'monospace' }}>
-                      {(chaseRate * 100).toFixed(1)}%
-                    </td>
-                    <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'right', fontFamily: 'monospace' }}>
-                      {(cswRate * 100).toFixed(1)}%
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {/* ── Count distribution ── */}
+      <Section title="Count Profile">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
+          {countData.map(c => (
+            <div key={c.count} style={{
+              background: '#1a1a2e', borderRadius: 6, padding: '6px 8px', textAlign: 'center',
+              border: `1px solid ${c.count === '0-0' ? '#4a9eff44' : '#2a2a3e'}`,
+            }}>
+              <div style={{ color: '#4a9eff', fontSize: 11, fontWeight: 600 }}>{c.count}</div>
+              <div style={{ color: '#e0e0e8', fontSize: 16, fontWeight: 700 }}>{c.n}</div>
+            </div>
+          ))}
         </div>
       </Section>
+
+      {/* ── Pitch Type Grades (TJStats-style) ── */}
+      {ptGrades.length > 0 && (
+        <Section title="Pitch Type Grades">
+          <PitchTypeGradeTable grades={ptGrades} compact />
+        </Section>
+      )}
 
       {/* ── Pitch log ── */}
       <Section title="Pitch Log">
@@ -423,5 +437,43 @@ export function StartReport() {
       </Section>
 
     </div>
+  );
+}
+
+// ── Reusable location scatter sub-component ──────────────────────────────────
+
+function LocationScatter({
+  pitches: ps,
+  ptList,
+  height = 280,
+}: {
+  pitches: RawPitch[];
+  ptList: { pt: string }[];
+  height?: number;
+}) {
+  if (ps.length === 0) {
+    return <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#606080', fontSize: 12 }}>No pitches</div>;
+  }
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <ScatterChart margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" />
+        <XAxis type="number" dataKey="px" domain={[-2.5, 2.5]} tick={{ fill: '#606080', fontSize: 10 }}
+          stroke="#2a2a3e" />
+        <YAxis type="number" dataKey="pz" domain={[0, 5]} tick={{ fill: '#606080', fontSize: 10 }}
+          stroke="#2a2a3e" />
+        <Tooltip cursor={false}
+          contentStyle={{ background: '#16162a', border: '1px solid #2a2a3e', borderRadius: 6, fontSize: 11 }}
+          formatter={(_, __, props) => [
+            `${pName(props.payload.pt)} · ${props.payload.v?.toFixed(1)} mph`,
+            props.payload.desc,
+          ]} />
+        {ptList.map(pt => (
+          <Scatter key={pt.pt} name={pName(pt.pt)}
+            data={ps.filter(p => p.pt === pt.pt).map(p => ({ px: p.px, pz: p.pz, pt: p.pt, v: p.v, desc: p.desc }))}
+            fill={pitchColor(pt.pt)} fillOpacity={0.7} r={4} />
+        ))}
+      </ScatterChart>
+    </ResponsiveContainer>
   );
 }

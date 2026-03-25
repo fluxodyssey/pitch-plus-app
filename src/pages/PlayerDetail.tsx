@@ -17,12 +17,19 @@ import { RollingChart } from '../components/RollingChart';
 import { PercentilePanel } from '../components/PercentilePanel';
 import { SkeletonPage } from '../components/Skeleton';
 import { PitchArsenal } from '../components/PitchArsenal';
+import { ArsenalSimulator } from '../components/ArsenalSimulator';
 import { SequenceMatrix } from '../components/SequenceMatrix';
 import { VelocityDistribution } from '../components/VelocityDistribution';
 import { SeasonHistory } from '../components/SeasonHistory';
+import { SimilarPitchers } from '../components/SimilarPitchers';
+import { CountStateHeatmap } from '../components/CountStateHeatmap';
 import { StuffDNA } from '../components/StuffDNA';
+import { NovelMetricsPanel } from '../components/NovelMetricsPanel';
+import { TabBar } from '../components/TabBar';
 import { usePitchAttributes } from '../data/usePitchAttributes';
 import { computeGradeAttribution } from '../data/gradeAttribution';
+import { computePitchTypeGrades } from '../data/computePitchTypeGrades';
+import { PitchTypeGradeTable } from '../components/PitchTypeGradeTable';
 import { scoreColorContinuous } from '../data/constants';
 import { computePercentiles } from '../data/percentiles';
 import {
@@ -224,6 +231,8 @@ export function PlayerDetail() {
       showFilters={showFilters}
       setShowFilters={setShowFilters}
       navigate={navigate}
+      searchParams={searchParams}
+      setSearchParams={setSearchParams}
       data={data}
       attributesByType={attributesByType}
       expectedPitchPlus={expectedPitchPlus}
@@ -248,6 +257,8 @@ interface InnerProps {
   showFilters: boolean;
   setShowFilters: (v: boolean) => void;
   navigate: ReturnType<typeof useNavigate>;
+  searchParams: URLSearchParams;
+  setSearchParams: ReturnType<typeof useSearchParams>[1];
   data: import('../types').AppData;
   attributesByType: Record<string, import('../types').AttributeGrades> | null;
   expectedPitchPlus: number | null;
@@ -268,6 +279,8 @@ function PlayerDetailInner({
   showFilters,
   setShowFilters,
   navigate,
+  searchParams,
+  setSearchParams,
   data,
   attributesByType,
   expectedPitchPlus,
@@ -276,6 +289,15 @@ function PlayerDetailInner({
   const activeFilterCount = countActiveFilters(filters);
   const hasFilters = activeFilterCount > 0;
   const [rollingMetric, setRollingMetric] = useState<'velo' | 'whiffRate' | 'zoneRate' | 'cswRate'>('velo');
+
+  // Tab state (synced with URL ?tab=)
+  const activeTab = searchParams.get('tab') ?? 'overview';
+  const setActiveTab = (tab: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (tab === 'overview') next.delete('tab');
+    else next.set('tab', tab);
+    setSearchParams(next, { replace: true });
+  };
 
   // Compute percentile rankings (memoized across all pitchers)
   const percentileMap = useMemo(
@@ -322,6 +344,16 @@ function PlayerDetailInner({
     [pitcherRawPitches]
   );
 
+  // Per-pitch-type grades (TJStats-style)
+  const pitchTypeGrades = useMemo(() => {
+    if (filteredPitches.length === 0 || !scoringConfig) return [];
+    return computePitchTypeGrades(
+      filteredPitches,
+      scoringConfig.league_averages as Record<string, any>,
+      pitchTypeNames,
+    );
+  }, [filteredPitches, scoringConfig, pitchTypeNames]);
+
   // Full-season-only metrics set
   const fullSeasonOnly = useMemo(
     () => new Set(scoringConfig?.fullseason_only_metrics ?? []),
@@ -358,9 +390,20 @@ function PlayerDetailInner({
     <div className="page">
       {/* ── Savant-style Header Card ──────────────────────────────────────────── */}
       <div>
-        <button className="back-btn" onClick={() => navigate(-1)} style={{ marginBottom: 10 }}>
-          ← Back
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <button className="back-btn" onClick={() => navigate(-1)}>← Back</button>
+          <button
+            onClick={() => window.print()}
+            style={{
+              background: '#0f1929', border: '1px solid #1e3a5f', color: '#94a3b8',
+              borderRadius: 8, padding: '6px 14px', fontSize: 12, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}
+            title="Export as PDF via browser print"
+          >
+            Export Report
+          </button>
+        </div>
         <div className="card" style={{ padding: '20px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap' }}>
             {/* Player info */}
@@ -617,6 +660,22 @@ function PlayerDetailInner({
         </div>
       )}
 
+      {/* ── Tab Bar ── */}
+      <TabBar
+        tabs={[
+          { key: 'overview',  label: 'Overview' },
+          { key: 'arsenal',   label: 'Arsenal', badge: pitchTypeGrades.length > 0 ? pitchTypeGrades.length : undefined },
+          { key: 'research',  label: 'Research Lab' },
+          { key: 'charts', label: 'Charts' },
+          { key: 'trends', label: 'Trends' },
+          { key: 'gamelog', label: 'Game Log' },
+        ]}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+      />
+
+      {/* ══════════════════════ OVERVIEW TAB ══════════════════════ */}
+      {activeTab === 'overview' && <>
       {/* Percentile Rankings */}
       {percentiles && <PercentilePanel pitcher={pitcher} percentiles={percentiles} />}
 
@@ -708,7 +767,7 @@ function PlayerDetailInner({
         </div>
       )}
 
-      {/* Two-column: Radar + original pitch movement OR game-selected GameSummary */}
+      {/* Two-column: Radar + Dimension Breakdown */}
       <div className="two-col">
         <div className="card">
           <h3 className="card-title">
@@ -724,35 +783,101 @@ function PlayerDetailInner({
             secondaryDimensions={hasFilters ? fullSeasonRadar : leagueRadar}
             secondaryLabel={hasFilters ? 'Full Season' : 'League Avg (100)'}
             secondaryColor={hasFilters ? '#ffd54f' : '#ffd54f'}
+            ciBands={pitcher.dim_ci as any}
           />
         </div>
 
-        {/* Game Log (when pitch data loaded) */}
-        {pitcherRawPitches.length > 0 ? (
-          <div className="card">
-            <h3 className="card-title">Game Log</h3>
-            <GameLog
-              pitches={pitcherRawPitches}
-              games={games}
-              pitcherTeam={pitcher.pitcher_team}
-              pitcherId={pitcher.pitcher_id}
-              selectedGameId={filters.gameId}
-              onSelectGame={(gid) => setFilters({ ...filters, gameId: gid })}
+        <div className="card">
+          <h3 className="card-title">Dimension Breakdown</h3>
+          {DIMENSION_KEYS.map((d) => (
+            <DimensionPanel
+              key={d}
+              dimKey={d}
+              pitcher={pitcher}
+              weight={weights[d]}
+              filteredScore={filteredScores?.dimensions[d]}
+              filteredMetrics={filteredMetrics ?? undefined}
+              hasFilters={hasFilters && filteredPitches.length > 0}
+              fullSeasonOnly={fullSeasonOnly}
             />
-          </div>
-        ) : (
-          <div className="card">
-            <h3 className="card-title">Pitch Movement</h3>
-            {pitchData.length > 0 ? (
-              <PitchMovementChart pitches={pitchData} />
-            ) : (
-              <div style={{ color: '#606080', padding: 20 }}>No pitch type data available</div>
-            )}
-          </div>
-        )}
+          ))}
+        </div>
       </div>
 
-      {/* GameSummary: shown when game selected or filters active and pitch data loaded */}
+      </>}
+
+      {/* ══════════════════════ ARSENAL TAB ══════════════════════ */}
+      {activeTab === 'arsenal' && <>
+
+      {/* Per-Pitch-Type Grades (TJStats-style) */}
+      {pitchTypeGrades.length > 0 && (
+        <div className="card">
+          <h3 className="card-title" style={{ marginBottom: 14 }}>
+            Pitch Type Grades
+            {hasFilters && <span style={{ color: '#606080', fontSize: 11, fontWeight: 400, marginLeft: 8 }}>(filtered)</span>}
+          </h3>
+          <PitchTypeGradeTable grades={pitchTypeGrades} />
+        </div>
+      )}
+
+      {/* Pitch Arsenal with per-pitch heatmaps */}
+      <div className="card">
+        <h3 className="card-title" style={{ marginBottom: 14 }}>
+          Pitch Arsenal
+          {hasFilters && <span style={{ color: '#606080', fontSize: 11, fontWeight: 400, marginLeft: 8 }}>(filtered)</span>}
+        </h3>
+        <PitchArsenal
+          pitches={pitcherRawPitches.length > 0 ? filteredPitches : []}
+          pitchTypes={pitchData}
+          config={scoringConfig}
+          pitchTypeNames={pitchTypeNames}
+          highlightedTypes={filters.pitchTypes}
+          attributesByType={attributesByType}
+          onPitchTypeClick={(pt) => {
+            const next = filters.pitchTypes.includes(pt)
+              ? filters.pitchTypes.filter(t => t !== pt)
+              : [...filters.pitchTypes, pt];
+            setFilters({ ...filters, pitchTypes: next });
+          }}
+        />
+      </div>
+
+      {/* Pitch Sequence Matrix */}
+      <SequenceMatrix pitcherId={pitcher.pitcher_id} />
+
+      {/* What-If Arsenal Simulator */}
+      {pitchData.length > 0 && (
+        <div className="card">
+          <h3 className="card-title" style={{ marginBottom: 6 }}>What-If Arsenal Simulator</h3>
+          <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 14, marginTop: 0 }}>
+            Simulate pitch mix changes and see projected Arsenal metric impact
+          </p>
+          <ArsenalSimulator pitchTypes={pitchData} pitchNames={pitchTypeNames} />
+        </div>
+      )}
+
+      </>}
+
+      {/* ══════════════════════ CHARTS TAB ══════════════════════ */}
+      {activeTab === 'charts' && <>
+
+      {/* Velocity Distribution */}
+      {filteredPitches.length > 30 && (
+        <div className="card">
+          <h3 className="card-title" style={{ marginBottom: 16 }}>Pitch Velocity Distribution</h3>
+          <VelocityDistribution pitches={filteredPitches} pitchTypeNames={pitchTypeNames} />
+        </div>
+      )}
+
+      {/* Pitch Movement from raw data */}
+      {filteredPitches.length > 0 && (
+        <div className="card">
+          <h3 className="card-title" style={{ marginBottom: 14 }}>Pitch Movement</h3>
+          <PitchMovementChartFromRaw pitches={filteredPitches} pitchTypeNames={pitchTypeNames} />
+        </div>
+      )}
+
+      {/* GameSummary: shown when game selected or filters active */}
       {(hasFilters || gameSelected) && pitcherRawPitches.length > 0 && filteredPitches.length > 0 && (
         <div className="card">
           <GameSummary
@@ -775,6 +900,11 @@ function PlayerDetailInner({
           />
         </div>
       )}
+
+      </>}
+
+      {/* ══════════════════════ TRENDS TAB ══════════════════════ */}
+      {activeTab === 'trends' && <>
 
       {/* Rolling Performance */}
       {pitcherRawPitches.length > 10 && (
@@ -812,61 +942,60 @@ function PlayerDetailInner({
         </div>
       )}
 
-      {/* Dimension Panels */}
-      <div className="card">
-        <h3 className="card-title">Dimension Breakdown</h3>
-        {DIMENSION_KEYS.map((d) => (
-          <DimensionPanel
-            key={d}
-            dimKey={d}
-            pitcher={pitcher}
-            weight={weights[d]}
-            filteredScore={filteredScores?.dimensions[d]}
-            filteredMetrics={filteredMetrics ?? undefined}
-            hasFilters={hasFilters && filteredPitches.length > 0}
-            fullSeasonOnly={fullSeasonOnly}
-          />
-        ))}
-      </div>
-
-      {/* Pitch Arsenal with per-pitch heatmaps */}
-      <div className="card">
-        <h3 className="card-title" style={{ marginBottom: 14 }}>
-          Pitch Arsenal
-          {hasFilters && <span style={{ color: '#606080', fontSize: 11, fontWeight: 400, marginLeft: 8 }}>(filtered)</span>}
-        </h3>
-        <PitchArsenal
-          pitches={pitcherRawPitches.length > 0 ? filteredPitches : []}
-          pitchTypes={pitchData}
-          config={scoringConfig}
-          pitchTypeNames={pitchTypeNames}
-          highlightedTypes={filters.pitchTypes}
-          attributesByType={attributesByType}
-          onPitchTypeClick={(pt) => {
-            const next = filters.pitchTypes.includes(pt)
-              ? filters.pitchTypes.filter(t => t !== pt)
-              : [...filters.pitchTypes, pt];
-            setFilters({ ...filters, pitchTypes: next });
-          }}
-        />
-      </div>
-
-      {/* Pitch Sequence Matrix */}
-      <SequenceMatrix pitcherId={pitcher.pitcher_id} />
-
-      {/* Velocity Distribution */}
-      {filteredPitches.length > 30 && (
-        <div className="card">
-          <h3 className="card-title" style={{ marginBottom: 16 }}>Pitch Velocity Distribution</h3>
-          <VelocityDistribution pitches={filteredPitches} pitchTypeNames={pitchTypeNames} />
-        </div>
-      )}
-
-      {/* Season History */}
+      {/* Season History + Trajectory */}
       <div className="card">
         <h3 className="card-title" style={{ marginBottom: 14 }}>Season History</h3>
         <SeasonHistory pitcherId={pitcher.pitcher_id} />
       </div>
+
+      {/* Count-State Heatmap (requires markov_pitch.py --merge) */}
+      {pitcher.markov_count_data && (
+        <div className="card">
+          <h3 className="card-title" style={{ marginBottom: 6 }}>Count-State Profile</h3>
+          <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 14, marginTop: 0 }}>
+            Absorption probabilities from each count via Markov chain analysis
+          </p>
+          <CountStateHeatmap
+            countData={pitcher.markov_count_data as any}
+            pitcherName={pitcher.pitcher_name}
+          />
+        </div>
+      )}
+
+      {/* Similar Pitchers */}
+      <div className="card">
+        <h3 className="card-title" style={{ marginBottom: 6 }}>Similar Pitchers</h3>
+        <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 14, marginTop: 0 }}>
+          Pitchers with the most similar dimension profile in the current season
+        </p>
+        <SimilarPitchers pitcher={pitcher} n={6} />
+      </div>
+
+      </>}
+
+      {/* ══════════════════════ RESEARCH LAB TAB ══════════════════════ */}
+      {activeTab === 'research' && <>
+      <NovelMetricsPanel pitcherId={pitcher.pitcher_id} />
+      </>}
+
+      {/* ══════════════════════ GAME LOG TAB ══════════════════════ */}
+      {activeTab === 'gamelog' && <>
+
+      {pitcherRawPitches.length > 0 && (
+        <div className="card">
+          <h3 className="card-title">Game Log</h3>
+          <GameLog
+            pitches={pitcherRawPitches}
+            games={games}
+            pitcherTeam={pitcher.pitcher_team}
+            pitcherId={pitcher.pitcher_id}
+            selectedGameId={filters.gameId}
+            onSelectGame={(gid) => setFilters({ ...filters, gameId: gid })}
+          />
+        </div>
+      )}
+
+      </>}
     </div>
   );
 }

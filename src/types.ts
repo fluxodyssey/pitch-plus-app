@@ -45,7 +45,29 @@ export type MetricKey =
   | 'best_secondary_whiff'
   | 'platoon_resistance'
   // New v3: pitcher deception index
-  | 'pitcher_deception_index';
+  | 'pitcher_deception_index'
+  // New v3.1: backtest-validated novel metrics (2026-03-24)
+  | 'bip_adjusted_kbb'        // K%×1.3 - BB% (replaces k_bb_pct in Command)
+  | 'bip_rate'                // BIP per PA (Outcomes — BIP avoidance)
+  | 'take_rv_against'         // passive command: mean RV on takes
+  | 'called_strike_rv'        // take RV decomposition: called strikes only
+  | 'ball_rv'                 // take RV decomposition: balls only
+  | 'regime_whiff_delta'      // whiff% ahead - whiff% behind (Deception)
+  | 'velocity_adaptation'     // velo_behind - velo_ahead (regime adaptation)
+  | 'mix_adaptation'          // entropy_ahead - entropy_behind
+  // Markov chain metrics (from markov_pitch.py)
+  | 'markov_dominance'        // P(K | start 0-0)
+  | 'markov_walk_risk'        // P(BB | start 0-0)
+  | 'markov_efficiency'       // Expected pitches per PA from 0-0
+  | 'markov_recovery_score'   // P(K | 2-0) / P(K | 0-0)
+  | 'markov_k_from_behind'    // mean P(K) across behind-count starts
+  // Stuff alpha metrics (from stuff_alpha.py)
+  | 'non_stuff_alpha'         // ERA outperformance beyond Stuff+
+  | 'command_alpha'           // K-BB% outperformance beyond Stuff+
+  // Trajectory metrics (from trajectory.py)
+  | 'trajectory_slope'        // Pitch+ trend (pts/yr via OLS)
+  // v3.1 display-only fields (not scored but shown in app)
+  | 'k_bb_pct';               // kept for display; scoring uses bip_adjusted_kbb
 
 export interface DimensionScore {
   score: number;
@@ -67,7 +89,48 @@ export interface Pitcher {
   n_games: number;
   ip?: number;  // season total innings pitched (baseball notation: 185.2)
   dimensions: Record<DimensionKey, DimensionScore>;
-  metric_grades: Record<MetricKey, MetricGrade>;
+  metric_grades: Record<string, MetricGrade>;  // string (not MetricKey) for forward compat
+
+  // v3.1 raw display fields (shown in app without requiring population stats)
+  bat_speed_suppression?: number | null;
+  swing_length_inducement?: number | null;
+  swing_plus_suppression?: number | null;
+  bip_adjusted_kbb?: number | null;
+  bip_rate?: number | null;
+  take_rv_against?: number | null;
+  called_strike_rv?: number | null;
+  ball_rv?: number | null;
+  regime_whiff_delta?: number | null;
+  velocity_adaptation?: number | null;
+  mix_adaptation?: number | null;
+
+  // Markov fields (from markov_pitch.py --merge)
+  markov_dominance?: number | null;
+  markov_walk_risk?: number | null;
+  markov_efficiency?: number | null;
+  markov_recovery_score?: number | null;
+  markov_k_from_behind?: number | null;
+
+  // Alpha fields (from stuff_alpha.py --merge)
+  non_stuff_alpha?: number | null;
+  command_alpha?: number | null;
+  stuff_independence?: number | null;
+
+  // Trajectory fields (from trajectory.py --merge)
+  trajectory_slope?: number | null;
+  trajectory_label?: string | null;
+  trajectory_confidence?: number | null;
+  seasons_observed?: number | null;
+
+  // Bootstrap CI fields (from --bootstrap flag)
+  ci_p10?: number | null;
+  ci_p50?: number | null;
+  ci_p90?: number | null;
+  ci_width?: number | null;
+  /** Per-dimension CI bands: { stuff: { p10, p90 }, command: { p10, p90 }, … } */
+  dim_ci?: Partial<Record<DimensionKey, { p10: number; p90: number }>>;
+  /** Per-count Markov absorption data for count-state heatmap */
+  markov_count_data?: Record<string, { k: number; bb: number; bip: number; exp: number }>;
 }
 
 // ─── Pitch Attribute Intelligence ────────────────────────────────────────────
@@ -388,4 +451,33 @@ export interface ComputedMetrics {
 export interface ComputedScores {
   dimensions: Record<string, number | null>;
   pitchPlus: number | null;
+}
+
+// ─── Per-Pitch-Type Grades ──────────────────────────────────────────────────
+
+export interface PitchTypeGrade {
+  pitchType: string;
+  pitchName: string;
+  count: number;
+  usagePct: number;
+  // Physical attributes (computed from raw pitches)
+  avgVelo: number | null;
+  avgSpin: number | null;
+  avgIvb: number | null;
+  avgHb: number | null;
+  avgVaa: number | null;
+  avgExt: number | null;
+  // Outcome stats
+  zoneRate: number | null;
+  chaseRate: number | null;
+  whiffRate: number | null;
+  cswRate: number | null;
+  // Grades (0-200, 100 = league avg for that pitch type)
+  stuffGrade: number;
+  scoutingGrade: number;   // 20-80 scale
+  veloGrade: number;
+  spinGrade: number;
+  ivbGrade: number;
+  hbGrade: number;
+  extGrade: number;
 }

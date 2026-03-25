@@ -139,48 +139,51 @@ export function numericGrade(score: number): string {
   return 'D';
 }
 
+// Grade badge background colors — warm crimson for elite, steel blue for below avg
+// Matches Baseball Savant's heat-map convention: red = best, blue = worst
 export const GRADE_COLORS: Record<string, string> = {
-  'A+': '#d44040',
-  A: '#c85a5a',
-  'B+': '#a87070',
-  B: '#8890a0',
-  'C+': '#6878a0',
-  C: '#4a6494',
-  D: '#3a5080',
+  'A+': '#c0392b',   // deep crimson
+  A:   '#c0502b',   // warm red-orange
+  'B+': '#8b6a4a',   // warm neutral
+  B:   '#566a7a',   // blue-gray neutral
+  'C+': '#2e5f8a',   // steel blue
+  C:   '#1a4a7a',   // deeper blue
+  D:   '#0f3060',   // dark navy
 };
 
 export function gradeColor(score: number): string {
-  return GRADE_COLORS[numericGrade(score)] ?? '#e0e0e8';
+  return GRADE_COLORS[numericGrade(score)] ?? '#566a7a';
 }
 
 // ─── Score Color (table cells) ────────────────────────────────────────────
+// Subtle background tints — Savant-style heat coloring
 
 export function scoreColor(score: number): string {
-  if (score >= 115) return 'rgba(212,64,64,0.25)';
-  if (score >= 105) return 'rgba(200,90,90,0.15)';
-  if (score >= 95) return 'transparent';
-  if (score >= 85) return 'rgba(74,100,148,0.15)';
-  return 'rgba(58,80,128,0.25)';
+  if (score >= 120) return 'rgba(192,57,43,0.28)';
+  if (score >= 110) return 'rgba(192,57,43,0.15)';
+  if (score >= 100) return 'rgba(192,57,43,0.06)';
+  if (score >= 90)  return 'rgba(30,95,138,0.08)';
+  if (score >= 80)  return 'rgba(30,95,138,0.18)';
+  return 'rgba(30,95,138,0.28)';
 }
 
 // ─── Continuous Score Color (for percentile bars, heatmaps) ──────────────
+// Maps score (0-200, 100=avg) → crimson(elite) → neutral → steel blue(poor)
+// Calibrated to match Baseball Savant's red-blue heat map palette
 
 export function scoreColorContinuous(score: number, alpha = 1): string {
-  // Maps score (0-200, centered at 100) to red(good) → gray(avg) → blue(bad)
-  const t = Math.max(0, Math.min(1, (score - 50) / 100)); // 0=bad(50), 1=good(150)
+  const t = Math.max(0, Math.min(1, (score - 50) / 100)); // 0=poor, 1=elite
   let r: number, g: number, b: number;
   if (t >= 0.5) {
-    // neutral → red (good)
-    const s = (t - 0.5) * 2; // 0..1
-    r = Math.round(136 + s * 76);  // 136 → 212
-    g = Math.round(144 - s * 80);  // 144 → 64
-    b = Math.round(160 - s * 96);  // 160 → 64
+    const s = (t - 0.5) * 2;
+    r = Math.round(86  + s * 106);  // 86  → 192 (crimson)
+    g = Math.round(106 - s * 63);   // 106 → 43
+    b = Math.round(122 - s * 79);   // 122 → 43
   } else {
-    // blue (bad) → neutral
-    const s = t * 2; // 0..1
-    r = Math.round(58 + s * 78);   // 58 → 136
-    g = Math.round(80 + s * 64);   // 80 → 144
-    b = Math.round(128 + s * 32);  // 128 → 160
+    const s = t * 2;
+    r = Math.round(22  + s * 64);   // 22  → 86
+    g = Math.round(74  + s * 32);   // 74  → 106
+    b = Math.round(130 - s * 8);    // 130 → 122
   }
   return `rgba(${r},${g},${b},${alpha})`;
 }
@@ -209,6 +212,29 @@ export const PITCH_TYPE_COLORS: Record<string, string> = {
 export function pitchColor(type: string): string {
   return PITCH_TYPE_COLORS[type] ?? '#e0e0e8';
 }
+
+// ─── 20-80 Scouting Grade Scale ──────────────────────────────────────────
+
+export function toScoutingGrade(score: number): number {
+  const raw = 50 + (score - 100) * 0.5;
+  return Math.max(20, Math.min(80, Math.round(raw / 5) * 5));
+}
+
+export const SCOUTING_LABELS: Record<number, string> = {
+  80: 'Elite',
+  75: 'Plus-Plus',
+  70: 'Plus-Plus',
+  65: 'Plus',
+  60: 'Above Avg',
+  55: 'Avg+',
+  50: 'Average',
+  45: 'Below Avg',
+  40: 'Fringe',
+  35: 'Well Below',
+  30: 'Poor',
+  25: 'Poor',
+  20: 'Poor',
+};
 
 // ─── All sortable metric options for Leaderboard ─────────────────────────
 
