@@ -1,47 +1,54 @@
 import { useState, useEffect } from 'react';
 import type { GameLogEntry } from '../types';
+import { fetchJson } from './fetchJson';
 
 interface GameLogsData {
   metadata: { season: number; n_pitchers: number; n_games: number };
   pitchers: Record<string, GameLogEntry[]>;
 }
 
-let cache: GameLogsData | null = null;
-let inflight: Promise<GameLogsData | null> | null = null;
+const cache = new Map<number, GameLogsData>();
+const inflight = new Map<number, Promise<GameLogsData | null>>();
 
 async function loadGameLogs(season: number): Promise<GameLogsData | null> {
-  if (cache) return cache;
-  if (inflight) return inflight;
-  inflight = fetch(`/data/game_logs_${season}.json`)
-    .then((r) => {
-      if (!r.ok) return null;
-      return r.json() as Promise<GameLogsData>;
-    })
+  const cached = cache.get(season);
+  if (cached) return cached;
+  const existing = inflight.get(season);
+  if (existing) return existing;
+
+  const promise = fetchJson<GameLogsData>(`/data/game_logs_${season}.json`)
     .then((d) => {
-      cache = d;
-      inflight = null;
+      cache.set(season, d);
+      inflight.delete(season);
       return d;
     })
-    .catch(() => {
-      inflight = null;
-      return null;
+    .catch((err) => {
+      inflight.delete(season);
+      throw err;
     });
-  return inflight;
+
+  inflight.set(season, promise);
+  return promise;
 }
 
 export function useGameLogs(season: number) {
-  const [data, setData] = useState<GameLogsData | null>(cache);
-  const [loading, setLoading] = useState(!cache);
+  const [data, setData] = useState<GameLogsData | null>(cache.get(season) ?? null);
+  const [loading, setLoading] = useState(!cache.has(season));
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (cache) { setData(cache); setLoading(false); return; }
+    const cached = cache.get(season);
+    if (cached) { setData(cached); setLoading(false); setError(null); return; }
     setLoading(true);
-    loadGameLogs(season).then((d) => { setData(d); setLoading(false); });
+    setError(null);
+    loadGameLogs(season)
+      .then((d) => { setData(d); setLoading(false); })
+      .catch((err) => { setData(null); setLoading(false); setError(err.message); });
   }, [season]);
 
   function getPlayerGames(pitcherId: number): GameLogEntry[] {
     return data?.pitchers[String(pitcherId)] ?? [];
   }
 
-  return { data, loading, getPlayerGames };
+  return { data, loading, error, getPlayerGames };
 }

@@ -1,8 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { rowNavProps } from '../data/rowNavigation';
 import { useData } from '../data/useData';
 import { GradeBadge } from '../components/GradeBadge';
 import { ALL_METRIC_OPTIONS, PCT_METRICS, gradeColor } from '../data/constants';
+import { exportCsv } from '../data/exportCsv';
 import { SkeletonPage } from '../components/Skeleton';
 import type { Pitcher, DimensionKey, MetricKey } from '../types';
 
@@ -40,6 +42,8 @@ export function Leaderboard() {
   const [teamFilter, setTeamFilter] = useState('All');
   const [roleFilter, setRoleFilter] = useState<'All' | 'Starter' | 'Reliever'>('All');
   const [pitchTypeFilter, setPitchTypeFilter] = useState('All');
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 50;
 
   const teams = useMemo(() => {
     if (!data) return [];
@@ -82,16 +86,19 @@ export function Leaderboard() {
     return [...pitchers].sort((a, b) => {
       const av = getMetricValue(a, selectedMetric).grade;
       const bv = getMetricValue(b, selectedMetric).grade;
-      return bv - av;
+      return bv - av || a.pitcher_name.localeCompare(b.pitcher_name);
     });
   }, [data, selectedMetric, minPitches, handFilter, teamFilter, roleFilter, starterIds, pitchTypeFilter]);
+
+  // Reset to first page when filters/sort change
+  useEffect(() => { setPage(0); }, [selectedMetric, minPitches, handFilter, teamFilter, roleFilter, pitchTypeFilter]);
 
   if (loading) return <SkeletonPage />;
   if (error) return <div className="error">Error: {error}</div>;
   if (!data) return null;
 
   const selectedOption = ALL_METRIC_OPTIONS.find((o) => o.key === selectedMetric);
-  const maxPitches = Math.max(...data.pitchers.pitchers.map((p) => p.n_pitches));
+  const maxPitches = data.pitchers.pitchers.length > 0 ? Math.max(...data.pitchers.pitchers.map((p) => p.n_pitches)) : 0;
 
   // Group options by group
   const groups = Array.from(new Set(ALL_METRIC_OPTIONS.map((o) => o.group)));
@@ -109,7 +116,26 @@ export function Leaderboard() {
             {season} MLB
           </span>
         </div>
-        <p className="subtitle">Rank any of 33 metrics across all pitchers · {data.pitchers.metadata.n_pitchers.toLocaleString()} pitchers · {data.pitchers.metadata.n_games} games</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <p className="subtitle" style={{ margin: 0 }}>Rank any of 33 metrics across all pitchers · {data.pitchers.metadata.n_pitchers.toLocaleString()} pitchers · {data.pitchers.metadata.n_games} games</p>
+          <button
+            onClick={() => {
+              const headers = ['Rank', 'Name', 'Team', 'H', selectedOption?.label ?? 'Value', 'Grade', 'Pitches', 'IP', 'Games'];
+              const rows = sorted.map((p, i) => {
+                const { raw } = getMetricValue(p, selectedMetric);
+                return [i + 1, p.pitcher_name, p.pitcher_team, p.pitcher_hand, raw, getMetricValue(p, selectedMetric).grade, p.n_pitches, p.ip?.toFixed(1) ?? '', p.n_games];
+              });
+              exportCsv(headers, rows, `leaderboard-${selectedMetric}-${season}.csv`);
+            }}
+            style={{
+              padding: '4px 10px', fontSize: 11, borderRadius: 5,
+              border: '1px solid #2a2a3e', background: 'transparent',
+              color: '#a0a0b8', cursor: 'pointer', whiteSpace: 'nowrap',
+            }}
+          >
+            ↓ Export CSV
+          </button>
+        </div>
       </div>
 
       {/* Quick Presets */}
@@ -264,18 +290,19 @@ export function Leaderboard() {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((pitcher, idx) => {
+              {sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((pitcher, idx) => {
                 const { grade, raw } = getMetricValue(pitcher, selectedMetric);
                 const color = gradeColor(grade);
+                const rank = page * PAGE_SIZE + idx + 1;
                 return (
                   <tr
                     key={pitcher.pitcher_id}
                     className="table-row-hover"
-                    onClick={() => navigate(`/player/${pitcher.pitcher_id}`)}
+                    {...rowNavProps(navigate, `/player/${pitcher.pitcher_id}`)}
                     style={{ borderBottom: '1px solid #1e1e2e', cursor: 'pointer' }}
                   >
                     <td style={{ padding: '7px 12px', color: '#606080', textAlign: 'right' }}>
-                      {idx + 1}
+                      {rank}
                     </td>
                     <td style={{ padding: '7px 12px', color: '#e0e0e8', fontWeight: 500, whiteSpace: 'nowrap' }}>
                       {pitcher.pitcher_name}
@@ -315,6 +342,34 @@ export function Leaderboard() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {sorted.length > PAGE_SIZE && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 16 }}>
+            <button
+              disabled={page === 0}
+              onClick={() => setPage(p => p - 1)}
+              style={{
+                padding: '6px 14px', fontSize: 12, borderRadius: 6,
+                border: '1px solid #2a2a3e', background: '#1a1a2e', color: page === 0 ? '#404060' : '#e0e0e8',
+                cursor: page === 0 ? 'default' : 'pointer',
+              }}
+            >Prev</button>
+            <span style={{ color: '#a0a0b8', fontSize: 12 }}>
+              {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, sorted.length)} of {sorted.length}
+            </span>
+            <button
+              disabled={(page + 1) * PAGE_SIZE >= sorted.length}
+              onClick={() => setPage(p => p + 1)}
+              style={{
+                padding: '6px 14px', fontSize: 12, borderRadius: 6,
+                border: '1px solid #2a2a3e', background: '#1a1a2e',
+                color: (page + 1) * PAGE_SIZE >= sorted.length ? '#404060' : '#e0e0e8',
+                cursor: (page + 1) * PAGE_SIZE >= sorted.length ? 'default' : 'pointer',
+              }}
+            >Next</button>
+          </div>
+        )}
       </div>
     </div>
   );

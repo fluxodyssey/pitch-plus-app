@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { fetchJsonOrNull } from './fetchJson';
 
 export interface TransitionStats {
   n: number;
@@ -46,19 +47,11 @@ let inflight: Promise<SequenceData | null> | null = null;
 async function loadSequenceData(): Promise<SequenceData | null> {
   if (cache) return cache;
   if (inflight) return inflight;
-  inflight = fetch('/data/sequence_plus.json')
-    .then((r) => {
-      if (!r.ok) return null;
-      return r.json() as Promise<SequenceData>;
-    })
+  inflight = fetchJsonOrNull<SequenceData>('/data/sequence_plus.json')
     .then((d) => {
       cache = d;
       inflight = null;
       return d;
-    })
-    .catch(() => {
-      inflight = null;
-      return null;
     });
   return inflight;
 }

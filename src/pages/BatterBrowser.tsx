@@ -6,7 +6,9 @@ import {
 import { GradeBadge } from '../components/GradeBadge';
 import { scoreColor } from '../data/constants';
 import { useData } from '../data/useData';
-import type { Batter, BatterBDQData, Hitter, EnrichedHitter, SwingPlusMetrics } from '../types';
+import { useBatterOutcomes } from '../data/useMatchupData';
+import { fetchJson, isJsonResponse } from '../data/fetchJson';
+import type { Batter, BatterBDQData, BatterOutcomesData, Hitter, EnrichedHitter, SwingPlusMetrics } from '../types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,24 +20,32 @@ type SwingMetricKey = keyof SwingPlusMetrics;
 function useBatterData(season: number) {
   const [bdq, setBdq] = useState<BatterBDQData | null>(null);
   const [rawHitters, setRawHitters] = useState<Hitter[] | null>(null);
+  const [bdqError, setBdqError] = useState<string | null>(null);
+  const [hittersError, setHittersError] = useState<string | null>(null);
   const loadedSeason = useRef<number | null>(null);
 
   useEffect(() => {
-    fetch('/data/batter_bdq.json').then(r => r.json()).then(setBdq).catch(console.error);
+    fetchJson<BatterBDQData>('/data/batter_bdq.json')
+      .then(setBdq)
+      .catch((e) => { console.error(e); setBdqError(String(e)); });
   }, []);
 
   useEffect(() => {
     if (loadedSeason.current === season) return;
     loadedSeason.current = season;
     setRawHitters(null);
-    // Try season-specific file first, fall back to legacy hitters.json
+    setHittersError(null);
+    // Try season-specific file first, fall back to legacy hitters.json.
     fetch(`/data/hitters_${season}.json`)
-      .then(r => r.ok ? r.json() : fetch('/data/hitters.json').then(r2 => r2.json()))
+      .then(r => isJsonResponse(r) ? r.json() : fetch('/data/hitters.json').then(r2 => {
+        if (!isJsonResponse(r2)) throw new Error(`hitters.json: HTTP ${r2.status}`);
+        return r2.json();
+      }))
       .then((data) => {
         // hitters_{year}.json wraps in { hitters: [...] }; legacy is a flat array
         setRawHitters(Array.isArray(data) ? data : (data.hitters ?? []));
       })
-      .catch(console.error);
+      .catch((e) => { console.error(e); setHittersError(String(e)); });
   }, [season]);
 
   const enriched = useMemo<EnrichedHitter[] | null>(() => {
@@ -47,7 +57,10 @@ function useBatterData(season: number) {
     });
   }, [bdq, rawHitters]);
 
-  return { bdq, enriched, loading: !bdq || !rawHitters };
+  const error = bdqError ?? hittersError ?? null;
+  // loading = still waiting; error = failed; otherwise ready
+  const loading = !error && (!bdq || !rawHitters);
+  return { bdq, enriched, loading, error };
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -102,6 +115,9 @@ const METRIC_CONFIG: Record<SwingMetricKey, MetricDef> = {
   xwoba:                 { label: 'xwOBA',        fmt: v => v.toFixed(3) },
   xslg:                  { label: 'xSLG',         fmt: v => v.toFixed(3) },
   bat_speed_efficiency:  { label: 'BS Eff',       fmt: v => v.toFixed(3) },
+  aa_opt_fb:             { label: 'AA Opt FB%',   fmt: v => `${(v*100).toFixed(1)}%` },
+  aa_opt_brk:            { label: 'AA Opt Brk%',  fmt: v => `${(v*100).toFixed(1)}%` },
+  aa_opt_os:             { label: 'AA Opt OS%',   fmt: v => `${(v*100).toFixed(1)}%` },
 };
 
 const METRIC_GROUPS: { label: string; keys: SwingMetricKey[] }[] = [
@@ -338,7 +354,7 @@ function SwingPlusTab({ hitters }: { hitters: EnrichedHitter[] }) {
                 {activeGroup
                   ? activeGroup.keys.map(k => {
                       const v = h.metrics[k];
-                      return <td key={k} style={{ padding: '7px 10px', textAlign: 'center', color: '#e0e0e8', fontFamily: 'monospace' }}>{METRIC_CONFIG[k].fmt(v)}</td>;
+                      return <td key={k} style={{ padding: '7px 10px', textAlign: 'center', color: '#e0e0e8', fontFamily: 'monospace' }}>{v != null ? METRIC_CONFIG[k].fmt(v) : '—'}</td>;
                     })
                   : SWING_DIMS.map(d => {
                       const score = h.dimensions[d] ?? 0;
@@ -520,9 +536,10 @@ function BDQTab({ bdq }: { bdq: BatterBDQData }) {
 
 // ─── Combined Profile Tab ─────────────────────────────────────────────────────
 
-type CombinedSortKey = 'swing_plus' | 'bad_chase_rate' | 'xwoba' | 'barrel_rate' | 'avg_bat_speed' | 'n_pa';
+type CombinedSortKey = 'swing_plus' | 'bad_chase_rate' | 'xwoba' | 'barrel_rate' | 'avg_bat_speed' | 'n_pa'
+                     | 'bipr_simple' | 'wobacon';
 
-function CombinedTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBDQData }) {
+function CombinedTab({ hitters, bdq, outcomes }: { hitters: EnrichedHitter[]; bdq: BatterBDQData; outcomes: BatterOutcomesData | null }) {
   const [search, setSearch] = useState('');
   const [teamFilter, setTeamFilter] = useState('all');
   const [handFilter, setHandFilter] = useState<'all' | 'L' | 'R'>('all');
@@ -531,13 +548,31 @@ function CombinedTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterB
 
   const bdqMap = useMemo(() => new Map(bdq.batters.map(b => [b.batter_id, b])), [bdq]);
 
-  type CombinedPlayer = EnrichedHitter & { bdq: Batter };
+  type CombinedPlayer = EnrichedHitter & {
+    bdq: Batter;
+    bipr_simple: number | null;
+    bipr_rv: number | null;
+    wobacon: number | null;
+    pred_rv_100: number | null;
+  };
 
   const combined = useMemo<CombinedPlayer[]>(() =>
     hitters
-      .map(h => { const b = bdqMap.get(h.id); return b ? { ...h, bdq: b } : null; })
+      .map(h => {
+        const b = bdqMap.get(h.id);
+        if (!b) return null;
+        const ov = outcomes?.[String(h.id)]?.overall;
+        return {
+          ...h,
+          bdq: b,
+          bipr_simple: ov?.bipr_simple ?? null,
+          bipr_rv: ov?.bipr_rv ?? null,
+          wobacon: ov?.wobacon ?? null,
+          pred_rv_100: ov?.pred_rv_100 ?? null,
+        };
+      })
       .filter((x): x is CombinedPlayer => x !== null),
-    [hitters, bdqMap]
+    [hitters, bdqMap, outcomes]
   );
 
   const teams = useMemo(() =>
@@ -552,16 +587,27 @@ function CombinedTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterB
       .filter(p => handFilter === 'all' || p.hand === handFilter)
       .sort((a, b) => {
         let av: number, bv: number;
+        // Nullish BIPR fields sort to the bottom regardless of direction
+        const sortNull = sortKey === 'bipr_simple' || sortKey === 'wobacon';
         switch (sortKey) {
           case 'bad_chase_rate': av = a.bdq.bad_chase_rate; bv = b.bdq.bad_chase_rate; break;
           case 'xwoba': av = a.metrics.xwoba; bv = b.metrics.xwoba; break;
           case 'barrel_rate': av = a.metrics.barrel_rate; bv = b.metrics.barrel_rate; break;
           case 'avg_bat_speed': av = a.metrics.avg_bat_speed; bv = b.metrics.avg_bat_speed; break;
           case 'n_pa': av = a.n_pa; bv = b.n_pa; break;
+          case 'bipr_simple': av = a.bipr_simple ?? -Infinity; bv = b.bipr_simple ?? -Infinity; break;
+          case 'wobacon': av = a.wobacon ?? -Infinity; bv = b.wobacon ?? -Infinity; break;
           default: av = a.swing_plus; bv = b.swing_plus;
         }
         const d = bv - av;
-        return sortKey === 'bad_chase_rate' ? (sortDir === 'asc' ? -d : d) : (sortDir === 'desc' ? d : -d);
+        if (sortKey === 'bad_chase_rate') return sortDir === 'asc' ? -d : d;
+        if (sortNull && sortDir === 'asc') {
+          // ascending: nulls still at bottom — flip non-null comparison
+          if (av === -Infinity && bv !== -Infinity) return 1;
+          if (bv === -Infinity && av !== -Infinity) return -1;
+          return -d;
+        }
+        return sortDir === 'desc' ? d : -d;
       }),
     [combined, search, teamFilter, handFilter, sortKey, sortDir]
   );
@@ -621,6 +667,8 @@ function CombinedTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterB
               <SortTh k="xwoba" label="xwOBA" />
               <SortTh k="barrel_rate" label="Barrel%" />
               <SortTh k="avg_bat_speed" label="Bat Spd" />
+              <SortTh k="bipr_simple" label="BIPR%" title="Batter Ideal Process Rate — (Balls+BIP+HBP − CS−Whiff−FTip−FStrike) / Pitches" />
+              <SortTh k="wobacon" label="wOBACON" title="wOBA on Contact (BIP only)" />
               <th style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>EV90</th>
               <th style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>Whiff%</th>
               <th style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>K%</th>
@@ -655,6 +703,12 @@ function CombinedTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterB
                   <td style={{ padding: '7px 10px', textAlign: 'right', color: '#e0e0e8', fontFamily: 'monospace' }}>{p.metrics.xwoba.toFixed(3)}</td>
                   <td style={{ padding: '7px 10px', textAlign: 'right', color: '#e0e0e8', fontFamily: 'monospace' }}>{pct(p.metrics.barrel_rate)}</td>
                   <td style={{ padding: '7px 10px', textAlign: 'right', color: '#e0e0e8', fontFamily: 'monospace' }}>{p.metrics.avg_bat_speed.toFixed(1)}</td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: p.bipr_simple != null ? '#e0e0e8' : '#606080', fontFamily: 'monospace' }}>
+                    {p.bipr_simple != null ? `${(p.bipr_simple * 100).toFixed(1)}%` : 'N/A'}
+                  </td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: p.wobacon != null ? '#e0e0e8' : '#606080', fontFamily: 'monospace' }}>
+                    {p.wobacon != null ? p.wobacon.toFixed(3) : 'N/A'}
+                  </td>
                   <td style={{ padding: '7px 10px', textAlign: 'right', color: '#a0a0b8', fontFamily: 'monospace' }}>{p.metrics.ev90.toFixed(1)}</td>
                   <td style={{ padding: '7px 10px', textAlign: 'right', color: '#a0a0b8', fontFamily: 'monospace' }}>{pct(p.metrics.whiff_rate)}</td>
                   <td style={{ padding: '7px 10px', textAlign: 'right', color: '#a0a0b8', fontFamily: 'monospace' }}>{pct(p.metrics.k_rate)}</td>
@@ -721,7 +775,8 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
 
   function CustomTooltip({ active, payload }: TooltipProps) {
     if (!active || !payload?.length) return null;
-    const d = payload[0].payload;
+    const d = payload[0]?.payload;
+    if (!d) return null;
     const g = bdqGrade(d.badChase);
     const tc = tierColor(d.tier);
     return (
@@ -798,8 +853,8 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
           <ReferenceLine x={avgBadChase} stroke="#4a9eff" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: 'Avg', position: 'top', fill: '#4a9eff', fontSize: 10 }} />
           <ReferenceLine y={100} stroke="#4a9eff" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: 'Avg', position: 'right', fill: '#4a9eff', fontSize: 10 }} />
           <Scatter data={points} fillOpacity={0.75} r={4}>
-            {points.map((p, i) => (
-              <Cell key={i} fill={colorBy === 'tier' ? tierColor(p.tier) : xwobaColor(p.xwoba)} />
+            {points.map((p) => (
+              <Cell key={`${p.name}-${p.team}`} fill={colorBy === 'tier' ? tierColor(p.tier) : xwobaColor(p.xwoba)} />
             ))}
           </Scatter>
         </ScatterChart>
@@ -841,10 +896,42 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
 
 export function BatterBrowser() {
   const { season } = useData();
-  const { bdq, enriched, loading } = useBatterData(typeof season === 'number' ? season : 2025);
+  const safeSeason = (typeof season === 'number' ? season : 2025) as 2021 | 2022 | 2023 | 2024 | 2025 | 2026;
+  const { bdq, enriched, loading, error } = useBatterData(safeSeason);
+  const { data: outcomes } = useBatterOutcomes(safeSeason);
   const [activeTab, setActiveTab] = useState<Tab>('swing');
 
-  if (loading) return <div className="loading">Loading batter data…</div>;
+  if (loading) return (
+    <div style={{ padding: '24px', maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ height: 28, width: 200, background: '#1e1e2e', borderRadius: 6, marginBottom: 10 }} />
+        <div style={{ height: 14, width: 340, background: '#1e1e2e', borderRadius: 4 }} />
+      </div>
+      {[...Array(8)].map((_, i) => (
+        <div key={i} style={{ height: 44, background: '#14141f', borderRadius: 6, marginBottom: 6,
+          animation: 'pulse 1.5s ease-in-out infinite', opacity: 0.6 + (i % 3) * 0.1 }} />
+      ))}
+    </div>
+  );
+
+  if (error) return (
+    <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+      <div style={{ color: '#ef4444', fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
+        Failed to load batter data
+      </div>
+      <div style={{ color: '#606080', fontSize: 13, marginBottom: 16, maxWidth: 400, margin: '0 auto 16px' }}>
+        {error}
+      </div>
+      <button
+        onClick={() => window.location.reload()}
+        style={{ background: '#4a9eff', color: '#0a0a0f', border: 'none', borderRadius: 6,
+          padding: '8px 18px', cursor: 'pointer', fontWeight: 600 }}
+      >
+        Retry
+      </button>
+    </div>
+  );
+
   if (!bdq || !enriched) return null;
 
   const tabs: { id: Tab; label: string }[] = [
@@ -861,7 +948,7 @@ export function BatterBrowser() {
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e0e0e8', margin: 0 }}>Batter Analysis</h1>
-          <SourceBadge label="2025 MLB Season" />
+          <SourceBadge label={`${season} MLB Season`} />
           <span style={{ fontSize: 13, color: '#606080' }}>
             {bdq.metadata.n_batters} BDQ players · {enriched.length} Swing+ players · {enriched.length} in both
           </span>
@@ -904,7 +991,7 @@ export function BatterBrowser() {
 
       {activeTab === 'swing'    && <SwingPlusTab hitters={enriched} />}
       {activeTab === 'bdq'      && <BDQTab bdq={bdq} />}
-      {activeTab === 'combined' && <CombinedTab hitters={enriched} bdq={bdq} />}
+      {activeTab === 'combined' && <CombinedTab hitters={enriched} bdq={bdq} outcomes={outcomes} />}
       {activeTab === 'scatter'  && <ScatterTab hitters={enriched} bdq={bdq} />}
     </div>
   );

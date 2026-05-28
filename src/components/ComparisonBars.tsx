@@ -14,8 +14,8 @@ export function ComparisonBars({ pitcherA, pitcherB }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {DIMS.map(dim => {
-        const a = pitcherA.dimensions[dim].score;
-        const b = pitcherB.dimensions[dim].score;
+        const a = pitcherA.dimensions[dim]?.score ?? 0;
+        const b = pitcherB.dimensions[dim]?.score ?? 0;
         const aPct = Math.min(100, (a / maxScore) * 100);
         const bPct = Math.min(100, (b / maxScore) * 100);
         const aColor = gradeColor(a);

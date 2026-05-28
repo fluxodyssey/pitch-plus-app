@@ -44,7 +44,9 @@ export function RollingChart({ pitches, metric = 'velo', height = 240 }: Props) 
 
     const games: GamePoint[] = [];
     for (const [, ps] of gameMap) {
-      const date = ps[0].gd;
+      const first = ps[0];
+      if (!first) continue;
+      const date = first.gd;
       let value: number;
 
       switch (metric) {
@@ -79,10 +81,11 @@ export function RollingChart({ pitches, metric = 'velo', height = 240 }: Props) 
 
     // Compute 3-game rolling average
     for (let i = 0; i < games.length; i++) {
+      const g = games[i]!;
       if (i < 2) {
-        games[i].rolling = null;
+        g.rolling = null;
       } else {
-        games[i].rolling = (games[i].value + games[i - 1].value + games[i - 2].value) / 3;
+        g.rolling = (g.value + games[i - 1]!.value + games[i - 2]!.value) / 3;
       }
     }
 

@@ -27,7 +27,10 @@ export function computePercentiles(pitchers: Pitcher[]): PercentileMap {
   // Collect all score arrays once
   const ppScores = pitchers.map(p => p.pitch_plus);
 
-  const dimScores: Record<DimensionKey, number[]> = {} as any;
+  const dimScores: Record<DimensionKey, number[]> = {
+    stuff: [], command: [], deception: [],
+    tunnel_and_sequence: [], outcomes: [], arsenal: [],
+  };
   for (const dk of DIMENSION_KEYS) {
     dimScores[dk] = pitchers.map(p => p.dimensions[dk].score);
   }
@@ -51,7 +54,10 @@ export function computePercentiles(pitchers: Pitcher[]): PercentileMap {
   const result: PercentileMap = new Map();
 
   for (const p of pitchers) {
-    const dims = {} as Record<DimensionKey, number>;
+    const dims: Record<DimensionKey, number> = {
+      stuff: 0, command: 0, deception: 0,
+      tunnel_and_sequence: 0, outcomes: 0, arsenal: 0,
+    };
     for (const dk of DIMENSION_KEYS) {
       dims[dk] = rankPercentile(dimScores[dk], p.dimensions[dk].score);
     }

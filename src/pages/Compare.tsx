@@ -1,256 +1,279 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useMemo, useEffect, useState } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useData } from '../data/useData';
 import { usePitchData } from '../data/usePitchData';
 import { useScoringConfig } from '../data/useScoringConfig';
 import { GradeBadge } from '../components/GradeBadge';
 import { DimensionRadarChart } from '../components/DimensionRadarChart';
-import { ComparisonBars } from '../components/ComparisonBars';
-import { PitchTypeGradeTable } from '../components/PitchTypeGradeTable';
-import { computePitchTypeGrades } from '../data/computePitchTypeGrades';
+import { InlineSearch } from '../components/InlineSearch';
+import { computePitchTypeGrades, type LeagueAvgDetailed } from '../data/computePitchTypeGrades';
 import { gradeColor, DIMENSION_LABELS } from '../data/constants';
 import type { Pitcher, DimensionKey } from '../types';
 
 const DIMS: DimensionKey[] = ['stuff', 'command', 'deception', 'tunnel_and_sequence', 'outcomes', 'arsenal'];
+const MAX_PITCHERS = 5;
+
+// A palette of distinct colors for the comparison series
+const SERIES_COLORS = ['#4a9eff', '#ff6b6b', '#34d399', '#fbbf24', '#a78bfa'];
 
 export function Compare() {
+  // Support both old route params (/compare/:id1/:id2) and new query params (?ids=1,2,3)
   const { id1, id2 } = useParams<{ id1?: string; id2?: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { data } = useData();
+  const { data, season } = useData();
   const { config: scoringConfig } = useScoringConfig();
 
   const pitchers = data?.pitchers.pitchers ?? [];
 
-  const pitcherA = useMemo(() => pitchers.find(p => String(p.pitcher_id) === id1), [pitchers, id1]);
-  const pitcherB = useMemo(() => pitchers.find(p => String(p.pitcher_id) === id2), [pitchers, id2]);
+  // Resolve pitcher IDs — prefer ?ids= param, fall back to route params
+  const [ids, setIds] = useState<number[]>(() => {
+    const idsParam = searchParams.get('ids');
+    if (idsParam) return idsParam.split(',').map(Number).filter(Boolean).slice(0, MAX_PITCHERS);
+    const routeIds = [id1, id2].filter(Boolean).map(Number).filter(Boolean);
+    return routeIds;
+  });
 
-  // Load pitch data for both pitchers
-  const dataA = usePitchData();
-  const dataB = usePitchData();
+  // Sync ids → URL search param
+  useEffect(() => {
+    if (ids.length > 0) {
+      setSearchParams({ ids: ids.join(',') }, { replace: true });
+    } else {
+      setSearchParams({}, { replace: true });
+    }
+  }, [ids.join(',')]);
+
+  const selectedPitchers = useMemo(
+    () => ids.map(id => pitchers.find(p => p.pitcher_id === id)).filter(Boolean) as Pitcher[],
+    [pitchers, ids],
+  );
+
+  // Load pitch data for each selected pitcher
+  const pitchDataHooks = [
+    usePitchData(season),
+    usePitchData(season),
+    usePitchData(season),
+    usePitchData(season),
+    usePitchData(season),
+  ];
 
   useEffect(() => {
-    if (pitcherA) dataA.loadForPitcher(pitcherA.pitcher_id);
-  }, [pitcherA?.pitcher_id]);
+    selectedPitchers.forEach((p, i) => {
+      if (pitchDataHooks[i]) pitchDataHooks[i].loadForPitcher(p.pitcher_id);
+    });
+  }, [ids.join(','), season]);
 
-  useEffect(() => {
-    if (pitcherB) dataB.loadForPitcher(pitcherB.pitcher_id);
-  }, [pitcherB?.pitcher_id]);
+  const pitchGrades = useMemo(() => {
+    return selectedPitchers.map((_, i) => {
+      const pitches = pitchDataHooks[i]?.pitches ?? [];
+      if (!pitches.length || !scoringConfig) return [];
+      return computePitchTypeGrades(pitches, scoringConfig.league_averages as unknown as Record<string, LeagueAvgDetailed>);
+    });
+  }, [selectedPitchers.map(p => p.pitcher_id).join(','), scoringConfig, ...pitchDataHooks.map(h => h.pitches.length)]);
 
-  // Pitch type grades
-  const gradesA = useMemo(() => {
-    if (!dataA.pitches.length || !scoringConfig) return [];
-    return computePitchTypeGrades(dataA.pitches, scoringConfig.league_averages as any);
-  }, [dataA.pitches, scoringConfig]);
+  const radarSeries = selectedPitchers.map(p =>
+    DIMS.map(d => ({ dimension: d, score: p.dimensions[d]?.score ?? 0 }))
+  );
 
-  const gradesB = useMemo(() => {
-    if (!dataB.pitches.length || !scoringConfig) return [];
-    return computePitchTypeGrades(dataB.pitches, scoringConfig.league_averages as any);
-  }, [dataB.pitches, scoringConfig]);
-
-  // Radar data
-  const radarA = pitcherA ? DIMS.map(d => ({ dimension: d, score: pitcherA.dimensions[d].score })) : [];
-  const radarB = pitcherB ? DIMS.map(d => ({ dimension: d, score: pitcherB.dimensions[d].score })) : [];
-
-  const handleSelectA = (p: Pitcher) => {
-    navigate(id2 ? `/compare/${p.pitcher_id}/${id2}` : `/compare/${p.pitcher_id}`);
+  const addPitcher = (p: Pitcher) => {
+    if (ids.includes(p.pitcher_id)) return;
+    setIds(prev => [...prev, p.pitcher_id].slice(0, MAX_PITCHERS));
   };
-  const handleSelectB = (p: Pitcher) => {
-    navigate(`/compare/${id1 ?? ''}/${p.pitcher_id}`);
-  };
+
+  const removePitcher = (id: number) => setIds(prev => prev.filter(x => x !== id));
+
+  const canAdd = ids.length < MAX_PITCHERS;
+  const unselected = pitchers.filter(p => !ids.includes(p.pitcher_id));
 
   return (
     <div className="page">
-      <h2 style={{ margin: '0 0 16px', fontSize: 20, color: '#e0e0e8' }}>Compare Pitchers</h2>
-
-      {/* Pitcher selectors */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 16, alignItems: 'flex-start', marginBottom: 24 }}>
-        <PitcherSelector pitchers={pitchers} selected={pitcherA} onSelect={handleSelectA} label="Pitcher A" />
-        <div style={{ color: '#606080', fontSize: 16, fontWeight: 700, paddingTop: 10 }}>VS</div>
-        <PitcherSelector pitchers={pitchers} selected={pitcherB} onSelect={handleSelectB} label="Pitcher B" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+        <h2 style={{ margin: 0, fontSize: 20, color: '#e0e0e8' }}>
+          Compare Pitchers
+          <span style={{ fontSize: 12, color: '#606080', fontWeight: 400, marginLeft: 10 }}>
+            {selectedPitchers.length}/{MAX_PITCHERS} selected
+          </span>
+        </h2>
+        {ids.length > 0 && (
+          <button
+            onClick={() => setIds([])}
+            style={{ padding: '5px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #2a2a3e', background: 'transparent', color: '#606080', cursor: 'pointer' }}
+          >
+            Clear all ×
+          </button>
+        )}
       </div>
 
-      {/* Selected pitcher cards */}
-      {pitcherA && pitcherB && (
-        <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
-            <PitcherCard pitcher={pitcherA} />
-            <PitcherCard pitcher={pitcherB} />
-          </div>
-
-          {/* Comparison bars */}
-          <div className="card" style={{ marginBottom: 20 }}>
-            <h3 className="card-title" style={{ marginBottom: 14 }}>Dimension Comparison</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 80px', gap: 0, alignItems: 'start' }}>
-              <div style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, color: '#4a9eff' }}>{pitcherA.pitcher_name.split(' ').pop()}</div>
-              <div />
-              <div style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, color: '#ff6b6b' }}>{pitcherB.pitcher_name.split(' ').pop()}</div>
+      {/* Pitcher selector row */}
+      <div className="card" style={{ marginBottom: 20, padding: '14px 16px' }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          {/* Selected pitcher chips */}
+          {selectedPitchers.map((p, i) => (
+            <div key={p.pitcher_id} style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: `${SERIES_COLORS[i]}18`, border: `1px solid ${SERIES_COLORS[i]}50`,
+              borderRadius: 20, padding: '5px 12px', fontSize: 13, color: SERIES_COLORS[i],
+            }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: SERIES_COLORS[i], display: 'inline-block', flexShrink: 0 }} />
+              <span style={{ fontWeight: 600 }}>{p.pitcher_name}</span>
+              <span style={{ color: '#606080', fontSize: 11 }}>({p.pitcher_team})</span>
+              <button onClick={() => removePitcher(p.pitcher_id)} style={{ background: 'none', border: 'none', color: '#606080', cursor: 'pointer', padding: '0 2px', fontSize: 14, lineHeight: 1 }}>×</button>
             </div>
-            <ComparisonBars pitcherA={pitcherA} pitcherB={pitcherB} />
+          ))}
+
+          {/* Add pitcher search */}
+          {canAdd && (
+            <div style={{ width: 240 }}>
+              <InlineSearch<Pitcher>
+                items={unselected}
+                getKey={p => p.pitcher_id}
+                getLabel={p => p.pitcher_name}
+                value={null}
+                onSelect={addPitcher}
+                placeholder={ids.length === 0 ? 'Add pitcher…' : '+ Add another…'}
+                maxResults={8}
+                clearOnSelect
+                renderItem={(p) => (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>{p.pitcher_name} <span style={{ color: '#606080', fontSize: 11 }}>({p.pitcher_team})</span></span>
+                    <GradeBadge score={p.pitch_plus} size="sm" />
+                  </div>
+                )}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {selectedPitchers.length === 0 && (
+        <div style={{ textAlign: 'center', color: '#606080', padding: 48, fontSize: 14 }}>
+          Add up to {MAX_PITCHERS} pitchers above to compare
+        </div>
+      )}
+
+      {selectedPitchers.length >= 1 && (
+        <>
+          {/* Pitcher cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(selectedPitchers.length, 3)}, 1fr)`, gap: 12, marginBottom: 20 }}>
+            {selectedPitchers.map((p, i) => (
+              <PitcherCard key={p.pitcher_id} pitcher={p} color={SERIES_COLORS[i] ?? '#888'} />
+            ))}
           </div>
 
           {/* Radar overlay */}
-          <div className="card" style={{ marginBottom: 20 }}>
-            <h3 className="card-title" style={{ marginBottom: 14 }}>Radar Comparison</h3>
-            <DimensionRadarChart
-              dimensions={radarA}
-              secondaryDimensions={radarB}
-              secondaryLabel={pitcherB.pitcher_name}
-              secondaryColor="#ff6b6b"
-            />
-          </div>
+          {selectedPitchers.length >= 2 && (
+            <div className="card" style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <h3 className="card-title" style={{ margin: 0 }}>Radar Comparison</h3>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  {selectedPitchers.map((p, i) => (
+                    <span key={p.pitcher_id} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: SERIES_COLORS[i] }}>
+                      <span style={{ width: 10, height: 10, borderRadius: '50%', background: SERIES_COLORS[i], display: 'inline-block' }} />
+                      {p.pitcher_name.split(' ').pop()}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <DimensionRadarChart
+                dimensions={radarSeries[0] ?? []}
+                color={SERIES_COLORS[0] ?? '#888'}
+                secondaryDimensions={radarSeries[1] ?? []}
+                secondaryColor={SERIES_COLORS[1] ?? '#888'}
+                secondaryLabel={selectedPitchers[1]?.pitcher_name ?? ''}
+                extraSeries={selectedPitchers.slice(2).map((p, i) => ({
+                  dimensions: radarSeries[i + 2] ?? [],
+                  color: SERIES_COLORS[i + 2] ?? '#888',
+                  label: p.pitcher_name,
+                }))}
+              />
+            </div>
+          )}
+
+          {/* Dimension comparison bars */}
+          {selectedPitchers.length >= 2 && (
+            <div className="card" style={{ marginBottom: 20 }}>
+              <h3 className="card-title" style={{ marginBottom: 14 }}>Dimension Scores</h3>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', color: '#606080', fontWeight: 500 }}>Dimension</th>
+                      {selectedPitchers.map((p, i) => (
+                        <th key={p.pitcher_id} style={{ padding: '6px 10px', textAlign: 'center', color: SERIES_COLORS[i], fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          {p.pitcher_name.split(' ').pop()}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {DIMS.map(d => (
+                      <tr key={d} style={{ borderBottom: '1px solid #1e1e2e' }}>
+                        <td style={{ padding: '6px 10px', color: '#a0a0b8', fontSize: 12 }}>{DIMENSION_LABELS[d]}</td>
+                        {selectedPitchers.map((p, i) => {
+                          const score = p.dimensions[d]?.score ?? 0;
+                          return (
+                            <td key={p.pitcher_id} style={{ padding: '6px 10px', textAlign: 'center' }}>
+                              <span style={{ color: gradeColor(score), fontWeight: 700 }}>{score}</span>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                    <tr style={{ borderTop: '2px solid #2a2a3e' }}>
+                      <td style={{ padding: '8px 10px', color: '#e0e0e8', fontWeight: 600 }}>Pitch+</td>
+                      {selectedPitchers.map((p, i) => (
+                        <td key={p.pitcher_id} style={{ padding: '8px 10px', textAlign: 'center' }}>
+                          <GradeBadge score={p.pitch_plus} size="sm" />
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Arsenal comparison */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-            <div className="card">
-              <h3 className="card-title" style={{ marginBottom: 10 }}>{pitcherA.pitcher_name} Arsenal</h3>
-              {gradesA.length > 0 ? (
-                <PitchTypeGradeTable grades={gradesA} compact />
-              ) : (
-                <div style={{ color: '#606080', fontSize: 12, padding: 10 }}>Loading pitch data…</div>
-              )}
-            </div>
-            <div className="card">
-              <h3 className="card-title" style={{ marginBottom: 10 }}>{pitcherB.pitcher_name} Arsenal</h3>
-              {gradesB.length > 0 ? (
-                <PitchTypeGradeTable grades={gradesB} compact />
-              ) : (
-                <div style={{ color: '#606080', fontSize: 12, padding: 10 }}>Loading pitch data…</div>
-              )}
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(selectedPitchers.length, 3)}, 1fr)`, gap: 12 }}>
+            {selectedPitchers.map((p, i) => (
+              <div key={p.pitcher_id} className="card">
+                <h3 className="card-title" style={{ marginBottom: 10, color: SERIES_COLORS[i] }}>
+                  {p.pitcher_name} Arsenal
+                </h3>
+                {(pitchGrades[i]?.length ?? 0) > 0 ? (
+                  <PitchTypeGradeTableCompact grades={pitchGrades[i] ?? []} />
+                ) : (
+                  <div style={{ color: '#606080', fontSize: 12, padding: 10 }}>Loading pitch data…</div>
+                )}
+              </div>
+            ))}
           </div>
         </>
       )}
-
-      {/* Prompt if only one or zero selected */}
-      {(!pitcherA || !pitcherB) && (
-        <div style={{ textAlign: 'center', color: '#606080', padding: 40, fontSize: 14 }}>
-          Select two pitchers above to compare
-        </div>
-      )}
     </div>
   );
 }
 
-// ─── Inline pitcher selector with search ─────────────────────────────────────
+// ─── Pitcher card ─────────────────────────────────────────────────────────────
 
-function PitcherSelector({
-  pitchers,
-  selected,
-  onSelect,
-  label,
-}: {
-  pitchers: Pitcher[];
-  selected: Pitcher | undefined;
-  onSelect: (p: Pitcher) => void;
-  label: string;
-}) {
-  const [query, setQuery] = useState('');
-  const [open, setOpen] = useState(false);
-  const [idx, setIdx] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
-
-  const results = query.length >= 2
-    ? pitchers.filter(p => p.pitcher_name.toLowerCase().includes(query.toLowerCase())).slice(0, 8)
-    : [];
-
-  useEffect(() => { setIdx(0); }, [query]);
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
+function PitcherCard({ pitcher, color }: { pitcher: Pitcher; color: string }) {
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      <div style={{ fontSize: 10, color: '#606080', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>{label}</div>
-      <input
-        value={query}
-        onChange={e => { setQuery(e.target.value); setOpen(true); }}
-        onFocus={() => setOpen(true)}
-        placeholder={selected ? selected.pitcher_name : 'Search pitcher...'}
-        onKeyDown={e => {
-          if (e.key === 'ArrowDown') { e.preventDefault(); setIdx(i => Math.min(i + 1, results.length - 1)); }
-          if (e.key === 'ArrowUp') { e.preventDefault(); setIdx(i => Math.max(i - 1, 0)); }
-          if (e.key === 'Enter' && results[idx]) { onSelect(results[idx]); setQuery(''); setOpen(false); }
-          if (e.key === 'Escape') setOpen(false);
-        }}
-        style={{
-          width: '100%',
-          padding: '8px 12px',
-          fontSize: 13,
-          background: '#0f0f1a',
-          border: '1px solid #2a2a3e',
-          borderRadius: 6,
-          color: '#e0e0e8',
-          outline: 'none',
-        }}
-      />
-      {open && results.length > 0 && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          right: 0,
-          marginTop: 4,
-          background: '#14141f',
-          border: '1px solid #2a2a3e',
-          borderRadius: 6,
-          maxHeight: 260,
-          overflowY: 'auto',
-          zIndex: 200,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-        }}>
-          {results.map((p, i) => (
-            <div
-              key={p.pitcher_id}
-              onClick={() => { onSelect(p); setQuery(''); setOpen(false); }}
-              style={{
-                padding: '8px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                cursor: 'pointer',
-                background: i === idx ? '#1a1a2e' : 'transparent',
-                color: i === idx ? '#e0e0e8' : '#a0a0b8',
-                fontSize: 13,
-              }}
-            >
-              <span>{p.pitcher_name} <span style={{ color: '#606080', fontSize: 11 }}>({p.pitcher_team})</span></span>
-              <GradeBadge score={p.pitch_plus} size="sm" />
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Pitcher card summary ────────────────────────────────────────────────────
-
-function PitcherCard({ pitcher }: { pitcher: Pitcher }) {
-  return (
-    <div className="card" style={{ padding: '16px 20px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+    <div className="card" style={{ padding: '14px 16px', borderLeft: `3px solid ${color}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <GradeBadge score={pitcher.pitch_plus} size="lg" />
         <div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#e0e0e8' }}>{pitcher.pitcher_name}</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#e0e0e8' }}>{pitcher.pitcher_name}</div>
           <div style={{ fontSize: 12, color: '#a0a0b8' }}>
             {pitcher.pitcher_team} · {pitcher.pitcher_hand === 'L' ? 'LHP' : 'RHP'} · {pitcher.n_pitches.toLocaleString()} pitches
           </div>
-          <div style={{ display: 'flex', gap: 4, marginTop: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
             {DIMS.map(d => {
-              const score = pitcher.dimensions[d].score;
+              const score = pitcher.dimensions[d]?.score ?? 0;
               return (
                 <span key={d} style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  fontFamily: 'monospace',
-                  color: gradeColor(score),
-                  background: `${gradeColor(score)}18`,
-                  padding: '1px 5px',
-                  borderRadius: 3,
+                  fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
+                  color: gradeColor(score), background: `${gradeColor(score)}18`,
+                  padding: '1px 5px', borderRadius: 3,
                 }}>
                   {DIMENSION_LABELS[d].slice(0, 3).toUpperCase()} {score}
                 </span>
@@ -260,5 +283,37 @@ function PitcherCard({ pitcher }: { pitcher: Pitcher }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Inline pitch grade table ─────────────────────────────────────────────────
+
+function PitchTypeGradeTableCompact({ grades }: { grades: ReturnType<typeof computePitchTypeGrades> }) {
+  return (
+    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+      <thead>
+        <tr>
+          {['Type', 'Velo', 'Grade', 'Usage'].map(h => (
+            <th key={h} style={{ padding: '4px 6px', color: '#606080', fontWeight: 500, textAlign: h === 'Type' ? 'left' : 'center', borderBottom: '1px solid #1e1e2e' }}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {grades.map(g => (
+          <tr key={g.pitchType} style={{ borderBottom: '1px solid #111118' }}>
+            <td style={{ padding: '4px 6px', color: '#e0e0e8' }}>{g.pitchName}</td>
+            <td style={{ padding: '4px 6px', color: '#a0a0b8', textAlign: 'center', fontFamily: 'monospace' }}>
+              {g.avgVelo?.toFixed(1) ?? '—'}
+            </td>
+            <td style={{ padding: '4px 6px', textAlign: 'center' }}>
+              <GradeBadge score={g.stuffGrade} size="sm" />
+            </td>
+            <td style={{ padding: '4px 6px', color: '#a0a0b8', textAlign: 'center' }}>
+              {`${(g.usagePct * 100).toFixed(0)}%`}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }

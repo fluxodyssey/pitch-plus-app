@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { rowNavProps } from '../data/rowNavigation';
 import { useData } from '../data/useData';
 import { gradeColor, DIMENSION_LABELS } from '../data/constants';
 import type { DimensionKey, Pitcher } from '../types';
@@ -159,7 +160,7 @@ export function TeamBrowser() {
             <div
               key={t.abbrev}
               className="team-card"
-              onClick={() => navigate(`/team/${t.abbrev}`)}
+              {...rowNavProps(navigate, `/team/${t.abbrev}`)}
               style={{ borderTop: `3px solid ${displayColor}` }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

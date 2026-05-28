@@ -56,12 +56,15 @@ export function PitchHeatmap({ pitches, colorBy = 'density', width = 340, height
       const minJ = Math.max(0, Math.floor(gy - 3 * SIGMA));
       const maxJ = Math.min(GRID - 1, Math.ceil(gy + 3 * SIGMA));
 
-      for (let i = minI; i <= maxI; i++) {
-        for (let j = minJ; j <= maxJ; j++) {
+      for (let j = minJ; j <= maxJ; j++) {
+        const countsRow = counts[j]!;
+        const swingsRow = swings[j]!;
+        const whiffsRow = whiffs[j]!;
+        for (let i = minI; i <= maxI; i++) {
           const w = gaussianWeight(gx - (i + 0.5), gy - (j + 0.5), SIGMA);
-          counts[j][i] += w;
-          if (p.sw) swings[j][i] += w;
-          if (p.wh) whiffs[j][i] += w;
+          countsRow[i]! += w;
+          if (p.sw) swingsRow[i]! += w;
+          if (p.wh) whiffsRow[i]! += w;
         }
       }
     }
@@ -69,23 +72,27 @@ export function PitchHeatmap({ pitches, colorBy = 'density', width = 340, height
     // Find max for normalization
     let maxVal = 0;
     for (let j = 0; j < GRID; j++) {
+      const row = counts[j]!;
       for (let i = 0; i < GRID; i++) {
-        if (counts[j][i] > maxVal) maxVal = counts[j][i];
+        if (row[i]! > maxVal) maxVal = row[i]!;
       }
     }
 
     // Draw cells
     for (let j = 0; j < GRID; j++) {
+      const countsRow = counts[j]!;
+      const swingsRow = swings[j]!;
+      const whiffsRow = whiffs[j]!;
       for (let i = 0; i < GRID; i++) {
-        const count = counts[j][i];
+        const count = countsRow[i]!;
         if (count < 0.01) continue;
 
         let alpha: number;
         let color: string;
 
         if (colorBy === 'whiffRate') {
-          const sw = swings[j][i];
-          const wh = whiffs[j][i];
+          const sw = swingsRow[i]!;
+          const wh = whiffsRow[i]!;
           if (sw < 0.5) continue; // not enough swings to compute rate
           const rate = wh / sw; // 0 to 1
           // Map whiff rate to score: higher = better for pitcher = red

@@ -125,7 +125,7 @@ interface MvTooltipProps {
   payload?: MvTooltipItem[];
 }
 function MovementTooltip({ active, payload }: MvTooltipProps) {
-  if (!active || !payload?.length || !payload[0].payload) return null;
+  if (!active || !payload?.length || !payload[0]?.payload) return null;
   const p = payload[0].payload as RawPitch;
   const color = pitchColor(p.pt);
   const result = p.wh ? 'Whiff' : p.ip ? 'In Play' : p.sw ? 'Swing' : 'Take';
@@ -443,8 +443,8 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
               pitches={pitches}
               pitchTypeNames={pitchTypeNames}
               height={340}
-              highlightedPitchTypes={highlightedPitchTypes}
-              onPitchTypeClick={onPitchTypeClick}
+              {...(highlightedPitchTypes && { highlightedPitchTypes })}
+              {...(onPitchTypeClick && { onPitchTypeClick })}
             />
           ) : (
             <PitchHeatmap
@@ -500,7 +500,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                   name={pitchTypeNames[pt] ?? pt}
                   data={typeMap.get(pt)!}
                   fill={pitchColor(pt)}
-                  shape={<MovementDot highlightedTypes={highlightedPitchTypes} />}
+                  shape={<MovementDot {...(highlightedPitchTypes && { highlightedTypes: highlightedPitchTypes })} />}
                   isAnimationActive={false}
                 />
               ))}

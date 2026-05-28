@@ -20,6 +20,12 @@ interface CIBand {
   p90: number;
 }
 
+export interface RadarSeries {
+  dimensions: DimensionData[];
+  color: string;
+  label: string;
+}
+
 interface Props {
   dimensions: DimensionData[];
   color?: string;
@@ -29,6 +35,8 @@ interface Props {
   height?: number;
   /** Per-dimension bootstrap CI bands — rendered as dashed p10/p90 polygons */
   ciBands?: Partial<Record<DimensionKey, CIBand>>;
+  /** Additional series for batch comparison (up to 4 extra) */
+  extraSeries?: RadarSeries[];
 }
 
 const RADAR_MIN = 60;
@@ -46,21 +54,27 @@ export function DimensionRadarChart({
   secondaryLabel = 'League Avg',
   height = 320,
   ciBands,
+  extraSeries = [],
 }: Props) {
   const hasCi = ciBands != null && Object.keys(ciBands).length > 0;
 
-  const data = dimensions.map((d) => ({
-    subject: DIMENSION_LABELS[d.dimension],
-    value:   normalize(d.score),
-    fullMark: RADAR_MAX,
-    rawScore: d.score,
-    secondary: secondaryDimensions
-      ? normalize(secondaryDimensions.find((s) => s.dimension === d.dimension)?.score ?? 100)
-      : undefined,
-    // Bootstrap CI bounds — undefined when no CI data available
-    ciLow:  hasCi ? normalize(ciBands![d.dimension]?.p10 ?? d.score) : undefined,
-    ciHigh: hasCi ? normalize(ciBands![d.dimension]?.p90 ?? d.score) : undefined,
-  }));
+  const data = dimensions.map((d) => {
+    const point: Record<string, unknown> = {
+      subject: DIMENSION_LABELS[d.dimension],
+      value:   normalize(d.score),
+      fullMark: RADAR_MAX,
+      rawScore: d.score,
+      secondary: secondaryDimensions
+        ? normalize(secondaryDimensions.find((s) => s.dimension === d.dimension)?.score ?? 100)
+        : undefined,
+      ciLow:  hasCi ? normalize(ciBands?.[d.dimension]?.p10 ?? d.score) : undefined,
+      ciHigh: hasCi ? normalize(ciBands?.[d.dimension]?.p90 ?? d.score) : undefined,
+    };
+    extraSeries.forEach((es, i) => {
+      point[`extra${i}`] = normalize(es.dimensions.find(s => s.dimension === d.dimension)?.score ?? 100);
+    });
+    return point;
+  });
 
   return (
     <div>
@@ -86,8 +100,8 @@ export function DimensionRadarChart({
             }}
             formatter={(value, name, item) => {
               if (name === 'ciLow' || name === 'ciHigh') return null;
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const raw = (item as any)?.payload?.rawScore;
+              const payload = (item as { payload?: { rawScore?: number } } | undefined)?.payload;
+              const raw = payload?.rawScore;
               return [raw !== undefined ? raw : value, 'Score'];
             }}
           />
@@ -131,6 +145,18 @@ export function DimensionRadarChart({
               strokeDasharray="4 2"
             />
           )}
+          {extraSeries.map((es, i) => (
+            <Radar
+              key={`extra-${i}`}
+              name={es.label}
+              dataKey={`extra${i}`}
+              stroke={es.color}
+              fill={es.color}
+              fillOpacity={0.08}
+              strokeWidth={1.5}
+              strokeDasharray="4 2"
+            />
+          ))}
           <Radar
             name="Score"
             dataKey="value"

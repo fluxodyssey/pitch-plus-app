@@ -49,7 +49,7 @@ interface CustomTooltipProps {
 }
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
-  if (!active || !payload?.length) return null;
+  if (!active || !payload?.length || !payload[0]?.payload) return null;
   const p = payload[0].payload as PitchType;
   const color = pitchColor(p.pitch_type);
   return (

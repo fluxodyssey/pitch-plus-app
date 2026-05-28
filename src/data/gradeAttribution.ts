@@ -49,25 +49,6 @@ function gradeToPercentile(grade: number): number {
   return Math.round(Math.max(1, Math.min(99, (grade / 200) * 100)));
 }
 
-function formatDrivers(
-  pitchType: string,
-  attrs: AttributeGrades,
-  attrKeys: string[],
-): GradeDriver[] {
-  return attrKeys.map((key) => {
-    const grade = (attrs as any)[key] as number | undefined;
-    if (grade == null) return null;
-    const pct = gradeToPercentile(grade);
-    return {
-      label: `${pitchTypeLabel(pitchType)} ${ATTR_LABELS[key] ?? key}`,
-      percentile: pct,
-      contribution: contribution(pct),
-    } satisfies GradeDriver;
-  }).filter((d): d is GradeDriver => d !== null)
-    .sort((a, b) => Math.abs(b.percentile - 50) - Math.abs(a.percentile - 50))
-    .slice(0, 3);
-}
-
 function buildSummary(drivers: GradeDriver[]): string {
   if (drivers.length === 0) return '';
   const positives = drivers.filter(d => d.contribution === 'positive');
@@ -208,7 +189,7 @@ export function computeGradeAttribution(
         contribution: contribution(gradeToPercentile(attrs.overall)),
       }))
       .sort((a, b) => b.percentile - a.percentile);
-    if (secondaries.length > 0) drivers.push(secondaries[0]);
+    if (secondaries.length > 0) drivers.push(secondaries[0]!);
 
     // Arsenal diversity (implied by spread of overall grades across types)
     const overalls = sortedTypes.map(([, attrs]) => attrs.overall);

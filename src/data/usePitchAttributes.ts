@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { PitchAttributesData, AttributeGrades } from '../types';
 import type { Season } from './useData';
+import { fetchJson } from './fetchJson';
 
 const cache = new Map<Season, PitchAttributesData>();
 const inflight = new Map<Season, Promise<PitchAttributesData>>();
@@ -15,11 +16,7 @@ async function loadAttributes(season: Season): Promise<PitchAttributesData> {
   const existing = inflight.get(season);
   if (existing) return existing;
 
-  const p = fetch(attrUrl(season))
-    .then((r) => {
-      if (!r.ok) throw new Error(`pitch_attributes_${season}.json not found`);
-      return r.json() as Promise<PitchAttributesData>;
-    })
+  const p = fetchJson<PitchAttributesData>(attrUrl(season))
     .then((data) => {
       cache.set(season, data);
       inflight.delete(season);

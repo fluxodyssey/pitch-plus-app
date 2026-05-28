@@ -37,7 +37,7 @@ function computeEntropy(weights: number[]): number {
 function computeSpeedDiff(types: PitchType[], weights: number[]): number {
   const total = weights.reduce((a, b) => a + b, 0);
   if (total === 0) return 0;
-  const velos = types.map((t, i) => ({ velo: t.velo, w: weights[i] / total }))
+  const velos = types.map((t, i) => ({ velo: t.velo, w: (weights[i] ?? 0) / total }))
     .filter(x => x.velo > 0 && x.w > 0);
   if (velos.length < 2) return 0;
   const maxV = Math.max(...velos.map(x => x.velo));

@@ -8,22 +8,40 @@ export type DimensionKey =
   | 'outcomes'
   | 'arsenal';
 
-export type MetricKey =
+// ScoredMetricKey is the contract with models/constants.py:PITCH_PLUS_DIMENSIONS.
+// Any change here MUST be paired with a constants.py change (and vice versa).
+// The sync-types skill validates this contract; the PostToolUse hook surfaces drift.
+// Use this type wherever scoring math runs.
+export type ScoredMetricKey =
+  // ── Stuff ──────────────────────────────────────────────────────────────────
   | 'stuff_z'
   | 'ssw_proxy'
   | 'avg_perceived_velo'
-  | 'k_bb_pct'
+  | 'spin_direction_efficiency'  // cos(axis) × spin efficiency (Stuff)
+  | 'bat_speed_suppression'      // pitcher degrades batter bat speed (Stuff)
+  | 'swing_plus_suppression'     // swing quality degradation composite (Stuff)
+  // ── Command ────────────────────────────────────────────────────────────────
+  | 'bip_adjusted_kbb'           // K%×1.3 − BB% — replaces k_bb_pct in scoring
   | 'zone_rate'
   | 'edge_rate'
   | 'loc_precision'
   | 'first_pitch_strike_rate'
+  | 'obp_hr_residual'            // FIP-buster indicator (Command)
+  | 'take_rv_against'            // passive command: mean RV on takes
+  | 'race_to_2_strikes'          // pitches to reach 2-strike count (Command)
+  | 'markov_efficiency'          // expected pitches/PA from 0-0 (Command)
+  // ── Deception ─────────────────────────────────────────────────────────────
   | 'in_zone_whiff_rate'
+  | 'zone_weighted_chase'        // Decision+ zone-weighted chase rate (Deception)
   | 'chase_rate'
   | 'csw_rate'
   | 'avg_extension'
   | 'fb_vaa'
+  | 'swing_length_inducement'    // longer swings = confused batter (Deception)
   | 'release_consistency'
-  // New v3: temporal tunnel (velocity-adjusted commit point)
+  | 'pitcher_deception_index'
+  | 'regime_whiff_delta'         // whiff% ahead − whiff% behind (Deception)
+  // ── Tunnel & Sequence ─────────────────────────────────────────────────────
   | 'temporal_tunnel_tightness'
   | 'temporal_tunnel_effectiveness'
   | 'tunnel_tightness'
@@ -32,42 +50,45 @@ export type MetricKey =
   | 'speed_differential'
   | 'movement_differential'
   | 'sequence_surprise'
-  | 'wrc_plus_against'
+  // ── Outcomes ──────────────────────────────────────────────────────────────
+  | 'swing_rv_against'           // mean RV on swings — best ERA predictor (r=0.854)
+  | 'in_zone_swing_rv'           // in-zone contact quality suppression (r=0.799)
+  | 'barrel_rate_against'        // barrel rate allowed
+  | 'chase_swing_rv'             // bad contact on chases (r=0.354)
   | 'k_rate'
   | 'bb_rate'
+  | 'bip_rate'                   // BIP per PA (BIP avoidance)
+  | 'wrc_plus_against'
   | 'avg_launch_speed_against'
   | 'gb_rate'
-  | 'pitch_entropy'
-  // New v3: count-conditional entropy + arsenal synergy
+  | 'markov_dominance'           // P(K | start 0-0)
+  // ── Arsenal ───────────────────────────────────────────────────────────────
   | 'count_conditional_entropy'
   | 'arsenal_synergy'
-  | 'n_pitch_types'
   | 'best_secondary_whiff'
+  | 'spin_diversity'             // decorrelated spin profiles (Arsenal)
+  | 'speed_diversity'            // decorrelated speed profiles (Arsenal)
   | 'platoon_resistance'
-  // New v3: pitcher deception index
-  | 'pitcher_deception_index'
-  // New v3.1: backtest-validated novel metrics (2026-03-24)
-  | 'bip_adjusted_kbb'        // K%×1.3 - BB% (replaces k_bb_pct in Command)
-  | 'bip_rate'                // BIP per PA (Outcomes — BIP avoidance)
-  | 'take_rv_against'         // passive command: mean RV on takes
-  | 'called_strike_rv'        // take RV decomposition: called strikes only
-  | 'ball_rv'                 // take RV decomposition: balls only
-  | 'regime_whiff_delta'      // whiff% ahead - whiff% behind (Deception)
-  | 'velocity_adaptation'     // velo_behind - velo_ahead (regime adaptation)
-  | 'mix_adaptation'          // entropy_ahead - entropy_behind
-  // Markov chain metrics (from markov_pitch.py)
-  | 'markov_dominance'        // P(K | start 0-0)
-  | 'markov_walk_risk'        // P(BB | start 0-0)
-  | 'markov_efficiency'       // Expected pitches per PA from 0-0
-  | 'markov_recovery_score'   // P(K | 2-0) / P(K | 0-0)
-  | 'markov_k_from_behind'    // mean P(K) across behind-count starts
-  // Stuff alpha metrics (from stuff_alpha.py)
-  | 'non_stuff_alpha'         // ERA outperformance beyond Stuff+
-  | 'command_alpha'           // K-BB% outperformance beyond Stuff+
-  // Trajectory metrics (from trajectory.py)
-  | 'trajectory_slope'        // Pitch+ trend (pts/yr via OLS)
-  // v3.1 display-only fields (not scored but shown in app)
-  | 'k_bb_pct';               // kept for display; scoring uses bip_adjusted_kbb
+  | 'n_pitch_types'
+  | 'pitch_entropy';
+
+// Display-only — surfaced in UI / decomposition panels, but NOT used in composite scoring.
+// Adding here does NOT require a constants.py change.
+export type DisplayMetricKey =
+  | 'called_strike_rv'           // take RV decomposition: called strikes only
+  | 'ball_rv'                    // take RV decomposition: balls only
+  | 'velocity_adaptation'        // velo_behind − velo_ahead (regime adaptation)
+  | 'mix_adaptation'             // entropy_ahead − entropy_behind
+  | 'markov_walk_risk'           // P(BB | start 0-0)
+  | 'markov_recovery_score'      // P(K | 2-0) / P(K | 0-0)
+  | 'markov_k_from_behind'       // mean P(K) across behind-count starts
+  | 'non_stuff_alpha'            // ERA outperformance beyond Stuff+
+  | 'command_alpha'              // K-BB% outperformance beyond Stuff+
+  | 'trajectory_slope'           // Pitch+ trend (pts/yr via OLS)
+  | 'k_bb_pct';                  // kept for display; scoring uses bip_adjusted_kbb
+
+// Back-compat alias. Prefer ScoredMetricKey where the math actually runs.
+export type MetricKey = ScoredMetricKey | DisplayMetricKey;
 
 export interface DimensionScore {
   score: number;
@@ -87,6 +108,7 @@ export interface Pitcher {
   pitch_plus: number;
   n_pitches: number;
   n_games: number;
+  season?: number | null;  // season year (added by pipeline; sync-types flagged drift 2026-05-21)
   ip?: number;  // season total innings pitched (baseball notation: 185.2)
   dimensions: Record<DimensionKey, DimensionScore>;
   metric_grades: Record<string, MetricGrade>;  // string (not MetricKey) for forward compat
@@ -121,6 +143,15 @@ export interface Pitcher {
   trajectory_label?: string | null;
   trajectory_confidence?: number | null;
   seasons_observed?: number | null;
+
+  // IAA fields (from induced_attack_angle.py --merge)
+  // iaa_score composite NOT injected — failed decile monotonicity test (Spearman r≈0).
+  // iaa_fb:  YoY r=0.706, r=-0.126** vs avg EV — future Stuff candidate (display only for now)
+  // iaa_brk: YoY r=0.223 (unstable), r=-0.133* vs wRC+ — display only, MIN_n_brk=75
+  iaa_fb?: number | null;         // fastball IAA score (100=avg, σ=15) — validated
+  iaa_brk?: number | null;        // breaking ball IAA score — display only, small-sample caution
+  iaa_os?: number | null;         // offspeed IAA score — display only, no confirmed signal
+  iaa_n_contacts?: number | null; // total tracked contacts used for IAA
 
   // Bootstrap CI fields (from --bootstrap flag)
   ci_p10?: number | null;
@@ -304,6 +335,10 @@ export interface SwingPlusMetrics {
   xwoba: number;
   xslg: number;
   bat_speed_efficiency: number;
+  // IAA batter-side fields (from induced_attack_angle.py)
+  aa_opt_fb?: number | null;    // % contacts in optimal AA window vs fastballs
+  aa_opt_brk?: number | null;   // % contacts in optimal AA window vs breaking balls
+  aa_opt_os?: number | null;    // % contacts in optimal AA window vs offspeed
 }
 
 export interface DecisionPlusComponents {
@@ -451,6 +486,162 @@ export interface ComputedMetrics {
 export interface ComputedScores {
   dimensions: Record<string, number | null>;
   pitchPlus: number | null;
+}
+
+// ─── Game Grades ─────────────────────────────────────────────────────────────
+
+export interface GameGradeEntry {
+  game_id: number;
+  date: string;
+  opp: string;
+  home: boolean;
+  n_pitches: number;
+  pitch_plus: number;
+  stuff: number;
+  command: number;
+  deception: number;
+  tunnel_and_sequence: number;
+  outcomes: number;
+  arsenal: number;
+  deltas: {
+    pitch_plus: number;
+    stuff: number;
+    command: number;
+    deception: number;
+    tunnel_and_sequence: number;
+    outcomes: number;
+    arsenal: number;
+  };
+}
+
+export interface PitcherGameGrades {
+  season_grades: {
+    pitch_plus: number;
+    stuff: number;
+    command: number;
+    deception: number;
+    tunnel_and_sequence: number;
+    outcomes: number;
+    arsenal: number;
+  };
+  games: GameGradeEntry[];
+}
+
+export type GameGradesData = Record<string, PitcherGameGrades>;
+
+// ─── Pitcher Similarity ───────────────────────────────────────────────────────
+
+export interface SimilarPitcherEntry {
+  id: number;
+  name: string;
+  team: string;
+  hand: string;
+  role: 'SP' | 'RP';
+  similarity: number;
+  pitch_plus: number;
+  dimensions: Record<string, number>;
+}
+
+export interface PitcherSimilarityInfo {
+  hand: string;
+  role: 'SP' | 'RP';
+  similar: SimilarPitcherEntry[];
+}
+
+export type SimilarityData = Record<string, PitcherSimilarityInfo>;
+
+// ─── Batter Outcomes ─────────────────────────────────────────────────────────
+
+export interface BatterOutcomeStats {
+  n_pa: number;
+  k_pct: number;
+  bb_pct: number;
+  single_pct?: number;
+  double_pct?: number;
+  triple_pct?: number;
+  hr_pct?: number;
+  xwoba?: number | null;
+  avg_ev?: number | null;
+  hard_hit_rate?: number | null;
+  barrel_rate?: number | null;
+  barrel_pct?: number | null;   // computed barrel% (replaces barrel_rate for new splits)
+  pull_air_pct?: number | null; // pulled fly ball % — primary HR predictor
+  gb_rate?: number | null;
+  fb_rate?: number | null;
+  swing_rv_for?: number | null;
+  take_rv_for?: number | null;
+  // BIPR (Batter Ideal Process Rate) — see models/batter_outcomes.py
+  bipr_simple?: number | null;
+  bipr_rv?: number | null;
+  wobacon?: number | null;
+  pred_rv_100?: number | null;
+  n_pitches?: number | null;
+  n_bip?: number | null;
+}
+
+export interface BatterOutcomeProfile {
+  name: string;
+  hand: string;
+  team: string;
+  overall?: BatterOutcomeStats;
+  vs_hand?: { L?: BatterOutcomeStats; R?: BatterOutcomeStats };
+  vs_pitcher?: Record<string, BatterOutcomeStats>;
+  /** Outcomes vs each pitch type (FF, SL, CH, …). Min 15 PA-ending pitches to publish. */
+  vs_pitch_type?: Record<string, BatterOutcomeStats>;
+  /** Outcomes vs coarse shape bucket (e.g. "FB_hard_ride", "BRK_avg_sweep"). Min 15 PA. */
+  vs_shape_bucket?: Record<string, BatterOutcomeStats>;
+}
+
+export type BatterOutcomesData = Record<string, BatterOutcomeProfile>;
+
+// ─── Matchup Projection ───────────────────────────────────────────────────────
+
+export interface MatchupOutcomes {
+  reach_pct: number;
+  hit_pct: number;
+  hr_pct: number;
+  double_triple_pct: number;
+  single_pct: number;
+  bb_pct: number;
+  k_pct: number;
+  xwoba: number;
+  /** 7-way vector fields from Python backend (matchup_outcomes.py) */
+  out_pct?: number;
+  double_pct?: number;
+  triple_pct?: number;
+  hard_hit_rate?: number;
+  gb_rate?: number;
+  fb_rate?: number;
+  barrel_rate?: number;
+  wrc_plus_proj?: number;
+}
+
+export interface MatchupDeltas {
+  from_batter_avg: Partial<MatchupOutcomes>;
+  from_pitcher_avg: Partial<MatchupOutcomes>;
+}
+
+/** HR component breakdown — which estimator drove the HR probability */
+export interface HrComponents {
+  hr_from_sim:   number | null;   // similarity estimator HR%
+  hr_from_shape: number | null;   // shape-mix estimator HR%
+  hr_refined:    number;          // after logit refinement (final)
+}
+
+export interface MatchupProjection {
+  pitcher_id: number;
+  batter_id: number;
+  outcomes: MatchupOutcomes;
+  deltas: MatchupDeltas;
+  grade: number;          // -10 to +10 (+ = batter advantage)
+  grade_label: string;
+  leans: 'pitcher' | 'batter' | 'neutral';
+  n_similar_with_data: number;
+  confidence: 'high' | 'medium' | 'low';
+  /** Fraction of pitcher arsenal covered by batter shape-bucket data (0-1) */
+  shape_coverage?: number;
+  /** Decomposition of HR probability by estimator */
+  components?: HrComponents;
 }
 
 // ─── Per-Pitch-Type Grades ──────────────────────────────────────────────────

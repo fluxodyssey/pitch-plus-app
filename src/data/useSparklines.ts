@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { fetchJsonOrNull } from './fetchJson';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -62,20 +63,16 @@ let trajectoryPromise: Promise<TrajectoriesJson | null> | null = null;
 async function loadSparklines(): Promise<SparklinesJson | null> {
   if (sparklineCache) return sparklineCache;
   if (sparklinePromise) return sparklinePromise;
-  sparklinePromise = fetch('/data/sparklines.json')
-    .then((r) => (r.ok ? r.json() : null))
-    .then((d) => { sparklineCache = d; return d; })
-    .catch(() => null);
+  sparklinePromise = fetchJsonOrNull<SparklinesJson>('/data/sparklines.json')
+    .then((d) => { sparklineCache = d; return d; });
   return sparklinePromise;
 }
 
 async function loadTrajectories(): Promise<TrajectoriesJson | null> {
   if (trajectoryCache) return trajectoryCache;
   if (trajectoryPromise) return trajectoryPromise;
-  trajectoryPromise = fetch('/data/trajectories.json')
-    .then((r) => (r.ok ? r.json() : null))
-    .then((d) => { trajectoryCache = d; return d; })
-    .catch(() => null);
+  trajectoryPromise = fetchJsonOrNull<TrajectoriesJson>('/data/trajectories.json')
+    .then((d) => { trajectoryCache = d; return d; });
   return trajectoryPromise;
 }
 

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { rowNavProps } from '../data/rowNavigation';
 import { useData } from '../data/useData';
 import { PlayerTable } from '../components/PlayerTable';
 import { GradeBadge } from '../components/GradeBadge';
@@ -115,7 +116,7 @@ function MetricsTable({ pitchers }: { pitchers: Pitcher[] }) {
           </thead>
           <tbody>
             {sorted.map((p, i) => (
-              <tr key={p.pitcher_id} onClick={() => navigate(`/player/${p.pitcher_id}`)}
+              <tr key={p.pitcher_id} {...rowNavProps(navigate, `/player/${p.pitcher_id}`)}
                 className="table-row-hover"
                 style={{ borderBottom: '1px solid #1e1e2e', cursor: 'pointer', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
                 <td style={{ padding: '8px 12px', color: '#606080', textAlign: 'center' }}>{i + 1}</td>
@@ -204,7 +205,7 @@ export function PlayerBrowser() {
   if (error) return <div className="error">Error: {error}</div>;
   if (!data) return null;
 
-  const maxPitches = Math.max(...data.pitchers.pitchers.map((p) => p.n_pitches));
+  const maxPitches = data.pitchers.pitchers.length > 0 ? Math.max(...data.pitchers.pitchers.map((p) => p.n_pitches)) : 0;
   const meta = data.pitchers.metadata;
 
   return (
@@ -298,8 +299,8 @@ export function PlayerBrowser() {
           <PlayerTable
             pitchers={filtered}
             showRank
-            pitchTypeFilter={pitchTypeFilter !== 'All' ? pitchTypeFilter : undefined}
-            pitchTypesData={pitchTypeFilter !== 'All' ? data?.pitchTypes : undefined}
+            {...(pitchTypeFilter !== 'All' && { pitchTypeFilter })}
+            {...(pitchTypeFilter !== 'All' && data?.pitchTypes && { pitchTypesData: data.pitchTypes })}
           />
         </div>
       ) : (

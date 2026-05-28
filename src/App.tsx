@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route, NavLink, Link } from 'react-router-dom';
 import { lazy, Suspense, useState, useEffect } from 'react';
-import { SEASON_LABELS, AVAILABLE_SEASONS, DEFAULT_SEASON, getGlobalSeason, setGlobalSeason, preloadSeason, useData } from './data/useData';
-import { SearchAutocomplete } from './components/SearchAutocomplete';
-import { CommandPaletteProvider } from './components/CommandPalette';
+import { SEASON_LABELS, AVAILABLE_SEASONS, DEFAULT_SEASON, preloadSeason, useData, hasMatchupData } from './data/useData';
 import type { Season } from './data/useData';
+import { SearchAutocomplete } from './components/SearchAutocomplete';
+import { CommandPaletteProvider, useCommandPalette } from './components/CommandPalette';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { useKeyboardShortcuts, KEYBOARD_SHORTCUTS } from './hooks/useKeyboardShortcuts';
 
 // Code-split every page — only the current route's bundle is loaded
 const PlayerBrowser  = lazy(() => import('./pages/PlayerBrowser').then(m => ({ default: m.PlayerBrowser })));
@@ -17,6 +19,10 @@ const StartReport    = lazy(() => import('./pages/StartReport').then(m => ({ def
 const ComparePage      = lazy(() => import('./pages/Compare').then(m => ({ default: m.Compare })));
 const SpringTraining   = lazy(() => import('./pages/SpringTraining').then(m => ({ default: m.SpringTraining })));
 const PitchDesign      = lazy(() => import('./pages/PitchDesign').then(m => ({ default: m.PitchDesign })));
+const FAQ              = lazy(() => import('./pages/FAQ').then(m => ({ default: m.FAQ })));
+const PitcherPlots     = lazy(() => import('./pages/PitcherPlots').then(m => ({ default: m.PitcherPlots })));
+const MatchupMachine   = lazy(() => import('./pages/MatchupMachine').then(m => ({ default: m.MatchupMachine })));
+const Glossary         = lazy(() => import('./pages/Glossary').then(m => ({ default: m.Glossary })));
 
 function PageLoader() {
   return <div className="loading">Loading…</div>;
@@ -25,7 +31,7 @@ function PageLoader() {
 // ── Season picker ─────────────────────────────────────────────────────────────
 
 function SeasonPicker() {
-  const [season, setSeason] = useState<Season>(getGlobalSeason());
+  const { season, setSeason } = useData();
 
   useEffect(() => {
     // Preload adjacent seasons on idle
@@ -40,7 +46,6 @@ function SeasonPicker() {
     const num = parseInt(e.target.value, 10);
     const s = (AVAILABLE_SEASONS as readonly number[]).includes(num) ? (num as Season) : DEFAULT_SEASON;
     setSeason(s);
-    setGlobalSeason(s);
   }
 
   return (
@@ -68,8 +73,15 @@ function SeasonPicker() {
 // ── Nav ───────────────────────────────────────────────────────────────────────
 
 function Nav() {
-  const { data } = useData();
+  const { data, season } = useData();
   const pitchers = data?.pitchers?.pitchers ?? [];
+  const [menuOpen, setMenuOpen] = useState(false);
+  const matchupAvailable = hasMatchupData(season);
+
+  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+    isActive ? 'nav-link active' : 'nav-link';
+
+  const closeMenu = () => setMenuOpen(false);
 
   return (
     <nav className="nav">
@@ -77,37 +89,42 @@ function Nav() {
         <Link to="/" className="nav-brand">
           Pitch<span style={{ color: 'var(--accent)', fontWeight: 600 }}>+</span>
         </Link>
-        <div className="nav-links">
-          <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-            Pitchers
-          </NavLink>
-          <NavLink to="/batters" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-            Batters
-          </NavLink>
-          <NavLink to="/teams" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-            Teams
-          </NavLink>
-          <NavLink to="/leaderboard" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-            Leaderboard
-          </NavLink>
-          <NavLink to="/search" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-            Search
-          </NavLink>
-          <NavLink to="/compare" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-            Compare
-          </NavLink>
-          <NavLink to="/design" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-            Design Lab
-          </NavLink>
-          <NavLink to="/spring" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'} style={{ position: 'relative' }}>
+
+        {/* Hamburger button (mobile only) */}
+        <button
+          className="nav-hamburger"
+          onClick={() => setMenuOpen(o => !o)}
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={menuOpen}
+        >
+          <span className={`hamburger-line ${menuOpen ? 'open' : ''}`} />
+          <span className={`hamburger-line ${menuOpen ? 'open' : ''}`} />
+          <span className={`hamburger-line ${menuOpen ? 'open' : ''}`} />
+        </button>
+
+        <div className={`nav-links ${menuOpen ? 'nav-links-open' : ''}`}>
+          <NavLink to="/" end className={navLinkClass} onClick={closeMenu}>Pitchers</NavLink>
+          <NavLink to="/batters" className={navLinkClass} onClick={closeMenu}>Batters</NavLink>
+          <NavLink to="/teams" className={navLinkClass} onClick={closeMenu}>Teams</NavLink>
+          <NavLink to="/leaderboard" className={navLinkClass} onClick={closeMenu}>Leaderboard</NavLink>
+          <NavLink to="/search" className={navLinkClass} onClick={closeMenu}>Search</NavLink>
+          {matchupAvailable && (
+            <NavLink to="/matchup" className={navLinkClass} onClick={closeMenu}>Matchups</NavLink>
+          )}
+          <NavLink to="/compare" className={navLinkClass} onClick={closeMenu}>Compare</NavLink>
+          <NavLink to="/plots" className={navLinkClass} onClick={closeMenu}>Plots</NavLink>
+          <NavLink to="/design" className={navLinkClass} onClick={closeMenu}>Design Lab</NavLink>
+          <NavLink to="/spring" className={navLinkClass} onClick={closeMenu} style={{ position: 'relative' }}>
             Spring
             <sup style={{ color: '#ef4444', fontSize: 8, fontWeight: 700, marginLeft: 2 }}>TEST</sup>
           </NavLink>
+          <NavLink to="/faq" className={navLinkClass} onClick={closeMenu}>FAQ</NavLink>
+          <NavLink to="/glossary" className={navLinkClass} onClick={closeMenu}>Glossary</NavLink>
         </div>
         {pitchers.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <SearchAutocomplete pitchers={pitchers} compact placeholder="Search..." />
-            <kbd style={{
+            <kbd className="kbd-hint" style={{
               fontSize: 9, color: 'var(--text-4)', background: 'var(--bg-input)',
               border: '1px solid var(--border)', borderRadius: 3, padding: '2px 5px',
               fontFamily: 'var(--mono)', whiteSpace: 'nowrap', letterSpacing: '0.05em',
@@ -122,12 +139,19 @@ function Nav() {
 
 // ── App ───────────────────────────────────────────────────────────────────────
 
-export default function App() {
+// ── Keyboard shortcuts + help overlay ────────────────────────────────────────
+
+function AppShell() {
+  const [showHelp, setShowHelp] = useState(false);
+  const { open: openCmdPalette } = useCommandPalette();
+  useKeyboardShortcuts(() => setShowHelp(h => !h), openCmdPalette);
+
   return (
-    <BrowserRouter>
-      <CommandPaletteProvider>
+    <>
+      <a href="#main" className="skip-link">Skip to content</a>
       <Nav />
-      <main className="main-content">
+      <main id="main" className="main-content">
+        <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/"                              element={<PlayerBrowser />} />
@@ -143,9 +167,59 @@ export default function App() {
             <Route path="/compare/:id1/:id2"             element={<ComparePage />} />
             <Route path="/spring"                        element={<SpringTraining />} />
             <Route path="/design"                        element={<PitchDesign />} />
+            <Route path="/faq"                           element={<FAQ />} />
+            <Route path="/plots"                         element={<PitcherPlots />} />
+            <Route path="/matchup"                       element={<MatchupMachine />} />
+            <Route path="/matchup/:pitcherId/:batterId"  element={<MatchupMachine />} />
+            <Route path="/glossary"                      element={<Glossary />} />
           </Routes>
         </Suspense>
+        </ErrorBoundary>
       </main>
+
+      {/* Keyboard shortcuts overlay */}
+      {showHelp && (
+        <div
+          onClick={() => setShowHelp(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+              width: 'min(480px, 90vw)', background: '#14141f', border: '1px solid #2a2a3e',
+              borderRadius: 12, padding: '20px 24px', zIndex: 9999,
+              boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ margin: 0, fontSize: 15, color: '#e0e0e8' }}>Keyboard Shortcuts</h3>
+              <button onClick={() => setShowHelp(false)} style={{ background: 'none', border: 'none', color: '#606080', cursor: 'pointer', fontSize: 18 }}>×</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 16px' }}>
+              {KEYBOARD_SHORTCUTS.map(({ key, description }) => (
+                <>
+                  <kbd key={`k-${key}`} style={{
+                    background: '#1a1a2e', border: '1px solid #2a2a3e', borderRadius: 4,
+                    padding: '2px 6px', fontSize: 12, fontFamily: 'var(--mono)',
+                    color: '#a0a0b8', whiteSpace: 'nowrap', justifySelf: 'start',
+                  }}>{key}</kbd>
+                  <span key={`d-${key}`} style={{ fontSize: 13, color: '#a0a0b8', alignSelf: 'center' }}>{description}</span>
+                </>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <CommandPaletteProvider>
+        <AppShell />
       </CommandPaletteProvider>
     </BrowserRouter>
   );

@@ -3,9 +3,9 @@ import type { AppData } from '../types';
 
 // ── Season config ─────────────────────────────────────────────────────────────
 
-export const AVAILABLE_SEASONS = [2021, 2022, 2023, 2024, 2025] as const;
+export const AVAILABLE_SEASONS = [2026, 2025, 2024, 2023, 2022, 2021] as const;
 export type Season = typeof AVAILABLE_SEASONS[number];
-export const DEFAULT_SEASON: Season = 2025;
+export const DEFAULT_SEASON: Season = 2026;
 
 export const SEASON_LABELS: Record<Season, string> = {
   2021: '2021 MLB',
@@ -13,7 +13,17 @@ export const SEASON_LABELS: Record<Season, string> = {
   2023: '2023 MLB',
   2024: '2024 MLB',
   2025: '2025 MLB',
+  2026: '2026 MLB',
 };
+
+// Seasons the Matchup Machine is exposed for. Product decision — earlier seasons
+// have the underlying data (similarity_{year}.json + batter_outcomes_{year}.json)
+// but matchup projections are only shown for the current season.
+export const MATCHUP_SEASONS: readonly Season[] = [2026];
+export function hasMatchupData(season: Season): boolean {
+  return MATCHUP_SEASONS.includes(season);
+}
+export const MATCHUP_DEFAULT_SEASON: Season = 2026;
 
 function pitchersUrl(season: Season): string {
   return `/data/pitchers_${season}.json`;
@@ -22,14 +32,17 @@ function pitchTypesUrl(_season: Season): string {
   return '/data/pitch_types.json';
 }
 
-// ── Per-season cache ──────────────────────────────────────────────────────────
+// ── Per-season cache (30-minute TTL) ─────────────────────────────────────────
 
-const seasonCache = new Map<Season, AppData>();
+const CACHE_TTL_MS = 30 * 60 * 1000;
+
+interface CacheEntry { data: AppData; ts: number }
+const seasonCache = new Map<Season, CacheEntry>();
 const seasonPromises = new Map<Season, Promise<AppData>>();
 
 async function loadSeason(season: Season): Promise<AppData> {
   const hit = seasonCache.get(season);
-  if (hit) return hit;
+  if (hit && Date.now() - hit.ts < CACHE_TTL_MS) return hit.data;
 
   const inflight = seasonPromises.get(season);
   if (inflight) return inflight;
@@ -50,7 +63,7 @@ async function loadSeason(season: Season): Promise<AppData> {
     ]);
 
     const data: AppData = { pitchers, pitchTypes, rotations };
-    seasonCache.set(season, data);
+    seasonCache.set(season, { data, ts: Date.now() });
     seasonPromises.delete(season);
     return data;
   })();
@@ -61,11 +74,20 @@ async function loadSeason(season: Season): Promise<AppData> {
 
 // ── Global season state (shared across the whole app) ────────────────────────
 
-let globalSeason: Season = DEFAULT_SEASON;
+function getInitialSeason(): Season {
+  try {
+    const stored = parseInt(localStorage.getItem('pitch-plus-season') ?? '', 10);
+    if ((AVAILABLE_SEASONS as readonly number[]).includes(stored)) return stored as Season;
+  } catch { /* localStorage unavailable */ }
+  return DEFAULT_SEASON;
+}
+
+let globalSeason: Season = getInitialSeason();
 const seasonListeners = new Set<(s: Season) => void>();
 
 export function setGlobalSeason(s: Season): void {
   globalSeason = s;
+  try { localStorage.setItem('pitch-plus-season', String(s)); } catch { /* ignore */ }
   seasonListeners.forEach((fn) => fn(s));
 }
 
@@ -83,9 +105,11 @@ export interface UseDataResult {
 
 export function useData(overrideSeason?: Season): UseDataResult {
   const [season, setSeasonLocal] = useState<Season>(overrideSeason ?? globalSeason);
+  const cachedEntry = seasonCache.get(season);
+  const isFresh = cachedEntry != null && Date.now() - cachedEntry.ts < CACHE_TTL_MS;
   const [state, setState] = useState<Omit<UseDataResult, 'season' | 'setSeason'>>({
-    data: seasonCache.get(season) ?? null,
-    loading: !seasonCache.has(season),
+    data: isFresh ? cachedEntry.data : null,
+    loading: !isFresh,
     error: null,
   });
 
@@ -99,8 +123,8 @@ export function useData(overrideSeason?: Season): UseDataResult {
 
   useEffect(() => {
     const cached = seasonCache.get(season);
-    if (cached) {
-      setState({ data: cached, loading: false, error: null });
+    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+      setState({ data: cached.data, loading: false, error: null });
       return;
     }
     setState({ data: null, loading: true, error: null });

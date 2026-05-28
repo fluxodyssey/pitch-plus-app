@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { RawPitch, GameInfo } from '../types';
 import type { Season } from './useData';
+import { fetchJsonOrNull } from './fetchJson';
 
 export interface PitchIndex {
   index: Map<number, RawPitch[]>;
@@ -30,12 +31,12 @@ async function fetchGames(season: Season): Promise<Record<string, GameInfo>> {
   const url = gamesUrl(season);
   if (!url) return {};
 
-  const p = fetch(url)
-    .then((r) => r.ok ? r.json() : {})
-    .then((data: Record<string, GameInfo>) => {
-      gamesCache.set(season, data);
+  const p = fetchJsonOrNull<Record<string, GameInfo>>(url)
+    .then((data) => {
+      const games = data ?? {};
+      gamesCache.set(season, games);
       gamesFetching.delete(season);
-      return data;
+      return games;
     });
   gamesFetching.set(season, p);
   return p;
@@ -58,15 +59,9 @@ export function usePitchData(season: Season = 2025) {
       if (pitcherCache.has(cacheKey)) {
         pitcherPitches = pitcherCache.get(cacheKey)!;
       } else {
-        const url = pitchUrl(season, pitcherId);
-        const res = await fetch(url);
-        if (!res.ok) {
-          pitcherPitches = [];
-        } else {
-          const data = await res.json();
-          pitcherPitches = data.pitches ?? [];
-          pitcherCache.set(cacheKey, pitcherPitches);
-        }
+        const data = await fetchJsonOrNull<{ pitches?: RawPitch[] }>(pitchUrl(season, pitcherId));
+        pitcherPitches = data?.pitches ?? [];
+        if (data) pitcherCache.set(cacheKey, pitcherPitches);
       }
 
       const seasonGames = await fetchGames(season);

@@ -59,10 +59,13 @@ export function computeSpringDeltas(
   }
 
   const deltas: SpringDelta[] = [];
+  const seenIds = new Set<number>();
 
   for (const sp of springData.pitchers) {
+    if (seenIds.has(sp.pitcher_id)) continue; // Source data has duplicate pitcher_ids (e.g., mid-spring trades); first occurrence wins
     const bp = baselineMap.get(sp.pitcher_id);
     if (!bp) continue; // No 2025 baseline for this pitcher
+    seenIds.add(sp.pitcher_id);
 
     // Dimension deltas
     const dimDeltas: Record<string, number> = {};

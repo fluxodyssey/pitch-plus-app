@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, createContext, useContext } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { useData } from '../data/useData';
+import { useData, AVAILABLE_SEASONS, setGlobalSeason, getGlobalSeason, hasMatchupData } from '../data/useData';
 import { GradeBadge } from './GradeBadge';
 import type { Pitcher } from '../types';
 
@@ -78,18 +78,38 @@ function CommandPaletteOverlay({ onClose }: { onClose: () => void }) {
   // Build command list
   const items = useMemo(() => {
     const cmds: CmdItem[] = [];
+    const currentSeason = getGlobalSeason();
 
-    // Navigation
+    // Navigation — all pages
     const navs = [
-      { label: 'Pitchers', path: '/' },
-      { label: 'Batters', path: '/batters' },
-      { label: 'Teams', path: '/teams' },
-      { label: 'Leaderboard', path: '/leaderboard' },
-      { label: 'Advanced Search', path: '/search' },
-      { label: 'Compare Pitchers', path: '/compare' },
+      { label: 'Pitchers', sublabel: 'Browse all pitchers', path: '/' },
+      { label: 'Batters', sublabel: 'Browse all batters', path: '/batters' },
+      { label: 'Teams', sublabel: 'Team rotations', path: '/teams' },
+      { label: 'Leaderboard', sublabel: 'Rank pitchers by any metric', path: '/leaderboard' },
+      { label: 'Advanced Search', sublabel: 'Filter & slice metrics', path: '/search' },
+      { label: 'Compare Pitchers', sublabel: 'Head-to-head comparison', path: '/compare' },
+      ...(hasMatchupData(currentSeason) ? [{ label: 'Matchup Machine', sublabel: 'Pitcher vs batter projections', path: '/matchup' }] : []),
+      { label: 'Pitcher Plots', sublabel: 'Movement, location, heatmaps', path: '/plots' },
+      { label: 'Design Lab', sublabel: 'Pitch design recommendations', path: '/design' },
+      { label: 'Spring Training', sublabel: 'Spring development tracker', path: '/spring' },
+      { label: 'Glossary', sublabel: 'Metric definitions', path: '/glossary' },
+      { label: 'FAQ', sublabel: 'How scores are calculated', path: '/faq' },
     ];
     for (const n of navs) {
-      cmds.push({ id: `nav-${n.path}`, label: n.label, group: 'Navigate', onSelect: () => { navigate(n.path); onClose(); } });
+      cmds.push({ id: `nav-${n.path}`, label: n.label, sublabel: n.sublabel, group: 'Navigate', onSelect: () => { navigate(n.path); onClose(); } });
+    }
+
+    // Season switching
+    for (const s of [...AVAILABLE_SEASONS].reverse()) {
+      if (s !== currentSeason) {
+        cmds.push({
+          id: `season-${s}`,
+          label: `Switch to ${s} season`,
+          sublabel: `Currently: ${currentSeason}`,
+          group: 'Season',
+          onSelect: () => { setGlobalSeason(s); onClose(); },
+        });
+      }
     }
 
     // Pitcher search
@@ -103,11 +123,29 @@ function CommandPaletteOverlay({ onClose }: { onClose: () => void }) {
         cmds.push({
           id: `pitcher-${pitcher.pitcher_id}`,
           label: pitcher.pitcher_name,
-          sublabel: pitcher.pitcher_team,
+          sublabel: `${pitcher.pitcher_team} · ${pitcher.pitcher_hand === 'L' ? 'LHP' : 'RHP'}`,
           group: 'Pitchers',
           score,
           badge: pitcher.pitch_plus,
           onSelect: () => { navigate(`/player/${pitcher.pitcher_id}`); onClose(); },
+        });
+      }
+      // Quick compare action when a pitcher is found
+      if (scored.length > 0) {
+        const p = scored[0]!.pitcher;
+        cmds.push({
+          id: `compare-${p.pitcher_id}`,
+          label: `Compare ${p.pitcher_name}`,
+          sublabel: 'Open side-by-side comparison',
+          group: 'Actions',
+          onSelect: () => { navigate(`/compare/${p.pitcher_id}`); onClose(); },
+        });
+        cmds.push({
+          id: `plots-${p.pitcher_id}`,
+          label: `Plot ${p.pitcher_name}`,
+          sublabel: 'View movement, location & heatmaps',
+          group: 'Actions',
+          onSelect: () => { navigate(`/plots?pitcher=${p.pitcher_id}`); onClose(); },
         });
       }
     }

@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { rowNavProps } from '../data/rowNavigation';
 import { GradeBadge } from './GradeBadge';
 import { scoreColor, scoreColorContinuous, pitchColor } from '../data/constants';
 import { computePercentiles } from '../data/percentiles';
@@ -107,8 +108,10 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
       bv = b.dimensions[sortKey as DimensionKey]?.score ?? 0;
     } else if (sortKey in PT_SORT_FIELD) {
       const field = PT_SORT_FIELD[sortKey];
-      av = getPitchTypeRow(a.pitcher_id)?.[field] ?? 0;
-      bv = getPitchTypeRow(b.pitcher_id)?.[field] ?? 0;
+      if (field !== undefined) {
+        av = getPitchTypeRow(a.pitcher_id)?.[field] ?? 0;
+        bv = getPitchTypeRow(b.pitcher_id)?.[field] ?? 0;
+      }
     }
 
     if (typeof av === 'string' && typeof bv === 'string') {
@@ -254,7 +257,7 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
             return (
               <tr
                 key={p.pitcher_id}
-                onClick={() => navigate(`/player/${p.pitcher_id}`)}
+                {...rowNavProps(navigate, `/player/${p.pitcher_id}`)}
                 style={{
                   cursor: 'pointer',
                   borderBottom: '1px solid #1e1e2e',

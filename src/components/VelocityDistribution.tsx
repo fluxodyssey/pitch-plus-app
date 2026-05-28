@@ -117,19 +117,19 @@ export function VelocityDistribution({ pitches, pitchTypeNames, width = 720, hei
     for (const [pt, ys] of curves) {
       const color = pitchColor(pt);
       ctx.beginPath();
-      ctx.moveTo(toX(xs[0]), toY(0));
+      ctx.moveTo(toX(xs[0]!), toY(0));
       for (let i = 0; i < xs.length; i++) {
-        ctx.lineTo(toX(xs[i]), toY(ys[i]));
+        ctx.lineTo(toX(xs[i]!), toY(ys[i]!));
       }
-      ctx.lineTo(toX(xs[xs.length - 1]), toY(0));
+      ctx.lineTo(toX(xs[xs.length - 1]!), toY(0));
       ctx.closePath();
       ctx.fillStyle = color + '30';
       ctx.fill();
 
       ctx.beginPath();
-      ctx.moveTo(toX(xs[0]), toY(ys[0]));
+      ctx.moveTo(toX(xs[0]!), toY(ys[0]!));
       for (let i = 1; i < xs.length; i++) {
-        ctx.lineTo(toX(xs[i]), toY(ys[i]));
+        ctx.lineTo(toX(xs[i]!), toY(ys[i]!));
       }
       ctx.strokeStyle = color;
       ctx.lineWidth = 1.8;
@@ -138,9 +138,9 @@ export function VelocityDistribution({ pitches, pitchTypeNames, width = 720, hei
 
     // All pitches dashed line
     ctx.beginPath();
-    ctx.moveTo(toX(xs[0]), toY(allCurve[0]));
+    ctx.moveTo(toX(xs[0]!), toY(allCurve[0]!));
     for (let i = 1; i < xs.length; i++) {
-      ctx.lineTo(toX(xs[i]), toY(allCurve[i]));
+      ctx.lineTo(toX(xs[i]!), toY(allCurve[i]!));
     }
     ctx.strokeStyle = '#606080';
     ctx.lineWidth = 1.5;

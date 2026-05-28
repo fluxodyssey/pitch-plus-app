@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { rowNavProps } from '../data/rowNavigation';
 import { useSpringData } from '../data/useSpringData';
 import { DeltaBadge } from '../components/DeltaBadge';
 import { DIMENSION_LABELS, gradeColor, PITCH_TYPE_COLORS } from '../data/constants';
@@ -29,7 +30,7 @@ function MoverCard({ player, rank, type }: { player: SpringDelta; rank: number; 
 
   return (
     <div
-      onClick={() => navigate(`/player/${player.pitcher_id}`)}
+      {...rowNavProps(navigate, `/player/${player.pitcher_id}`)}
       style={{
         background: '#12121e', border: `1px solid ${color}33`, borderRadius: 8,
         padding: '10px 14px', cursor: 'pointer', flex: 1, minWidth: 180,
@@ -52,7 +53,7 @@ function MoverCard({ player, rank, type }: { player: SpringDelta; rank: number; 
       </div>
       <div style={{ color: '#a0a0b8', fontSize: 11, marginTop: 4 }}>
         Biggest change: <span style={{ color }}>{DIMENSION_LABELS[biggestDim as keyof typeof DIMENSION_LABELS] ?? biggestDim}</span>{' '}
-        <DeltaBadge delta={player.dimension_deltas[biggestDim]} size="sm" />
+        <DeltaBadge delta={player.dimension_deltas[biggestDim] ?? null} size="sm" />
       </div>
     </div>
   );
@@ -273,7 +274,7 @@ export function SpringTraining() {
               {filtered.map((d, i) => (
                 <tr
                   key={d.pitcher_id}
-                  onClick={() => navigate(`/player/${d.pitcher_id}`)}
+                  {...rowNavProps(navigate, `/player/${d.pitcher_id}`)}
                   style={{
                     borderBottom: '1px solid #1a1a2e', cursor: 'pointer',
                     background: i % 2 === 0 ? 'transparent' : '#0a0a14',
@@ -298,7 +299,7 @@ export function SpringTraining() {
                   </td>
                   {DIM_KEYS.map(dk => (
                     <td key={dk} style={{ ...tdStyle, textAlign: 'center' }}>
-                      <DeltaBadge delta={d.dimension_deltas[dk]} />
+                      <DeltaBadge delta={d.dimension_deltas[dk] ?? null} />
                     </td>
                   ))}
                 </tr>
@@ -336,7 +337,7 @@ export function SpringTraining() {
                 >
                   <td
                     style={{ ...tdStyle, fontWeight: 500, color: '#e0e0e8', cursor: 'pointer' }}
-                    onClick={() => navigate(`/player/${row.player.pitcher_id}`)}
+                    {...rowNavProps(navigate, `/player/${row.player.pitcher_id}`)}
                   >
                     {row.player.pitcher_name}
                     <span style={{ color: '#606080', fontSize: 11, marginLeft: 4 }}>{row.player.pitcher_team}</span>

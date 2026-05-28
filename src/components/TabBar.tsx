@@ -12,7 +12,7 @@ interface TabBarProps {
 
 export function TabBar({ tabs, activeTab, onChange }: TabBarProps) {
   return (
-    <div style={{
+    <div role="tablist" style={{
       display: 'flex',
       gap: 0,
       borderBottom: '2px solid #1e1e2e',
@@ -25,6 +25,8 @@ export function TabBar({ tabs, activeTab, onChange }: TabBarProps) {
         return (
           <button
             key={tab.key}
+            role="tab"
+            aria-selected={active}
             onClick={() => onChange(tab.key)}
             style={{
               padding: '10px 18px',
@@ -33,7 +35,6 @@ export function TabBar({ tabs, activeTab, onChange }: TabBarProps) {
               color: active ? '#4a9eff' : '#606080',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              borderBottom: `2px solid ${active ? '#4a9eff' : 'transparent'}`,
               marginBottom: -2,
               transition: 'color 0.15s, border-color 0.15s',
               display: 'flex',

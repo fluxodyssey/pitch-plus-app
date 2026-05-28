@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { RawPitch, GameInfo, GameAppearance } from '../types';
+import { gradeColor } from '../data/constants';
+import type { RawPitch, GameInfo, GameAppearance, PitcherGameGrades } from '../types';
 
 interface Props {
   pitches: RawPitch[];
@@ -9,9 +10,11 @@ interface Props {
   pitcherId: number;
   selectedGameId: number | null;
   onSelectGame: (gameId: number | null) => void;
+  /** Optional: game-level Pitch+ grades from game_grades_{year}.json */
+  pitcherGameGrades?: PitcherGameGrades | null;
 }
 
-type SortCol = 'date' | 'pitchCount' | 'innings' | 'strikeouts' | 'walks' | 'hits' | 'homeRuns' | 'runs';
+type SortCol = 'date' | 'pitchCount' | 'innings' | 'strikeouts' | 'walks' | 'hits' | 'homeRuns' | 'runs' | 'pitchPlus';
 
 export function computeGameLog(
   pitches: RawPitch[],
@@ -36,7 +39,7 @@ export function computeGameLog(
       const isHome = game ? game.home === pitcherTeam : false;
       return {
         gameId: gid,
-        date: game?.date ?? gPitches[0].gd,
+        date: game?.date ?? gPitches[0]?.gd ?? '',
         opponent,
         isHome,
         pitchCount: gPitches.length,
@@ -53,11 +56,17 @@ export function computeGameLog(
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export function GameLog({ pitches, games, pitcherTeam, pitcherId, selectedGameId, onSelectGame }: Props) {
+export function GameLog({ pitches, games, pitcherTeam, pitcherId, selectedGameId, onSelectGame, pitcherGameGrades }: Props) {
   const [sortCol, setSortCol] = useState<SortCol>('date');
   const [sortAsc, setSortAsc] = useState(true);
 
   const appearances = computeGameLog(pitches, games, pitcherTeam);
+
+  // Build a lookup: game_id → game grade entry
+  const gradeByGameId = new Map(
+    (pitcherGameGrades?.games ?? []).map((g) => [g.game_id, g])
+  );
+  const seasonPP = pitcherGameGrades?.season_grades?.pitch_plus ?? null;
 
   const sorted = [...appearances].sort((a, b) => {
     let cmp = 0;
@@ -86,6 +95,12 @@ export function GameLog({ pitches, games, pitcherTeam, pitcherId, selectedGameId
       case 'runs':
         cmp = a.runs - b.runs;
         break;
+      case 'pitchPlus': {
+        const ga = gradeByGameId.get(a.gameId)?.pitch_plus ?? 100;
+        const gb = gradeByGameId.get(b.gameId)?.pitch_plus ?? 100;
+        cmp = ga - gb;
+        break;
+      }
     }
     return sortAsc ? cmp : -cmp;
   });
@@ -165,12 +180,28 @@ export function GameLog({ pitches, games, pitcherTeam, pitcherId, selectedGameId
               <th style={{ ...thStyle('homeRuns'), textAlign: 'right' }} onClick={() => handleSort('homeRuns')}>
                 HR{sortIndicator('homeRuns')}
               </th>
+              {pitcherGameGrades && (
+                <th style={{ ...thStyle('pitchPlus'), textAlign: 'center' }} onClick={() => handleSort('pitchPlus')}>
+                  Pitch+{sortIndicator('pitchPlus')}
+                </th>
+              )}
               <th style={{ ...thStyle('date') }}>Report</th>
             </tr>
           </thead>
           <tbody>
             {sorted.map((app) => {
               const isSelected = selectedGameId === app.gameId;
+              const gameGrade = gradeByGameId.get(app.gameId);
+              const pp = gameGrade?.pitch_plus;
+              const ppDelta = seasonPP != null && pp != null ? pp - seasonPP : null;
+              const rowBg = isSelected
+                ? 'rgba(74,158,255,0.12)'
+                : pp != null && pp >= 115
+                ? 'rgba(16,185,129,0.05)'
+                : pp != null && pp <= 85
+                ? 'rgba(239,68,68,0.05)'
+                : undefined;
+
               return (
                 <tr
                   key={app.gameId}
@@ -178,7 +209,7 @@ export function GameLog({ pitches, games, pitcherTeam, pitcherId, selectedGameId
                   style={{
                     borderBottom: '1px solid #1e1e2e',
                     cursor: 'pointer',
-                    background: isSelected ? 'rgba(74,158,255,0.12)' : undefined,
+                    background: rowBg,
                   }}
                   onClick={() => onSelectGame(isSelected ? null : app.gameId)}
                 >
@@ -204,6 +235,30 @@ export function GameLog({ pitches, games, pitcherTeam, pitcherId, selectedGameId
                   <td style={{ padding: '7px 10px', textAlign: 'right', color: app.homeRuns > 0 ? '#c85a5a' : '#a0a0b8' }}>
                     {app.homeRuns}
                   </td>
+                  {pitcherGameGrades && (
+                    <td style={{ padding: '7px 10px', textAlign: 'center' }}>
+                      {pp != null ? (
+                        <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <span style={{
+                            background: gradeColor(pp) + '22',
+                            color: gradeColor(pp),
+                            border: `1px solid ${gradeColor(pp)}44`,
+                            borderRadius: 5, padding: '1px 7px',
+                            fontWeight: 700, fontSize: 12,
+                          }}>
+                            {pp.toFixed(0)}
+                          </span>
+                          {ppDelta != null && (
+                            <span style={{ fontSize: 10, color: ppDelta > 0 ? '#10b981' : ppDelta < 0 ? '#ef4444' : '#606080', marginTop: 1 }}>
+                              {ppDelta > 0 ? `+${ppDelta.toFixed(0)}` : ppDelta.toFixed(0)}
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span style={{ color: '#404060', fontSize: 11 }}>—</span>
+                      )}
+                    </td>
+                  )}
                   <td style={{ padding: '7px 10px' }} onClick={(e) => e.stopPropagation()}>
                     <Link
                       to={`/player/${pitcherId}/start/${app.gameId}`}

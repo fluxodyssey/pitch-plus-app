@@ -1,3 +1,4 @@
+import { useState, type ComponentProps } from 'react';
 import {
   ScatterChart,
   Scatter,
@@ -9,6 +10,10 @@ import {
   ReferenceArea,
   ReferenceLine,
 } from 'recharts';
+
+// Recharts' chart-event handlers pass an object with xValue/yValue (chart coords).
+// We narrow once here so handler call sites stay type-safe.
+type ChartMouseEvent = NonNullable<ComponentProps<typeof ScatterChart>['onMouseDown']>;
 import { pitchColor } from '../data/constants';
 import type { RawPitch } from '../types';
 
@@ -59,7 +64,7 @@ interface CustomTooltipProps {
 }
 
 function CustomTooltip({ active, payload, pitchTypeNames }: CustomTooltipProps) {
-  if (!active || !payload?.length || !payload[0].payload) return null;
+  if (!active || !payload?.length || !payload[0]?.payload) return null;
   const p = payload[0].payload as RawPitch;
   const color = pitchColor(p.pt);
   const result = p.wh ? 'Whiff' : p.ip ? 'In Play' : p.sw ? 'Swing' : 'Take';
@@ -104,6 +109,10 @@ function CustomTooltip({ active, payload, pitchTypeNames }: CustomTooltipProps) 
   );
 }
 
+// Default axis bounds
+const DEFAULT_X: [number, number] = [-2.5, 2.5];
+const DEFAULT_Y: [number, number] = [0, 5];
+
 export function PitchLocationChart({
   pitches,
   pitchTypeNames,
@@ -111,6 +120,13 @@ export function PitchLocationChart({
   highlightedPitchTypes,
   onPitchTypeClick,
 }: Props) {
+  const [xDomain, setXDomain] = useState<[number, number]>(DEFAULT_X);
+  const [yDomain, setYDomain] = useState<[number, number]>(DEFAULT_Y);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const [dragCurrent, setDragCurrent] = useState<{ x: number; y: number } | null>(null);
+  const isZoomed = xDomain[0] !== DEFAULT_X[0] || xDomain[1] !== DEFAULT_X[1]
+    || yDomain[0] !== DEFAULT_Y[0] || yDomain[1] !== DEFAULT_Y[1];
+
   // Group pitches by type for separate scatter series
   const typeMap = new Map<string, RawPitch[]>();
   for (const p of pitches) {
@@ -122,80 +138,128 @@ export function PitchLocationChart({
 
   if (pitches.length === 0) {
     return (
-      <div
-        style={{
-          height,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#606080',
-        }}
-      >
+      <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#606080' }}>
         No pitch location data available
       </div>
     );
   }
 
+  const resetZoom = () => {
+    setXDomain(DEFAULT_X);
+    setYDomain(DEFAULT_Y);
+    setDragStart(null);
+    setDragCurrent(null);
+  };
+
+  // Recharts selection zoom: use ReferenceArea during drag
+  const handleMouseDown = (e: { xValue?: number; yValue?: number }) => {
+    if (e.xValue == null || e.yValue == null) return;
+    setDragStart({ x: e.xValue, y: e.yValue });
+    setDragCurrent({ x: e.xValue, y: e.yValue });
+  };
+
+  const handleMouseMove = (e: { xValue?: number; yValue?: number }) => {
+    if (!dragStart || e.xValue == null || e.yValue == null) return;
+    setDragCurrent({ x: e.xValue, y: e.yValue });
+  };
+
+  const handleMouseUp = () => {
+    if (dragStart && dragCurrent) {
+      const x1 = Math.min(dragStart.x, dragCurrent.x);
+      const x2 = Math.max(dragStart.x, dragCurrent.x);
+      const y1 = Math.min(dragStart.y, dragCurrent.y);
+      const y2 = Math.max(dragStart.y, dragCurrent.y);
+      // Only zoom if selection is meaningful
+      if (x2 - x1 > 0.1 && y2 - y1 > 0.1) {
+        setXDomain([x1, x2]);
+        setYDomain([y1, y2]);
+      }
+    }
+    setDragStart(null);
+    setDragCurrent(null);
+  };
+
   return (
     <div className="pitch-location-chart">
+      {/* Zoom controls */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4, gap: 8 }}>
+        {isZoomed && (
+          <button
+            onClick={resetZoom}
+            style={{
+              padding: '3px 8px', fontSize: 11, borderRadius: 4,
+              border: '1px solid #2a2a3e', background: 'transparent',
+              color: '#a0a0b8', cursor: 'pointer',
+            }}
+          >
+            ↺ Reset zoom
+          </button>
+        )}
+        {!isZoomed && (
+          <span style={{ fontSize: 10, color: '#404060' }}>Drag to zoom</span>
+        )}
+      </div>
+
       <ResponsiveContainer width="100%" height={height}>
-        <ScatterChart margin={{ top: 10, right: 20, bottom: 30, left: 20 }}>
+        <ScatterChart
+          margin={{ top: 10, right: 20, bottom: 30, left: 20 }}
+          onMouseDown={handleMouseDown as ChartMouseEvent}
+          onMouseMove={handleMouseMove as ChartMouseEvent}
+          onMouseUp={handleMouseUp}
+        >
           <CartesianGrid stroke="#1e1e2e" strokeDasharray="2 2" />
           <XAxis
             dataKey="px"
             type="number"
             name="Plate X"
-            domain={[-2.5, 2.5]}
-            ticks={[-2, -1, 0, 1, 2]}
-            label={{
-              value: 'Plate X (ft)',
-              position: 'insideBottom',
-              offset: -10,
-              fill: '#a0a0b8',
-              fontSize: 12,
-            }}
+            domain={xDomain}
+            label={{ value: 'Plate X (ft)', position: 'insideBottom', offset: -10, fill: '#a0a0b8', fontSize: 12 }}
             tick={{ fill: '#a0a0b8', fontSize: 11 }}
           />
           <YAxis
             dataKey="pz"
             type="number"
             name="Plate Z"
-            domain={[0, 5]}
-            ticks={[0, 1, 2, 3, 4, 5]}
-            label={{
-              value: 'Plate Z (ft)',
-              angle: -90,
-              position: 'insideLeft',
-              fill: '#a0a0b8',
-              fontSize: 12,
-            }}
+            domain={yDomain}
+            label={{ value: 'Plate Z (ft)', angle: -90, position: 'insideLeft', fill: '#a0a0b8', fontSize: 12 }}
             tick={{ fill: '#a0a0b8', fontSize: 11 }}
           />
           {/* Strike zone */}
           <ReferenceArea
-            x1={-0.83}
-            x2={0.83}
-            y1={1.5}
-            y2={3.5}
-            stroke="#4a9eff"
-            strokeWidth={1.5}
-            strokeDasharray="4 2"
+            x1={-0.83} x2={0.83} y1={1.5} y2={3.5}
+            stroke="#4a9eff" strokeWidth={1.5} strokeDasharray="4 2"
             fill="rgba(74,158,255,0.04)"
           />
           <ReferenceLine x={0} stroke="#2a2a3e" strokeDasharray="3 3" />
-          <Tooltip content={<CustomTooltip pitchTypeNames={pitchTypeNames} />} />
+          <Tooltip content={<CustomTooltip {...(pitchTypeNames && { pitchTypeNames })} />} />
+
+          {/* Zoom selection overlay */}
+          {dragStart && dragCurrent && (
+            <ReferenceArea
+              x1={Math.min(dragStart.x, dragCurrent.x)}
+              x2={Math.max(dragStart.x, dragCurrent.x)}
+              y1={Math.min(dragStart.y, dragCurrent.y)}
+              y2={Math.max(dragStart.y, dragCurrent.y)}
+              stroke="#4a9eff"
+              fill="rgba(74,158,255,0.1)"
+              strokeWidth={1}
+              strokeDasharray="4 2"
+            />
+          )}
+
           {types.map((pt) => (
             <Scatter
               key={pt}
               name={pitchTypeNames?.[pt] ?? pt}
               data={typeMap.get(pt)!}
               fill={pitchColor(pt)}
-              shape={<PitchDot highlightedTypes={highlightedPitchTypes} />}
+              shape={<PitchDot {...(highlightedPitchTypes && { highlightedTypes: highlightedPitchTypes })} />}
               isAnimationActive={false}
             />
           ))}
         </ScatterChart>
       </ResponsiveContainer>
+
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 4 }}>
         {types.map((pt) => {
           const isActive = !highlightedPitchTypes?.length || highlightedPitchTypes.includes(pt);
@@ -204,28 +268,15 @@ export function PitchLocationChart({
               key={pt}
               onClick={() => onPitchTypeClick?.(pt)}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                fontSize: 11,
+                display: 'flex', alignItems: 'center', gap: 4, fontSize: 11,
                 color: isActive ? '#e0e0e8' : '#404060',
                 cursor: onPitchTypeClick ? 'pointer' : 'default',
-                padding: '2px 6px',
-                borderRadius: 4,
+                padding: '2px 6px', borderRadius: 4,
                 background: isActive && highlightedPitchTypes?.length ? 'rgba(74,158,255,0.1)' : 'transparent',
                 transition: 'all 0.15s',
               }}
             >
-              <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  background: pitchColor(pt),
-                  display: 'inline-block',
-                  opacity: isActive ? 1 : 0.3,
-                }}
-              />
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: pitchColor(pt), display: 'inline-block', opacity: isActive ? 1 : 0.3 }} />
               {pitchTypeNames?.[pt] ?? pt}
             </span>
           );

@@ -12,7 +12,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useData } from '../data/useData';
+import { useScoringConfig } from '../data/useScoringConfig';
+import { fetchJson } from '../data/fetchJson';
 import { SkeletonPage } from '../components/Skeleton';
+import { InlineSearch } from '../components/InlineSearch';
+import type { Pitcher } from '../types';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -231,6 +235,147 @@ function PitcherPanel({
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
+// ── What-If Simulator ─────────────────────────────────────────────────────────
+// Uses population_stats from scoring_config to compute grade delta for
+// a given change in a raw metric. Formula: delta_grade = delta_raw / std * 15
+
+interface SimMetric {
+  key: string;
+  label: string;
+  unit: string;
+  step: number;
+  min: number;
+  max: number;
+}
+
+const SIM_METRICS: SimMetric[] = [
+  { key: 'avg_velo', label: 'Fastball Velocity', unit: 'mph', step: 0.5, min: -5, max: 5 },
+  { key: 'avg_spin', label: 'Spin Rate', unit: 'rpm', step: 50, min: -500, max: 500 },
+  { key: 'avg_ivb', label: 'Induced Vertical Break', unit: '"', step: 1, min: -8, max: 8 },
+  { key: 'avg_hb', label: 'Horizontal Break', unit: '"', step: 1, min: -8, max: 8 },
+  { key: 'avg_ext', label: 'Extension', unit: 'ft', step: 0.1, min: -1, max: 1 },
+];
+
+function WhatIfSimulator({ pitchers }: { pitchers: Pitcher[] }) {
+  const { config } = useScoringConfig();
+  const [selected, setSelected] = useState<Pitcher | null>(null);
+  const [deltas, setDeltas] = useState<Record<string, number>>({});
+
+  const stats = config?.population_stats ?? {};
+
+  const projectedDelta = useMemo(() => {
+    if (!config) return 0;
+    let total = 0;
+    for (const [key, delta] of Object.entries(deltas)) {
+      if (delta === 0) continue;
+      const ps = stats[key];
+      if (ps?.std && ps.std > 0) {
+        total += (delta / ps.std) * 15;
+      }
+    }
+    return total;
+  }, [deltas, stats]);
+
+  const basePitchPlus = selected?.pitch_plus ?? 100;
+  const projectedPitchPlus = Math.round(Math.max(20, Math.min(180, basePitchPlus + projectedDelta)));
+
+  const deltaColor = projectedDelta > 2 ? '#34d399' : projectedDelta < -2 ? '#ef4444' : '#a0a0b8';
+
+  return (
+    <div className="card" style={{ padding: '20px 24px' }}>
+      <h3 style={{ margin: '0 0 16px', fontSize: 16, color: '#e0e0e8' }}>
+        ⚗ What-If Simulator
+        <span style={{ fontSize: 11, color: '#606080', fontWeight: 400, marginLeft: 8 }}>
+          Adjust pitch properties and see projected Pitch+ impact
+        </span>
+      </h3>
+
+      <div style={{ marginBottom: 16, maxWidth: 320 }}>
+        <div style={{ fontSize: 11, color: '#a0a0b8', marginBottom: 4 }}>SELECT PITCHER</div>
+        <InlineSearch<Pitcher>
+          items={pitchers}
+          getKey={p => p.pitcher_id}
+          getLabel={p => p.pitcher_name}
+          value={selected}
+          onSelect={setSelected}
+          placeholder="Choose a pitcher…"
+          maxResults={8}
+        />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+        {SIM_METRICS.map(metric => {
+          const delta = deltas[metric.key] ?? 0;
+          const ps = stats[metric.key];
+          const gradeImpact = ps?.std ? (delta / ps.std) * 15 : 0;
+          return (
+            <div key={metric.key}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontSize: 12, color: '#a0a0b8' }}>{metric.label}</span>
+                <span style={{ fontSize: 12, fontFamily: 'monospace', color: delta !== 0 ? deltaColor : '#606080' }}>
+                  {delta > 0 ? '+' : ''}{delta.toFixed(1)} {metric.unit}
+                  {gradeImpact !== 0 && (
+                    <span style={{ marginLeft: 6, fontSize: 10, color: gradeImpact > 0 ? '#34d399' : '#ef4444' }}>
+                      ({gradeImpact > 0 ? '+' : ''}{gradeImpact.toFixed(1)} pts)
+                    </span>
+                  )}
+                </span>
+              </div>
+              <input
+                type="range"
+                min={metric.min}
+                max={metric.max}
+                step={metric.step}
+                value={delta}
+                onChange={e => setDeltas(prev => ({ ...prev, [metric.key]: parseFloat(e.target.value) }))}
+                style={{ width: '100%', accentColor: 'var(--accent)' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#404060' }}>
+                <span>{metric.min > 0 ? '+' : ''}{metric.min}</span>
+                <span>0</span>
+                <span>+{metric.max}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Summary */}
+      <div style={{ marginTop: 20, padding: '14px 16px', background: '#0c1829', borderRadius: 8, border: '1px solid #1e2a3e', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontSize: 10, color: '#606080', marginBottom: 2 }}>CURRENT PITCH+</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: '#e0e0e8' }}>{basePitchPlus}</div>
+        </div>
+        <div style={{ fontSize: 24, color: '#2a2a3e' }}>→</div>
+        <div>
+          <div style={{ fontSize: 10, color: '#606080', marginBottom: 2 }}>PROJECTED PITCH+</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: deltaColor }}>{projectedPitchPlus}</div>
+        </div>
+        {projectedDelta !== 0 && (
+          <div style={{ marginLeft: 'auto' }}>
+            <div style={{ fontSize: 10, color: '#606080', marginBottom: 2 }}>NET CHANGE</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: deltaColor }}>
+              {projectedDelta > 0 ? '+' : ''}{projectedDelta.toFixed(1)} pts
+            </div>
+          </div>
+        )}
+        {projectedDelta !== 0 && (
+          <button
+            onClick={() => setDeltas({})}
+            style={{ padding: '5px 12px', fontSize: 11, borderRadius: 6, border: '1px solid #2a2a3e', background: 'transparent', color: '#606080', cursor: 'pointer' }}
+          >
+            Reset
+          </button>
+        )}
+      </div>
+
+      <div style={{ marginTop: 8, fontSize: 10, color: '#404060' }}>
+        Grade impact estimated from population standard deviations in scoring config. One standard deviation change = ±15 Pitch+ points.
+      </div>
+    </div>
+  );
+}
+
 export function PitchDesign() {
   const { data, loading: pitcherLoading } = useData();
   const [designData, setDesignData] = useState<PitchDesignData | null>(null);
@@ -246,12 +391,8 @@ export function PitchDesign() {
 
   // Load pitch_design.json
   useEffect(() => {
-    fetch('/data/pitch_design.json')
-      .then((r) => {
-        if (!r.ok) throw new Error(`pitch_design.json not found (HTTP ${r.status})`);
-        return r.json();
-      })
-      .then((d: PitchDesignData) => { setDesignData(d); setDesignLoading(false); })
+    fetchJson<PitchDesignData>('/data/pitch_design.json')
+      .then((d) => { setDesignData(d); setDesignLoading(false); })
       .catch((e) => { setDesignError(e.message); setDesignLoading(false); });
   }, []);
 
@@ -340,7 +481,7 @@ export function PitchDesign() {
         {['all', ...ALL_CATEGORIES].map((cat) => {
           const cfg = cat === 'all'
             ? { label: 'All', color: '#94a3b8' }
-            : CATEGORY_CONFIG[cat];
+            : (CATEGORY_CONFIG[cat] ?? { label: cat, color: '#94a3b8' });
           return (
             <button
               key={cat}
@@ -411,6 +552,13 @@ export function PitchDesign() {
           />
         </div>
       </div>
+
+      {/* What-If Simulator */}
+      {data && (
+        <div style={{ marginBottom: 24 }}>
+          <WhatIfSimulator pitchers={data.pitchers.pitchers} />
+        </div>
+      )}
 
       {/* Results count */}
       <div style={{ color: 'var(--text-4)', fontSize: 12, marginBottom: 16 }}>

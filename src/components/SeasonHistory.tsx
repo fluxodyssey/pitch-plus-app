@@ -1,18 +1,19 @@
 import { useMemo } from 'react';
 import { LineChart, Line, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { useData, AVAILABLE_SEASONS } from '../data/useData';
+import { useData, AVAILABLE_SEASONS, type Season } from '../data/useData';
 import { scoreColorContinuous, gradeColor, PCT_METRICS } from '../data/constants';
 import { usePitcherSparklines, usePitcherTrajectory } from '../data/useSparklines';
 import type { MetricKey } from '../types';
 
 // ── Trajectory badge ──────────────────────────────────────────────────────────
 
+const DEFAULT_TRAJECTORY_STYLE = { color: 'var(--text-4)', bg: 'var(--border)', arrow: '?' };
 const TRAJECTORY_STYLES: Record<string, { color: string; bg: string; arrow: string }> = {
   ascending:        { color: '#4ade80', bg: '#16a34a22', arrow: '↑' },
   declining:        { color: '#f87171', bg: '#ef444422', arrow: '↓' },
   plateau:          { color: 'var(--text-2)', bg: 'var(--border)',   arrow: '→' },
   volatile:         { color: '#fb923c', bg: '#f9731622', arrow: '~' },
-  insufficient_data:{ color: 'var(--text-4)', bg: 'var(--border)',   arrow: '?' },
+  insufficient_data: DEFAULT_TRAJECTORY_STYLE,
 };
 
 function TrajectoryBadge({ pitcherId }: { pitcherId: number }) {
@@ -20,7 +21,7 @@ function TrajectoryBadge({ pitcherId }: { pitcherId: number }) {
   if (!traj) return null;
 
   const label = traj.trajectory_label ?? 'insufficient_data';
-  const style = TRAJECTORY_STYLES[label] ?? TRAJECTORY_STYLES.insufficient_data;
+  const style = TRAJECTORY_STYLES[label] ?? DEFAULT_TRAJECTORY_STYLE;
   const slopeStr = traj.trajectory_slope != null
     ? `${traj.trajectory_slope > 0 ? '+' : ''}${traj.trajectory_slope.toFixed(1)} pts/yr`
     : '';
@@ -62,7 +63,7 @@ function PitchPlusSparkline({ pitcherId }: { pitcherId: number }) {
     if (p.pitch_plus! < min) min = p.pitch_plus!;
     if (p.pitch_plus! > max) max = p.pitch_plus!;
   }
-  const trend = filtered[filtered.length - 1].pitch_plus! - filtered[0].pitch_plus!;
+  const trend = (filtered[filtered.length - 1]?.pitch_plus ?? 0) - (filtered[0]?.pitch_plus ?? 0);
   const trendColor = trend > 2 ? '#4ade80' : trend < -2 ? '#f87171' : 'var(--text-2)';
 
   return (
@@ -70,7 +71,7 @@ function PitchPlusSparkline({ pitcherId }: { pitcherId: number }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     marginBottom: 6 }}>
         <span style={{ color: 'var(--text-3)', fontSize: 11 }}>
-          Pitch+ trend  ({filtered[0].season}–{filtered[filtered.length - 1].season})
+          Pitch+ trend  ({filtered[0]?.season}–{filtered[filtered.length - 1]?.season})
         </span>
         <span style={{ color: trendColor, fontSize: 11, fontWeight: 700 }}>
           {trend > 0 ? '+' : ''}{trend.toFixed(0)} pts over period
@@ -90,7 +91,7 @@ function PitchPlusSparkline({ pitcherId }: { pitcherId: number }) {
           <Tooltip
             contentStyle={{ background: 'var(--bg-input)', border: '1px solid var(--border-plus)',
                             borderRadius: 6, fontSize: 11 }}
-            formatter={(v: number) => [`${v} Pitch+`, '']}
+            formatter={(v) => [v != null ? `${v} Pitch+` : '', '']}
             labelFormatter={(l) => `${l}`}
           />
         </LineChart>
@@ -120,8 +121,8 @@ const SHOW_METRICS: Array<{ key: MetricKey; label: string; pct?: boolean }> = [
 ];
 
 // Single-season row — loads its own data; useMemo avoids repeated O(n) .find() on re-renders
-function SeasonRow({ pitcherId, season }: { pitcherId: number; season: number }) {
-  const { data } = useData(season as any);
+function SeasonRow({ pitcherId, season }: { pitcherId: number; season: Season }) {
+  const { data } = useData(season);
   const pitcher = useMemo(
     () => data?.pitchers.pitchers.find((p) => p.pitcher_id === pitcherId),
     [data, pitcherId],

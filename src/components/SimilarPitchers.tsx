@@ -16,8 +16,9 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useData } from '../data/useData';
+import { useSimilarityData } from '../data/useMatchupData';
 import { gradeColor, scoreColorContinuous } from '../data/constants';
-import type { Pitcher, DimensionKey } from '../types';
+import type { Pitcher, DimensionKey, SimilarPitcherEntry } from '../types';
 
 const DIMENSION_KEYS: DimensionKey[] = [
   'stuff', 'command', 'deception', 'tunnel_and_sequence', 'outcomes', 'arsenal',
@@ -39,7 +40,7 @@ function toVector(pitcher: Pitcher): number[] {
 }
 
 function cosineSimilarity(a: number[], b: number[]): number {
-  const dot = a.reduce((sum, ai, i) => sum + ai * b[i], 0);
+  const dot = a.reduce((sum, ai, i) => sum + ai * (b[i] ?? 0), 0);
   const magA = Math.sqrt(a.reduce((s, ai) => s + ai * ai, 0));
   const magB = Math.sqrt(b.reduce((s, bi) => s + bi * bi, 0));
   if (magA === 0 || magB === 0) return 0;
@@ -55,9 +56,27 @@ interface Props {
 }
 
 export function SimilarPitchers({ pitcher, n = 6, showDimensions = true }: Props) {
-  const { data } = useData();
+  const { data, season } = useData();
+  const { data: similarityData } = useSimilarityData(season);
 
+  // Prefer pre-computed similarity data (hand+role constrained, richer features)
+  // Fall back to client-side cosine similarity on 6 dimensions
   const similar = useMemo(() => {
+    const precomputed = similarityData?.[String(pitcher.pitcher_id)];
+    if (precomputed) {
+      return precomputed.similar.slice(0, n).map((s: SimilarPitcherEntry) => ({
+        id: s.id,
+        name: s.name,
+        team: s.team,
+        hand: s.hand,
+        role: s.role,
+        similarity: s.similarity,
+        pitch_plus: s.pitch_plus,
+        dimensions: s.dimensions,
+        fromJSON: true,
+      }));
+    }
+
     if (!data) return [];
     const allPitchers = data.pitchers.pitchers;
     const targetVec = toVector(pitcher);
@@ -65,12 +84,23 @@ export function SimilarPitchers({ pitcher, n = 6, showDimensions = true }: Props
     return allPitchers
       .filter((p) => p.pitcher_id !== pitcher.pitcher_id)
       .map((p) => ({
-        pitcher: p,
-        similarity: cosineSimilarity(targetVec, toVector(p)),
+        id: p.pitcher_id,
+        name: p.pitcher_name,
+        team: p.pitcher_team,
+        hand: p.pitcher_hand,
+        role: undefined as undefined,
+        similarity: cosineSimilarity(targetVec, toVector(p)) * 100,
+        pitch_plus: p.pitch_plus,
+        dimensions: Object.fromEntries(
+          DIMENSION_KEYS.map((dk) => [dk, p.dimensions[dk]?.score ?? 100])
+        ),
+        fromJSON: false,
       }))
       .sort((a, b) => b.similarity - a.similarity)
       .slice(0, n);
-  }, [data, pitcher, n]);
+  }, [data, similarityData, pitcher, n, season]);
+
+  const usingJSON = similar[0]?.fromJSON ?? false;
 
   if (similar.length === 0) {
     return <p style={{ color: 'var(--text-4)', fontSize: 13 }}>No similar pitchers found.</p>;
@@ -79,14 +109,15 @@ export function SimilarPitchers({ pitcher, n = 6, showDimensions = true }: Props
   return (
     <div>
       <div style={{ marginBottom: 10, fontSize: 11, color: 'var(--text-3)' }}>
-        Ranked by cosine similarity of 6-dimension Pitch+ profile.
-        Same profile shape ≠ same skill level — similarity measures pitcher archetype.
+        {usingJSON
+          ? 'Ranked by weighted feature similarity (hand + role constrained). Run pitcher_similarity.py to refresh.'
+          : 'Ranked by cosine similarity of 6-dimension Pitch+ profile (fallback — similarity.json not yet generated).'}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {similar.map(({ pitcher: p, similarity }) => (
+        {similar.map((s) => (
           <Link
-            key={p.pitcher_id}
-            to={`/player/${p.pitcher_id}`}
+            key={s.id}
+            to={`/player/${s.id}`}
             style={{ textDecoration: 'none' }}
           >
             <div style={{
@@ -104,10 +135,10 @@ export function SimilarPitchers({ pitcher, n = 6, showDimensions = true }: Props
                             alignItems: 'center', marginBottom: showDimensions ? 8 : 0 }}>
                 <div>
                   <span style={{ color: 'var(--text-1)', fontWeight: 600, fontSize: 14 }}>
-                    {p.pitcher_name}
+                    {s.name}
                   </span>
                   <span style={{ color: 'var(--text-3)', fontSize: 12, marginLeft: 8 }}>
-                    {p.pitcher_team} · {p.pitcher_hand}HP
+                    {s.team} · {s.hand}HP{s.role ? ` · ${s.role}` : ''}
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -116,21 +147,21 @@ export function SimilarPitchers({ pitcher, n = 6, showDimensions = true }: Props
                     <div style={{ fontSize: 10, color: 'var(--text-3)' }}>similarity</div>
                     <div style={{
                       fontSize: 14, fontWeight: 700,
-                      color: similarity > 0.995
-                        ? '#4ade80' : similarity > 0.985
+                      color: s.similarity >= 95
+                        ? '#4ade80' : s.similarity >= 85
                         ? 'var(--text-2)' : 'var(--text-3)',
                     }}>
-                      {(similarity * 100).toFixed(1)}%
+                      {s.similarity.toFixed(1)}%
                     </div>
                   </div>
                   {/* Pitch+ badge */}
                   <div style={{
-                    background: gradeColor(p.pitch_plus),
+                    background: gradeColor(s.pitch_plus),
                     color: '#fff', borderRadius: 6,
                     padding: '3px 10px', fontSize: 14, fontWeight: 700,
                     minWidth: 42, textAlign: 'center',
                   }}>
-                    {p.pitch_plus}
+                    {s.pitch_plus}
                   </div>
                 </div>
               </div>
@@ -139,7 +170,7 @@ export function SimilarPitchers({ pitcher, n = 6, showDimensions = true }: Props
               {showDimensions && (
                 <div style={{ display: 'flex', gap: 4 }}>
                   {DIMENSION_KEYS.map((dk) => {
-                    const score = p.dimensions[dk]?.score ?? 100;
+                    const score = s.dimensions[dk] ?? 100;
                     return (
                       <div key={dk} style={{ flex: 1, textAlign: 'center' }}>
                         <div style={{ fontSize: 9, color: 'var(--text-3)', marginBottom: 2 }}>

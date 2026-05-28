@@ -3,11 +3,14 @@
  * Supports: season, team, hand, game type, pitch type, min pitches,
  *           metric range filters, and full-text search.
  */
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { rowNavProps } from '../data/rowNavigation';
 import { useData } from '../data/useData';
 import { GradeBadge } from '../components/GradeBadge';
 import { gradeColor, ALL_METRIC_OPTIONS, PCT_METRICS, METRIC_LABELS, DIMENSION_LABELS } from '../data/constants';
+import { exportCsv } from '../data/exportCsv';
+import { getSavedFilters, saveFilter, deleteSavedFilter } from '../data/savedFilters';
 import type { Pitcher, MetricKey, DimensionKey } from '../types';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -122,15 +125,16 @@ const INPUT_STYLE = {
 export function AdvancedSearch() {
   const { data, loading, error, season } = useData();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Filter state
-  const [search,         setSearch]        = useState('');
-  const [teamFilter,     setTeamFilter]     = useState('All');
-  const [handFilter,     setHandFilter]     = useState('All');
-  const [pitchTypeFilter,setPitchTypeFilter]= useState('All');
-  const [minPitches,     setMinPitches]     = useState(0);
-  const [sortField,      setSortField]      = useState<SortField>('pitch_plus');
-  const [sortAsc,        setSortAsc]        = useState(false);
+  // Initialize filter state from URL params
+  const [search,         setSearch]        = useState(() => searchParams.get('q') ?? '');
+  const [teamFilter,     setTeamFilter]     = useState(() => searchParams.get('team') ?? 'All');
+  const [handFilter,     setHandFilter]     = useState(() => searchParams.get('hand') ?? 'All');
+  const [pitchTypeFilter,setPitchTypeFilter]= useState(() => searchParams.get('pt') ?? 'All');
+  const [minPitches,     setMinPitches]     = useState(() => parseInt(searchParams.get('min') ?? '0', 10) || 0);
+  const [sortField,      setSortField]      = useState<SortField>(() => (searchParams.get('sort') as SortField) ?? 'pitch_plus');
+  const [sortAsc,        setSortAsc]        = useState(() => searchParams.get('asc') === '1');
 
   // Which columns to show (user-configurable)
   const [shownDims,      setShownDims]      = useState<Set<DimensionKey>>(
@@ -138,11 +142,44 @@ export function AdvancedSearch() {
   );
   const [shownMetric,    setShownMetric]    = useState<MetricKey | null>(null);
 
-  // Metric range filters
-  const [rangeFilters,   setRangeFilters]   = useState<Partial<Record<MetricKey, RangeFilter>>>({});
+  // Metric range filters — restore from URL params (rf_<key>_min / rf_<key>_max)
+  const [rangeFilters, setRangeFilters] = useState<Partial<Record<MetricKey, RangeFilter>>>(() => {
+    const rf: Partial<Record<MetricKey, RangeFilter>> = {};
+    for (const [k, v] of searchParams.entries()) {
+      const minMatch = k.match(/^rf_(.+)_min$/);
+      const maxMatch = k.match(/^rf_(.+)_max$/);
+      if (minMatch) {
+        const mk = minMatch[1] as MetricKey;
+        rf[mk] = { ...(rf[mk] ?? { min: '', max: '' }), min: v };
+      } else if (maxMatch) {
+        const mk = maxMatch[1] as MetricKey;
+        rf[mk] = { ...(rf[mk] ?? { min: '', max: '' }), max: v };
+      }
+    }
+    return rf;
+  });
   // Dimension score range filters (for trait presets)
   const [dimFilters, setDimFilters] = useState<Partial<Record<DimensionKey, { min?: number; max?: number }>>>({});
-  const [activePreset, setActivePreset] = useState<string | null>(null);
+  const [activePreset, setActivePreset] = useState<string | null>(() => searchParams.get('preset') ?? null);
+  const [savedFilters, setSavedFilters] = useState(() => getSavedFilters('search'));
+
+  // Sync filter state → URL (replace, no history bloat)
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (search) params.set('q', search);
+    if (teamFilter !== 'All') params.set('team', teamFilter);
+    if (handFilter !== 'All') params.set('hand', handFilter);
+    if (pitchTypeFilter !== 'All') params.set('pt', pitchTypeFilter);
+    if (minPitches > 0) params.set('min', String(minPitches));
+    if (sortField !== 'pitch_plus') params.set('sort', sortField);
+    if (sortAsc) params.set('asc', '1');
+    if (activePreset) params.set('preset', activePreset);
+    for (const [mk, rf] of Object.entries(rangeFilters)) {
+      if (rf?.min) params.set(`rf_${mk}_min`, rf.min);
+      if (rf?.max) params.set(`rf_${mk}_max`, rf.max);
+    }
+    setSearchParams(params, { replace: true });
+  }, [search, teamFilter, handFilter, pitchTypeFilter, minPitches, sortField, sortAsc, activePreset, rangeFilters]);
 
   const teams = useMemo(() => {
     if (!data) return ['All'];
@@ -276,7 +313,12 @@ export function AdvancedSearch() {
                   } else {
                     setActivePreset(preset.label);
                     setDimFilters(preset.dimFilters);
-                    setRangeFilters(preset.metricFilters as any);
+                    setRangeFilters(preset.metricFilters);
+                    setSearch('');
+                    setTeamFilter('All');
+                    setHandFilter('All');
+                    setPitchTypeFilter('All');
+                    setMinPitches(0);
                   }
                 }}
                 style={{
@@ -406,14 +448,88 @@ export function AdvancedSearch() {
         ))}
       </div>
 
-      {/* ── Results count ── */}
-      <div style={{ color: '#606080', fontSize: 13 }}>
-        {filtered.length.toLocaleString()} results
+      {/* ── Results count + actions ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <span style={{ color: '#606080', fontSize: 13 }}>
+          {filtered.length.toLocaleString()} results
+        </span>
         {Object.values(rangeFilters).some(r => r?.min || r?.max) && (
           <button onClick={() => setRangeFilters({})}
-            style={{ marginLeft: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12 }}>
+            style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12 }}>
             Clear range filters ×
           </button>
+        )}
+        <button
+          onClick={() => {
+            const dimKeys = SORTABLE_DIMS;
+            const headers = ['Name', 'Team', 'H', 'Pitch+', ...dimKeys.map(d => DIMENSION_LABELS[d]), 'Pitches', 'Games'];
+            const rows = filtered.map(p => [
+              p.pitcher_name, p.pitcher_team, p.pitcher_hand, p.pitch_plus,
+              ...dimKeys.map(d => p.dimensions[d]?.score ?? 0),
+              p.n_pitches, p.n_games,
+            ]);
+            exportCsv(headers, rows, `pitch-plus-search-${season}.csv`);
+          }}
+          style={{
+            padding: '4px 10px', fontSize: 11, borderRadius: 5,
+            border: '1px solid #2a2a3e', background: 'transparent',
+            color: '#a0a0b8', cursor: 'pointer',
+          }}
+        >
+          ↓ Export CSV
+        </button>
+        <button
+          onClick={() => navigator.clipboard?.writeText(window.location.href)}
+          title="Copy shareable link with current filters"
+          style={{
+            padding: '4px 10px', fontSize: 11, borderRadius: 5,
+            border: '1px solid #2a2a3e', background: 'transparent',
+            color: '#a0a0b8', cursor: 'pointer',
+          }}
+        >
+          ⎘ Copy link
+        </button>
+        <button
+          onClick={() => {
+            const name = window.prompt('Name this filter set:');
+            if (!name?.trim()) return;
+            saveFilter(name.trim(), 'search', window.location.search);
+            setSavedFilters(getSavedFilters('search'));
+          }}
+          style={{
+            padding: '4px 10px', fontSize: 11, borderRadius: 5,
+            border: '1px solid #2a2a3e', background: 'transparent',
+            color: '#a0a0b8', cursor: 'pointer',
+          }}
+        >
+          ☆ Save filters
+        </button>
+        {savedFilters.length > 0 && (
+          <details style={{ display: 'inline' }}>
+            <summary style={{ fontSize: 11, color: '#a0a0b8', cursor: 'pointer', listStyle: 'none' }}>
+              ★ Saved ({savedFilters.length})
+            </summary>
+            <div style={{
+              position: 'absolute', background: '#14141f', border: '1px solid #2a2a3e',
+              borderRadius: 8, padding: 8, zIndex: 50, minWidth: 220,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            }}>
+              {savedFilters.map(sf => (
+                <div key={sf.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0' }}>
+                  <button
+                    onClick={() => { window.location.search = sf.url; }}
+                    style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', color: '#e0e0e8', fontSize: 12, cursor: 'pointer' }}
+                  >
+                    {sf.name}
+                  </button>
+                  <button
+                    onClick={() => { deleteSavedFilter(sf.id); setSavedFilters(getSavedFilters('search')); }}
+                    style={{ background: 'none', border: 'none', color: '#606080', cursor: 'pointer', fontSize: 14, padding: '0 2px' }}
+                  >×</button>
+                </div>
+              ))}
+            </div>
+          </details>
         )}
       </div>
 
@@ -441,7 +557,7 @@ export function AdvancedSearch() {
             <tbody>
               {filtered.map((p, i) => (
                 <tr key={p.pitcher_id}
-                  onClick={() => navigate(`/player/${p.pitcher_id}`)}
+                  {...rowNavProps(navigate, `/player/${p.pitcher_id}`)}
                   className="table-row-hover"
                   style={{ borderBottom: '1px solid #1e1e2e', cursor: 'pointer' }}>
                   <td style={{ padding: '6px 10px', color: '#606080', textAlign: 'center' }}>{i + 1}</td>

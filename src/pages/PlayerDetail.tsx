@@ -3,13 +3,14 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useData } from '../data/useData';
 import { usePitchData } from '../data/usePitchData';
 import { useScoringConfig } from '../data/useScoringConfig';
+import { useGameGrades } from '../data/useMatchupData';
 import { filterPitches, DEFAULT_FILTERS, countActiveFilters, SEASON_DATE_FROM, SEASON_DATE_TO } from '../data/filterPitches';
 import { filtersToSearchParams, searchParamsToFilters } from '../data/filterUrl';
 import { computeMetrics, computeScores } from '../data/scoringEngine';
 import { GradeBadge } from '../components/GradeBadge';
 import { MetricBar } from '../components/MetricBar';
 import { DimensionRadarChart } from '../components/DimensionRadarChart';
-import { PitchMovementChart } from '../components/PitchMovementChart';
+import { MovementProfileChart } from '../components/MovementProfileChart';
 import { FilterPanel } from '../components/FilterPanel';
 import { GameLog } from '../components/GameLog';
 import { GameSummary } from '../components/GameSummary';
@@ -25,7 +26,9 @@ import { SimilarPitchers } from '../components/SimilarPitchers';
 import { CountStateHeatmap } from '../components/CountStateHeatmap';
 import { StuffDNA } from '../components/StuffDNA';
 import { NovelMetricsPanel } from '../components/NovelMetricsPanel';
+import { TTOChart } from '../components/TTOChart';
 import { TabBar } from '../components/TabBar';
+import { useTTOData } from '../data/useTTOData';
 import { usePitchAttributes } from '../data/usePitchAttributes';
 import { computeGradeAttribution } from '../data/gradeAttribution';
 import { computePitchTypeGrades } from '../data/computePitchTypeGrades';
@@ -237,6 +240,7 @@ export function PlayerDetail() {
       attributesByType={attributesByType}
       expectedPitchPlus={expectedPitchPlus}
       leagueMovement={leagueMovement}
+      season={season}
     />
   );
 }
@@ -263,6 +267,7 @@ interface InnerProps {
   attributesByType: Record<string, import('../types').AttributeGrades> | null;
   expectedPitchPlus: number | null;
   leagueMovement: import('../types').PitchAttributesData['league_movement'] | null;
+  season: import('../data/useData').Season;
 }
 
 function PlayerDetailInner({
@@ -285,7 +290,10 @@ function PlayerDetailInner({
   attributesByType,
   expectedPitchPlus,
   leagueMovement,
+  season,
 }: InnerProps) {
+  const { data: gameGradesData } = useGameGrades(season);
+  const { data: ttoData } = useTTOData(pitcher?.pitcher_id ?? null, season);
   const activeFilterCount = countActiveFilters(filters);
   const hasFilters = activeFilterCount > 0;
   const [rollingMetric, setRollingMetric] = useState<'velo' | 'whiffRate' | 'zoneRate' | 'cswRate'>('velo');
@@ -664,7 +672,7 @@ function PlayerDetailInner({
       <TabBar
         tabs={[
           { key: 'overview',  label: 'Overview' },
-          { key: 'arsenal',   label: 'Arsenal', badge: pitchTypeGrades.length > 0 ? pitchTypeGrades.length : undefined },
+          { key: 'arsenal',   label: 'Arsenal', ...(pitchTypeGrades.length > 0 && { badge: pitchTypeGrades.length }) },
           { key: 'research',  label: 'Research Lab' },
           { key: 'charts', label: 'Charts' },
           { key: 'trends', label: 'Trends' },
@@ -780,10 +788,10 @@ function PlayerDetailInner({
           </h3>
           <DimensionRadarChart
             dimensions={radarData}
-            secondaryDimensions={hasFilters ? fullSeasonRadar : leagueRadar}
+            secondaryDimensions={(hasFilters ? fullSeasonRadar : leagueRadar) ?? []}
             secondaryLabel={hasFilters ? 'Full Season' : 'League Avg (100)'}
             secondaryColor={hasFilters ? '#ffd54f' : '#ffd54f'}
-            ciBands={pitcher.dim_ci as any}
+            {...(pitcher.dim_ci && { ciBands: pitcher.dim_ci })}
           />
         </div>
 
@@ -795,8 +803,8 @@ function PlayerDetailInner({
               dimKey={d}
               pitcher={pitcher}
               weight={weights[d]}
-              filteredScore={filteredScores?.dimensions[d]}
-              filteredMetrics={filteredMetrics ?? undefined}
+              {...(filteredScores?.dimensions[d] !== undefined && { filteredScore: filteredScores.dimensions[d] })}
+              {...(filteredMetrics && { filteredMetrics })}
               hasFilters={hasFilters && filteredPitches.length > 0}
               fullSeasonOnly={fullSeasonOnly}
             />
@@ -861,6 +869,12 @@ function PlayerDetailInner({
       {/* ══════════════════════ CHARTS TAB ══════════════════════ */}
       {activeTab === 'charts' && <>
 
+      {filteredPitches.length === 0 && (
+        <div className="card" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-3)' }}>
+          No per-pitch data available for this pitcher in {season}. Charts require pitch-level data files.
+        </div>
+      )}
+
       {/* Velocity Distribution */}
       {filteredPitches.length > 30 && (
         <div className="card">
@@ -872,8 +886,14 @@ function PlayerDetailInner({
       {/* Pitch Movement from raw data */}
       {filteredPitches.length > 0 && (
         <div className="card">
-          <h3 className="card-title" style={{ marginBottom: 14 }}>Pitch Movement</h3>
-          <PitchMovementChartFromRaw pitches={filteredPitches} pitchTypeNames={pitchTypeNames} />
+          <h3 className="card-title" style={{ marginBottom: 14 }}>Pitch Movement Profile</h3>
+          <MovementProfileChart
+            pitches={filteredPitches}
+            grades={pitchTypeGrades}
+            pitchTypeNames={pitchTypeNames}
+            width={560}
+            height={380}
+          />
         </div>
       )}
 
@@ -905,6 +925,12 @@ function PlayerDetailInner({
 
       {/* ══════════════════════ TRENDS TAB ══════════════════════ */}
       {activeTab === 'trends' && <>
+
+      {pitcherRawPitches.length === 0 && (
+        <div className="card" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-3)' }}>
+          No per-pitch data available for this pitcher in {season}. Rolling performance and pitch trends require pitch-level data files.
+        </div>
+      )}
 
       {/* Rolling Performance */}
       {pitcherRawPitches.length > 10 && (
@@ -956,7 +982,7 @@ function PlayerDetailInner({
             Absorption probabilities from each count via Markov chain analysis
           </p>
           <CountStateHeatmap
-            countData={pitcher.markov_count_data as any}
+            countData={pitcher.markov_count_data}
             pitcherName={pitcher.pitcher_name}
           />
         </div>
@@ -976,78 +1002,40 @@ function PlayerDetailInner({
       {/* ══════════════════════ RESEARCH LAB TAB ══════════════════════ */}
       {activeTab === 'research' && <>
       <NovelMetricsPanel pitcherId={pitcher.pitcher_id} />
+
+      {ttoData && (
+        <div className="card">
+          <h3 className="card-title" style={{ marginBottom: 16 }}>Times Through the Order (TTO)</h3>
+          <TTOChart data={ttoData} pitchTypeNames={pitchTypeNames} />
+        </div>
+      )}
       </>}
 
       {/* ══════════════════════ GAME LOG TAB ══════════════════════ */}
-      {activeTab === 'gamelog' && <>
-
-      {pitcherRawPitches.length > 0 && (
-        <div className="card">
-          <h3 className="card-title">Game Log</h3>
-          <GameLog
-            pitches={pitcherRawPitches}
-            games={games}
-            pitcherTeam={pitcher.pitcher_team}
-            pitcherId={pitcher.pitcher_id}
-            selectedGameId={filters.gameId}
-            onSelectGame={(gid) => setFilters({ ...filters, gameId: gid })}
-          />
-        </div>
+      {activeTab === 'gamelog' && (
+        pitcherRawPitches.length > 0 ? (
+          <div className="card">
+            <h3 className="card-title">Game Log</h3>
+            <GameLog
+              pitches={pitcherRawPitches}
+              games={games}
+              pitcherTeam={pitcher.pitcher_team}
+              pitcherId={pitcher.pitcher_id}
+              selectedGameId={filters.gameId}
+              onSelectGame={(gid) => setFilters({ ...filters, gameId: gid })}
+              pitcherGameGrades={gameGradesData?.[String(pitcher.pitcher_id)] ?? null}
+            />
+          </div>
+        ) : (
+          <div className="card" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-3)' }}>
+            No per-pitch game log data available for this pitcher in {season}.
+          </div>
+        )
       )}
-
-      </>}
     </div>
   );
 }
 
-// ─── Arsenal movement chart from raw pitches ─────────────────────────────────
-
-function PitchMovementChartFromRaw({
-  pitches,
-  pitchTypeNames,
-}: {
-  pitches: RawPitch[];
-  pitchTypeNames: Record<string, string>;
-}) {
-  // Aggregate to average per pitch type
-  const typeMap = new Map<string, { sumHb: number; sumIvb: number; sumVelo: number; sumSpin: number; sumWhiff: number; swings: number; n: number }>();
-  for (const p of pitches) {
-    if (!typeMap.has(p.pt)) {
-      typeMap.set(p.pt, { sumHb: 0, sumIvb: 0, sumVelo: 0, sumSpin: 0, sumWhiff: 0, swings: 0, n: 0 });
-    }
-    const entry = typeMap.get(p.pt)!;
-    entry.sumHb += p.hb;
-    entry.sumIvb += p.ivb;
-    entry.sumVelo += p.v;
-    if (p.sp > 0) entry.sumSpin += p.sp;
-    if (p.sw) {
-      entry.swings++;
-      if (p.wh) entry.sumWhiff++;
-    }
-    entry.n++;
-  }
-
-  const total = pitches.length;
-  const aggregated = Array.from(typeMap.entries()).map(([pt, s]) => ({
-    pitch_type: pt,
-    pitch_name: pitchTypeNames[pt] ?? pt,
-    n: s.n,
-    usage_pct: s.n / total,
-    velo: s.sumVelo / s.n,
-    spin: s.sumSpin / s.n,
-    ivb: s.sumIvb / s.n,
-    hb: s.sumHb / s.n,
-    ext: 0,
-    perc_velo: s.sumVelo / s.n,
-    whiff_rate: s.swings > 0 ? s.sumWhiff / s.swings : 0,
-  }));
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <PitchMovementChart pitches={aggregated} />
-    </div>
-  );
-}
 
 // ─── Legacy Arsenal Table (from pitch_types.json) ────────────────────────────
 

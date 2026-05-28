@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { rowNavProps } from '../data/rowNavigation';
 import { useData } from '../data/useData';
 import { DimensionRadarChart } from '../components/DimensionRadarChart';
 import { GradeBadge } from '../components/GradeBadge';
@@ -51,12 +52,14 @@ export function TeamDetail() {
     );
 
     // Per-dimension top contributor
+    const firstPitcher = pitchers[0];
     const topContributors = DIMENSION_KEYS.reduce(
       (acc, d) => {
-        const top = pitchers.reduce(
+        if (!firstPitcher) return acc;
+        const top = pitchers.reduce<Pitcher>(
           (best, p) =>
-            (p.dimensions[d]?.score ?? 0) > (best?.dimensions[d]?.score ?? 0) ? p : best,
-          pitchers[0]
+            (p.dimensions[d]?.score ?? 0) > (best.dimensions[d]?.score ?? 0) ? p : best,
+          firstPitcher
         );
         acc[d] = top;
         return acc;
@@ -187,7 +190,7 @@ export function TeamDetail() {
                     cursor: 'pointer',
                     borderLeft: `3px solid ${color}`,
                   }}
-                  onClick={() => navigate(`/player/${top.pitcher_id}`)}
+                  {...rowNavProps(navigate, `/player/${top.pitcher_id}`)}
                 >
                   <div>
                     <div style={{ color: '#a0a0b8', fontSize: 11 }}>

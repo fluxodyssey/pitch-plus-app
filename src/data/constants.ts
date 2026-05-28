@@ -40,6 +40,43 @@ export const METRIC_LABELS: Record<MetricKey, string> = {
   platoon_resistance: 'Platoon Resistance',
   // v3: Pitcher Deception Index
   pitcher_deception_index: 'Deception Index (PDI)',
+  // v3.1: Stuff — spin quality & swing suppression
+  spin_direction_efficiency: 'Spin Direction Eff.',
+  bat_speed_suppression: 'Bat Speed Suppression',
+  swing_plus_suppression: 'Swing+ Suppression',
+  // v3.1: Command — novel metrics
+  obp_hr_residual: 'OBP-HR Residual',
+  race_to_2_strikes: 'Race to 2 Strikes',
+  // v3.1: Deception — zone-weighted & swing inducement
+  zone_weighted_chase: 'Zone-Weighted Chase%',
+  swing_length_inducement: 'Swing Length Inducement',
+  // v3.1: Outcomes — swing run values & barrel suppression
+  swing_rv_against: 'Swing RV Against',
+  in_zone_swing_rv: 'In-Zone Swing RV',
+  barrel_rate_against: 'Barrel Rate Against',
+  chase_swing_rv: 'Chase Swing RV',
+  // v3.1: Arsenal — diversity metrics
+  spin_diversity: 'Spin Diversity',
+  speed_diversity: 'Speed Diversity',
+  // v3.1: backtest-validated novel metrics
+  bip_adjusted_kbb: 'BIP-Adj K-BB%',
+  bip_rate: 'BIP Rate',
+  take_rv_against: 'Take RV Against',
+  called_strike_rv: 'Called Strike RV',
+  ball_rv: 'Ball RV',
+  regime_whiff_delta: 'Regime Whiff Delta',
+  velocity_adaptation: 'Velocity Adaptation',
+  mix_adaptation: 'Mix Adaptation',
+  // Markov chain metrics
+  markov_dominance: 'Markov Dominance',
+  markov_walk_risk: 'Markov Walk Risk',
+  markov_efficiency: 'Markov Efficiency',
+  markov_recovery_score: 'Markov Recovery',
+  markov_k_from_behind: 'K% from Behind',
+  // Stuff alpha / trajectory metrics
+  non_stuff_alpha: 'Non-Stuff Alpha',
+  command_alpha: 'Command Alpha',
+  trajectory_slope: 'Trajectory Slope',
 };
 
 // ─── Dimension Labels ─────────────────────────────────────────────────────
@@ -56,25 +93,34 @@ export const DIMENSION_LABELS: Record<DimensionKey, string> = {
 // ─── Dimension to Metrics Mapping ─────────────────────────────────────────
 
 export const DIMENSION_METRICS: Record<DimensionKey, MetricKey[]> = {
-  stuff: ['stuff_z', 'ssw_proxy', 'avg_perceived_velo'],
+  stuff: ['stuff_z', 'ssw_proxy', 'avg_perceived_velo', 'spin_direction_efficiency', 'bat_speed_suppression', 'swing_plus_suppression'],
   command: [
+    'bip_adjusted_kbb',
     'k_bb_pct',
     'zone_rate',
     'edge_rate',
     'loc_precision',
     'first_pitch_strike_rate',
-    'in_zone_whiff_rate',
-    'chase_rate',
-    'csw_rate',
+    'obp_hr_residual',
+    'take_rv_against',
+    'race_to_2_strikes',
+    'markov_efficiency',
+    'called_strike_rv',
+    'ball_rv',
   ],
   deception: [
     'in_zone_whiff_rate',
-    'pitcher_deception_index',
+    'zone_weighted_chase',
     'chase_rate',
     'csw_rate',
     'avg_extension',
     'fb_vaa',
+    'swing_length_inducement',
     'release_consistency',
+    'pitcher_deception_index',
+    'regime_whiff_delta',
+    'velocity_adaptation',
+    'mix_adaptation',
   ],
   tunnel_and_sequence: [
     'temporal_tunnel_tightness',
@@ -86,11 +132,25 @@ export const DIMENSION_METRICS: Record<DimensionKey, MetricKey[]> = {
     'movement_differential',
     'sequence_surprise',
   ],
-  outcomes: ['wrc_plus_against', 'k_rate', 'bb_rate', 'avg_launch_speed_against', 'gb_rate'],
+  outcomes: [
+    'swing_rv_against',
+    'in_zone_swing_rv',
+    'barrel_rate_against',
+    'chase_swing_rv',
+    'k_rate',
+    'bb_rate',
+    'bip_rate',
+    'wrc_plus_against',
+    'avg_launch_speed_against',
+    'gb_rate',
+    'markov_dominance',
+  ],
   arsenal: [
     'count_conditional_entropy',
     'arsenal_synergy',
     'best_secondary_whiff',
+    'spin_diversity',
+    'speed_diversity',
     'platoon_resistance',
     'n_pitch_types',
     'pitch_entropy',
@@ -107,20 +167,35 @@ export const LOWER_IS_BETTER = new Set<MetricKey>([
   'wrc_plus_against',
   'bb_rate',
   'avg_launch_speed_against',
+  // v3.1: run-value metrics (lower RV = pitcher wins)
+  'swing_rv_against',
+  'in_zone_swing_rv',
+  'chase_swing_rv',
+  'take_rv_against',
+  'barrel_rate_against',
+  'bip_rate',
+  'race_to_2_strikes',           // fewer pitches to 2 strikes = better
+  'obp_hr_residual',             // FIP-buster indicator
+  'markov_walk_risk',
+  'markov_efficiency',           // fewer pitches per PA = more efficient
+  'ball_rv',                     // lower ball RV = better passive command
 ]);
 
 // ─── Percentage Metrics (multiply raw × 100 for display) ──────────────────
 
 export const PCT_METRICS = new Set<MetricKey>([
   'k_bb_pct',
+  'bip_adjusted_kbb',
   'zone_rate',
   'edge_rate',
   'first_pitch_strike_rate',
   'in_zone_whiff_rate',
+  'zone_weighted_chase',
   'chase_rate',
   'csw_rate',
   'k_rate',
   'bb_rate',
+  'bip_rate',
   'gb_rate',
   'best_secondary_whiff',
   'pitcher_deception_index',     // shown as %

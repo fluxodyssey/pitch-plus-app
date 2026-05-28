@@ -20,6 +20,7 @@ const YEARS = ['2021', '2022', '2023', '2024', '2025'];
 
 // ── Status badge config ────────────────────────────────────────────────────────
 
+const FALLBACK_STATUS = { label: '', color: '', bg: '' };
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   STRONG: { label: 'Strong',  color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
   WORTH:  { label: 'Worth',   color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
@@ -77,8 +78,8 @@ function Sparkline({
   const pathD = validPts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
 
   // Color by trend direction: if improving (going in the "better" direction) → positive color
-  const last  = pts[pts.length - 1];
-  const first = pts[0];
+  const last  = pts[pts.length - 1] ?? 0;
+  const first = pts[0] ?? 0;
   const improving = direction === 'lower' ? last < first : last > first;
   const trendColor = improving ? '#10b981' : '#f43f5e';
   const lastPt = validPts[validPts.length - 1];
@@ -145,7 +146,7 @@ function MetricRow({
 }) {
   const current = yearMetrics[yearMetrics.length - 1];
   const hasData = yearMetrics.some(v => v !== null);
-  const status = STATUS_CONFIG[meta.status] ?? STATUS_CONFIG[''];
+  const status = STATUS_CONFIG[meta.status] ?? FALLBACK_STATUS;
 
   return (
     <tr style={{ borderBottom: '1px solid var(--border)', opacity: hasData ? 1 : 0.45 }}>
@@ -366,15 +367,15 @@ export function NovelMetricsPanel({ pitcherId }: Props) {
         overflow: 'hidden',
         flexWrap: 'wrap',
       }}>
-        <SummaryStat label="Swing RV" value={swingRv !== null && swingRv !== undefined ? swingRv.toFixed(3) : '—'} color={swingRv !== null && swingRv !== undefined && swingRv < 0 ? '#10b981' : '#f43f5e'} />
+        <SummaryStat label="Swing RV" value={swingRv != null ? swingRv.toFixed(3) : '—'} {...(swingRv != null && { color: swingRv < 0 ? '#10b981' : swingRv > 0 ? '#f43f5e' : '' })} />
         <div style={{ width: 1, background: 'var(--border)', alignSelf: 'stretch' }} />
-        <SummaryStat label="IZ Swing RV" value={izSwingRv !== null && izSwingRv !== undefined ? izSwingRv.toFixed(3) : '—'} />
+        <SummaryStat label="IZ Swing RV" value={izSwingRv != null ? izSwingRv.toFixed(3) : '—'} />
         <div style={{ width: 1, background: 'var(--border)', alignSelf: 'stretch' }} />
-        <SummaryStat label="Take RV" value={takeRv !== null && takeRv !== undefined ? takeRv.toFixed(3) : '—'} />
+        <SummaryStat label="Take RV" value={takeRv != null ? takeRv.toFixed(3) : '—'} />
         <div style={{ width: 1, background: 'var(--border)', alignSelf: 'stretch' }} />
-        <SummaryStat label="BIP-Adj K-BB" value={bipAdjKbb !== null && bipAdjKbb !== undefined ? `${(bipAdjKbb * 100).toFixed(1)}%` : '—'} color={bipAdjKbb !== null && bipAdjKbb !== undefined && bipAdjKbb > 0 ? '#10b981' : '#f43f5e'} />
+        <SummaryStat label="BIP-Adj K-BB" value={bipAdjKbb != null ? `${(bipAdjKbb * 100).toFixed(1)}%` : '—'} {...(bipAdjKbb != null && { color: bipAdjKbb > 0 ? '#10b981' : bipAdjKbb < 0 ? '#f43f5e' : '' })} />
         <div style={{ width: 1, background: 'var(--border)', alignSelf: 'stretch' }} />
-        <SummaryStat label="Race to 2K" value={r2k !== null && r2k !== undefined ? r2k.toFixed(2) : '—'} />
+        <SummaryStat label="Race to 2K" value={r2k != null ? r2k.toFixed(2) : '—'} />
         <div style={{ width: 1, background: 'var(--border)', alignSelf: 'stretch' }} />
         <div style={{ marginLeft: 'auto', padding: '10px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2 }}>
@@ -392,7 +393,7 @@ export function NovelMetricsPanel({ pitcherId }: Props) {
           <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <span style={{
               display: 'inline-block', width: 8, height: 8, borderRadius: 2,
-              background: STATUS_CONFIG[s].color,
+              background: STATUS_CONFIG[s]?.color ?? '',
             }} />
             <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
               {s === 'STRONG' ? 'Strong — in Pitch+ model (r>0.15, YoY>0.5)'

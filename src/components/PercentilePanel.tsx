@@ -101,7 +101,7 @@ export function PercentilePanel({ pitcher, percentiles }: Props) {
                     key={key}
                     label={label}
                     percentile={pctile}
-                    rawValue={rawStr}
+                    {...(rawStr !== undefined && { rawValue: rawStr })}
                   />
                 );
               })}

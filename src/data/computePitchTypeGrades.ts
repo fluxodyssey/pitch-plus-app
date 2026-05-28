@@ -14,7 +14,7 @@ export const PITCH_NAMES: Record<string, string> = {
 
 // ─── League average structure from scoring_config.json ───────────────────────
 
-interface LeagueAvgDetailed {
+export interface LeagueAvgDetailed {
   n: number;
   avg_velo: number;  std_velo: number;
   avg_spin: number;  std_spin: number;

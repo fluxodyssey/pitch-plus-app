@@ -17,15 +17,17 @@ import { useParams, Link } from 'react-router-dom';
 import { exportToPng, copyToClipboard } from '../data/exportImage';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, ScatterChart, Scatter, Cell, Legend,
+  ResponsiveContainer, ScatterChart, Scatter,
 } from 'recharts';
+import { MovementProfileChart } from '../components/MovementProfileChart';
 import { usePitchData } from '../data/usePitchData';
 import { useData } from '../data/useData';
 import { useScoringConfig } from '../data/useScoringConfig';
-import { pitchColor, PITCH_TYPE_COLORS } from '../data/constants';
+import { useGameGrades } from '../data/useMatchupData';
+import { pitchColor, PITCH_TYPE_COLORS, gradeColor } from '../data/constants';
 import { computePitchTypeGrades } from '../data/computePitchTypeGrades';
 import { PitchTypeGradeTable } from '../components/PitchTypeGradeTable';
-import type { RawPitch } from '../types';
+import type { RawPitch, GameGradeEntry, PitcherGameGrades } from '../types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -73,12 +75,97 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
+// ── Game Pitch+ Grade Bar ─────────────────────────────────────────────────────
+
+const DIM_LABELS_SHORT: Record<string, string> = {
+  stuff: 'Stuff', command: 'Cmd', deception: 'Dec',
+  tunnel_and_sequence: 'Tun', outcomes: 'Out', arsenal: 'Ars',
+};
+
+function GameGradeBar({ gameGrade, seasonGrades }: {
+  gameGrade: GameGradeEntry;
+  seasonGrades: PitcherGameGrades['season_grades'];
+}) {
+  const dims = ['stuff', 'command', 'deception', 'tunnel_and_sequence', 'outcomes', 'arsenal'] as const;
+  const pp = gameGrade.pitch_plus;
+  const delta = gameGrade.deltas.pitch_plus;
+  const color = gradeColor(pp);
+
+  return (
+    <div style={{ marginTop: 16, padding: '14px 16px', background: '#14141f', borderRadius: 8, border: '1px solid #1e1e2e' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 12 }}>
+        {/* Pitch+ badge */}
+        <div style={{
+          background: color + '20', border: `2px solid ${color}`,
+          borderRadius: 10, padding: '8px 18px', textAlign: 'center',
+        }}>
+          <div style={{ color: '#606080', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.8 }}>Pitch+</div>
+          <div style={{ color, fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{pp.toFixed(0)}</div>
+        </div>
+        <div>
+          {/* Delta */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <span style={{
+              color: delta > 0 ? '#10b981' : delta < 0 ? '#ef4444' : '#a0a0b8',
+              fontWeight: 700, fontSize: 15,
+            }}>
+              {delta > 0 ? `+${delta.toFixed(0)}` : delta.toFixed(0)} vs season avg
+            </span>
+            <span style={{ color: '#606080', fontSize: 13 }}>({seasonGrades.pitch_plus.toFixed(0)} season)</span>
+          </div>
+          <div style={{ color: '#606080', fontSize: 12 }}>
+            {gameGrade.n_pitches} pitches · {gameGrade.opp && `vs ${gameGrade.opp}`}
+          </div>
+        </div>
+      </div>
+
+      {/* Dimension mini-bars */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
+        {dims.map((dk) => {
+          const score = gameGrade[dk] ?? 100;
+          const season = seasonGrades[dk] ?? 100;
+          const d = score - season;
+          const c = gradeColor(score);
+          return (
+            <div key={dk} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 9, color: '#606080', marginBottom: 3, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {DIM_LABELS_SHORT[dk]}
+              </div>
+              <div style={{
+                background: c + '25', border: `1px solid ${c}44`,
+                borderRadius: 5, padding: '3px 0',
+                color: c, fontSize: 13, fontWeight: 700,
+              }}>
+                {score.toFixed(0)}
+              </div>
+              <div style={{
+                fontSize: 10, marginTop: 2,
+                color: d > 0 ? '#10b981' : d < 0 ? '#ef4444' : '#606080',
+              }}>
+                {d > 0 ? `+${d.toFixed(0)}` : d.toFixed(0)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function StartReport() {
   const { id, gameId } = useParams<{ id: string; gameId: string }>();
-  const { loadForPitcher, pitches: allPitches, games, loading } = usePitchData();
-  const { data: appData } = useData();
+  const { data: appData, season } = useData();
+  const { loadForPitcher, pitches: allPitches, games, loading } = usePitchData(season);
   const { config: scoringConfig } = useScoringConfig();
+  const { data: gameGradesData } = useGameGrades(season);
   const seasonPitchTypes = appData?.pitchTypes.pitchers[id!] ?? null;
+
+  // Find this game's grade data
+  const pitcherGameGrades = id ? gameGradesData?.[id] : null;
+  const thisGameGrade = useMemo(() => {
+    if (!pitcherGameGrades || !gameId) return null;
+    return pitcherGameGrades.games.find((g) => String(g.game_id) === gameId) ?? null;
+  }, [pitcherGameGrades, gameId]);
 
   useEffect(() => {
     if (id) loadForPitcher(Number(id));
@@ -183,12 +270,19 @@ export function StartReport() {
     pitches.filter(p => p.et === 'hit_by_pitch' || p.desc?.toLowerCase().includes('hit by pitch')).length,
   [pitches]);
 
+  // Derived display values — safe to compute before early returns (all expressions handle empty pitches)
+  const pitcherName = pitches[0]?.pn ?? (id ? `Pitcher #${id}` : 'Unknown Pitcher');
+  const gameDate    = gameInfo?.date ?? pitches[0]?.gd ?? '';
+  const opponent    = gameInfo ? `${gameInfo.away} @ ${gameInfo.home}` : '';
+
   // Export ref
   const exportRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
+  const [logPage, setLogPage] = useState(0);
+  const LOG_PAGE_SIZE = 30;
 
   const handleExport = async (mode: 'png' | 'clipboard') => {
-    if (!exportRef.current) return;
+    if (!exportRef.current || loading) return;
     setExporting(true);
     try {
       const filename = `${pitcherName.replace(/\s+/g, '_')}_${gameDate}.png`;
@@ -215,10 +309,6 @@ export function StartReport() {
       </div>
     );
   }
-
-  const pitcherName = pitches[0]?.pn ?? `Pitcher ${id}`;
-  const gameDate    = gameInfo?.date ?? pitches[0]?.gd ?? '';
-  const opponent    = gameInfo ? `${gameInfo.away} @ ${gameInfo.home}` : '';
 
   return (
     <div className="page" ref={exportRef}>
@@ -250,6 +340,13 @@ export function StartReport() {
               <StatBox label="Inn" value={summary.innings} />
               {hbpCount > 0 && <StatBox label="HBP" value={hbpCount} />}
             </div>
+          )}
+          {/* Game-level Pitch+ grades (when game_grades_{year}.json is available) */}
+          {thisGameGrade && pitcherGameGrades && (
+            <GameGradeBar
+              gameGrade={thisGameGrade}
+              seasonGrades={pitcherGameGrades.season_grades}
+            />
           )}
         </div>
         {/* Export buttons */}
@@ -340,27 +437,14 @@ export function StartReport() {
         </Section>
 
         <Section title="Pitch Breaks (iVB vs HB)">
-          <ResponsiveContainer width="100%" height={280}>
-            <ScatterChart margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" />
-              <XAxis type="number" dataKey="hb" tick={{ fill: '#606080', fontSize: 10 }} stroke="#2a2a3e"
-                label={{ value: 'HB (in)', position: 'insideBottom', offset: -10, fill: '#606080', fontSize: 10 }} />
-              <YAxis type="number" dataKey="ivb" tick={{ fill: '#606080', fontSize: 10 }} stroke="#2a2a3e"
-                label={{ value: 'iVB (in)', angle: -90, position: 'insideLeft', fill: '#606080', fontSize: 10 }} />
-              <Tooltip cursor={false}
-                contentStyle={{ background: '#16162a', border: '1px solid #2a2a3e', borderRadius: 6, fontSize: 12 }}
-                formatter={(_, __, props) => [
-                  `${pName(props.payload.pt)} · ${props.payload.v.toFixed(1)} mph`,
-                  `iVB ${props.payload.ivb.toFixed(1)} · HB ${props.payload.hb.toFixed(1)}`,
-                ]} />
-              {pitchTypes.map(pt => (
-                <Scatter key={pt.pt} name={pName(pt.pt)}
-                  data={pitches.filter(p => p.pt === pt.pt && p.ivb != null && p.hb != null)
-                    .map(p => ({ hb: p.hb, ivb: p.ivb, pt: p.pt, v: p.v }))}
-                  fill={pitchColor(pt.pt)} fillOpacity={0.7} r={4} />
-              ))}
-            </ScatterChart>
-          </ResponsiveContainer>
+          <MovementProfileChart
+            pitches={pitches}
+            grades={ptGrades}
+            compact
+            showTable={false}
+            width={340}
+            height={260}
+          />
         </Section>
 
         <Section title={`Locations vs RHH (${pitchesVsRHH.length})`}>
@@ -406,12 +490,13 @@ export function StartReport() {
               </tr>
             </thead>
             <tbody>
-              {pitches.map((p, i) => {
+              {pitches.slice(logPage * LOG_PAGE_SIZE, (logPage + 1) * LOG_PAGE_SIZE).map((p, i) => {
+                const pitchNum = logPage * LOG_PAGE_SIZE + i + 1;
                 const resultColor = p.wh ? '#d44040' : p.sw && !p.ip ? '#4a6494' : p.ip ? '#4a9eff' : '#a0a0b8';
                 const resultLabel = p.et ? p.et.replace(/_/g, ' ') : p.desc;
                 return (
                   <tr key={p.pid} style={{ borderBottom: '1px solid #111118', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
-                    <td style={{ padding: '5px 8px', color: '#606080', textAlign: 'center' }}>{i + 1}</td>
+                    <td style={{ padding: '5px 8px', color: '#606080', textAlign: 'center' }}>{pitchNum}</td>
                     <td style={{ padding: '5px 8px', color: '#a0a0b8', textAlign: 'center' }}>{p.inn}</td>
                     <td style={{ padding: '5px 8px', color: '#a0a0b8', textAlign: 'center', fontFamily: 'monospace' }}>{p.b}-{p.s}</td>
                     <td style={{ padding: '5px 8px', color: '#e0e0e8', whiteSpace: 'nowrap' }}>{p.bn}</td>
@@ -434,6 +519,32 @@ export function StartReport() {
             </tbody>
           </table>
         </div>
+        {pitches.length > LOG_PAGE_SIZE && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 10 }}>
+            <button
+              disabled={logPage === 0}
+              onClick={() => setLogPage(p => p - 1)}
+              style={{
+                padding: '5px 12px', fontSize: 11, borderRadius: 6,
+                border: '1px solid #2a2a3e', background: '#1a1a2e', color: logPage === 0 ? '#404060' : '#e0e0e8',
+                cursor: logPage === 0 ? 'default' : 'pointer',
+              }}
+            >Prev</button>
+            <span style={{ color: '#a0a0b8', fontSize: 11 }}>
+              {logPage * LOG_PAGE_SIZE + 1}–{Math.min((logPage + 1) * LOG_PAGE_SIZE, pitches.length)} of {pitches.length}
+            </span>
+            <button
+              disabled={(logPage + 1) * LOG_PAGE_SIZE >= pitches.length}
+              onClick={() => setLogPage(p => p + 1)}
+              style={{
+                padding: '5px 12px', fontSize: 11, borderRadius: 6,
+                border: '1px solid #2a2a3e', background: '#1a1a2e',
+                color: (logPage + 1) * LOG_PAGE_SIZE >= pitches.length ? '#404060' : '#e0e0e8',
+                cursor: (logPage + 1) * LOG_PAGE_SIZE >= pitches.length ? 'default' : 'pointer',
+              }}
+            >Next</button>
+          </div>
+        )}
       </Section>
 
     </div>
