@@ -280,6 +280,11 @@ export interface Batter {
   chase_whiff_rate: number;
   bad_chase_rate: number;
   deceptive_chase_rate: number;
+  // BDQ v2: primary discipline metric — swing-decision run value per 100
+  // out-of-zone pitches (higher = better). bad_chase_rate is now secondary
+  // ("chase composition"). See models/run_value.py.
+  n_ooz?: number;
+  ooz_decision_rv?: number;
 }
 
 export interface BatterBDQData {

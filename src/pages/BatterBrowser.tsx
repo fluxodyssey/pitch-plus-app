@@ -7,7 +7,7 @@ import { GradeBadge } from '../components/GradeBadge';
 import { scoreColor } from '../data/constants';
 import { useData } from '../data/useData';
 import { useBatterOutcomes } from '../data/useMatchupData';
-import { fetchJson, isJsonResponse } from '../data/fetchJson';
+import { isJsonResponse } from '../data/fetchJson';
 import type { Batter, BatterBDQData, BatterOutcomesData, Hitter, EnrichedHitter, SwingPlusMetrics } from '../types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -24,26 +24,48 @@ function useBatterData(season: number) {
   const [hittersError, setHittersError] = useState<string | null>(null);
   const loadedSeason = useRef<number | null>(null);
 
-  useEffect(() => {
-    fetchJson<BatterBDQData>('/data/batter_bdq.json')
-      .then(setBdq)
-      .catch((e) => { console.error(e); setBdqError(String(e)); });
-  }, []);
-
+  // Year-specific load for both BDQ and Swing+. Fall back to legacy flat files
+  // only if they match the requested season (per their metadata.source).
   useEffect(() => {
     if (loadedSeason.current === season) return;
     loadedSeason.current = season;
+    setBdq(null);
     setRawHitters(null);
+    setBdqError(null);
     setHittersError(null);
-    // Try season-specific file first, fall back to legacy hitters.json.
+
+    const expectedSource = `mlb_${season}`;
+
+    // Year-specific files only. No silent fallback to flat files — a missing or
+    // wrong-season file must fail loud (the flat files silently served 2025 data
+    // under any year label, which is the bug this page used to have).
+
+    // ── BDQ ──
+    fetch(`/data/batter_bdq_${season}.json`)
+      .then(r => {
+        if (!isJsonResponse(r)) throw new Error(`No BDQ data for ${season} (HTTP ${r.status})`);
+        return r.json();
+      })
+      .then((data: BatterBDQData) => {
+        if (data?.metadata?.source !== expectedSource) {
+          throw new Error(`BDQ source mismatch for ${season}: file reports ${data?.metadata?.source}`);
+        }
+        setBdq(data);
+      })
+      .catch((e) => { console.error(e); setBdqError(String(e)); });
+
+    // ── Swing+ hitters (wrapped { hitters, metadata }) ──
     fetch(`/data/hitters_${season}.json`)
-      .then(r => isJsonResponse(r) ? r.json() : fetch('/data/hitters.json').then(r2 => {
-        if (!isJsonResponse(r2)) throw new Error(`hitters.json: HTTP ${r2.status}`);
-        return r2.json();
-      }))
+      .then(r => {
+        if (!isJsonResponse(r)) throw new Error(`No Swing+ data for ${season} (HTTP ${r.status})`);
+        return r.json();
+      })
       .then((data) => {
-        // hitters_{year}.json wraps in { hitters: [...] }; legacy is a flat array
-        setRawHitters(Array.isArray(data) ? data : (data.hitters ?? []));
+        const src = Array.isArray(data) ? null : data?.metadata?.source;
+        if (src !== expectedSource) {
+          throw new Error(`Swing+ source mismatch for ${season}: file reports ${src}`);
+        }
+        setRawHitters(data.hitters ?? []);
       })
       .catch((e) => { console.error(e); setHittersError(String(e)); });
   }, [season]);
@@ -148,6 +170,18 @@ function bdqGrade(r: number): { label: string; color: string } {
   if (r < 0.75) return { label: 'Below Avg', color: '#6878a0' };
   if (r < 0.85) return { label: 'Poor', color: '#4a6494' };
   return { label: 'Very Poor', color: '#3a5080' };
+}
+
+// Primary discipline grade: swing-decision run value per 100 OOZ pitches
+// (higher = better). League average ≈ +2.5; elite takers clear +3.5.
+function rvGrade(rv: number | undefined): { label: string; color: string } {
+  const v = rv ?? 0;
+  if (v >= 3.5) return { label: 'Elite', color: '#2ec27e' };
+  if (v >= 3.0) return { label: 'Above Avg', color: '#5fb87a' };
+  if (v >= 2.3) return { label: 'Average', color: '#a0a0b8' };
+  if (v >= 1.7) return { label: 'Below Avg', color: '#c89060' };
+  if (v >= 1.0) return { label: 'Poor', color: '#c85a5a' };
+  return { label: 'Very Poor', color: '#a04040' };
 }
 
 // ─── Shared UI ────────────────────────────────────────────────────────────────
@@ -387,8 +421,8 @@ function BDQTab({ bdq }: { bdq: BatterBDQData }) {
   const [search, setSearch] = useState('');
   const [teamFilter, setTeamFilter] = useState('all');
   const [handFilter, setHandFilter] = useState<'all' | 'L' | 'R'>('all');
-  const [sortKey, setSortKey] = useState<'bad_chase_rate' | 'deceptive_chase_rate' | 'n_chases'>('bad_chase_rate');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [sortKey, setSortKey] = useState<'ooz_decision_rv' | 'bad_chase_rate' | 'deceptive_chase_rate' | 'n_chases'>('ooz_decision_rv');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [minChases, setMinChases] = useState(50);
 
   const teams = useMemo(() =>
@@ -403,7 +437,7 @@ function BDQTab({ bdq }: { bdq: BatterBDQData }) {
       .filter(b => teamFilter === 'all' || b.batter_team === teamFilter)
       .filter(b => handFilter === 'all' || b.batter_hand === handFilter)
       .sort((a, b) => {
-        const d = (a[sortKey] as number) - (b[sortKey] as number);
+        const d = ((a[sortKey] as number | undefined) ?? 0) - ((b[sortKey] as number | undefined) ?? 0);
         return sortDir === 'asc' ? d : -d;
       }),
     [bdq, search, teamFilter, handFilter, sortKey, sortDir, minChases]
@@ -411,6 +445,7 @@ function BDQTab({ bdq }: { bdq: BatterBDQData }) {
 
   function handleSort(k: typeof sortKey) {
     if (k === sortKey) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    // bad_chase_rate is "lower = better"; all others are "higher = better".
     else { setSortKey(k); setSortDir(k === 'bad_chase_rate' ? 'asc' : 'desc'); }
   }
 
@@ -437,9 +472,9 @@ function BDQTab({ bdq }: { bdq: BatterBDQData }) {
           <div style={{ color: '#a0a0b8', fontSize: 12 }}>Deceptive vs bad chases (2025 MLB)</div>
         </div>
         <div>
-          <div style={{ color: '#4a9eff', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>League Average</div>
-          <div style={{ color: '#e0e0e8', fontSize: 18, fontWeight: 700, marginTop: 4 }}>64.8% bad chase rate</div>
-          <div style={{ color: '#a0a0b8', fontSize: 12 }}>Most chases are avoidable decisions</div>
+          <div style={{ color: '#4a9eff', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Primary Metric</div>
+          <div style={{ color: '#e0e0e8', fontSize: 18, fontWeight: 700, marginTop: 4 }}>Decision RV / 100 OOZ</div>
+          <div style={{ color: '#a0a0b8', fontSize: 12 }}>Run value of swing/take on out-of-zone pitches (higher = better)</div>
         </div>
       </div>
 
@@ -471,6 +506,7 @@ function BDQTab({ bdq }: { bdq: BatterBDQData }) {
               <th style={{ padding: '10px 14px', textAlign: 'left', color: '#606080', ...stickyHeaderStyle }}>Team</th>
               <th style={{ padding: '10px 14px', textAlign: 'center', color: '#606080', ...stickyHeaderStyle }}>H</th>
               <th style={{ padding: '10px 14px', textAlign: 'center', color: '#606080', ...stickyHeaderStyle }}>Grade</th>
+              <SortHdr k="ooz_decision_rv" label="Decision RV" />
               <SortHdr k="bad_chase_rate" label="Bad Chase%" />
               <SortHdr k="deceptive_chase_rate" label="Dec Chase%" />
               <SortHdr k="n_chases" label="Chases" />
@@ -481,7 +517,8 @@ function BDQTab({ bdq }: { bdq: BatterBDQData }) {
           </thead>
           <tbody>
             {filtered.map((b, i) => {
-              const g = bdqGrade(b.bad_chase_rate);
+              const g = rvGrade(b.ooz_decision_rv);
+              const rv = b.ooz_decision_rv ?? 0;
               return (
                 <tr key={b.batter_id} style={{ borderBottom: '1px solid #1a1a2e', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
                   <td style={{ padding: '9px 14px', color: '#606080' }}>{i + 1}</td>
@@ -491,14 +528,8 @@ function BDQTab({ bdq }: { bdq: BatterBDQData }) {
                   <td style={{ padding: '9px 14px', textAlign: 'center' }}>
                     <span style={{ background: g.color + '22', color: g.color, borderRadius: 4, padding: '2px 8px', fontSize: 12, fontWeight: 600 }}>{g.label}</span>
                   </td>
-                  <td style={{ padding: '9px 14px', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-                      <div style={{ width: 56, height: 5, background: '#1e1e2e', borderRadius: 3, overflow: 'hidden' }}>
-                        <div style={{ width: `${b.bad_chase_rate * 100}%`, height: '100%', background: g.color, borderRadius: 3 }} />
-                      </div>
-                      <span style={{ color: '#e0e0e8', minWidth: 44, textAlign: 'right', fontFamily: 'monospace' }}>{pct(b.bad_chase_rate)}</span>
-                    </div>
-                  </td>
+                  <td style={{ padding: '9px 14px', textAlign: 'right', color: g.color, fontFamily: 'monospace', fontWeight: 600 }}>{rv >= 0 ? '+' : ''}{rv.toFixed(2)}</td>
+                  <td style={{ padding: '9px 14px', textAlign: 'right', color: '#a0a0b8', fontFamily: 'monospace' }}>{pct(b.bad_chase_rate)}</td>
                   <td style={{ padding: '9px 14px', textAlign: 'right', color: '#4a9eff', fontFamily: 'monospace' }}>{pct(b.deceptive_chase_rate)}</td>
                   <td style={{ padding: '9px 14px', textAlign: 'right', color: '#a0a0b8' }}>{b.n_chases}</td>
                   <td style={{ padding: '9px 14px', textAlign: 'right', color: '#a0a0b8', fontFamily: 'monospace' }}>{pct(b.chase_whiff_rate)}</td>
