@@ -1,7 +1,7 @@
 import { PercentileGauge } from './PercentileGauge';
 import type { PercentileEntry } from '../data/percentiles';
 import type { Pitcher, MetricKey } from '../types';
-import { METRIC_LABELS, PCT_METRICS } from '../data/constants';
+import { PCT_METRICS } from '../data/constants';
 
 interface Props {
   pitcher: Pitcher;

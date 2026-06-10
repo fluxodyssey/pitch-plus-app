@@ -119,7 +119,7 @@ export function GameLog({ pitches, games, pitcherTeam, pitcherId, selectedGameId
     return <span style={{ color: '#4a9eff' }}>{sortAsc ? ' ↑' : ' ↓'}</span>;
   }
 
-  const thStyle = (col: SortCol) => ({
+  const thStyle = (_col: SortCol) => ({
     padding: '8px 10px',
     color: '#a0a0b8',
     borderBottom: '2px solid #1e1e2e',

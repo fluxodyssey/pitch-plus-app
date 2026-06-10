@@ -12,16 +12,10 @@ export const PITCH_NAMES: Record<string, string> = {
   FO: 'Forkball',
 };
 
-// ─── League average structure from scoring_config.json ───────────────────────
-
-export interface LeagueAvgDetailed {
-  n: number;
-  avg_velo: number;  std_velo: number;
-  avg_spin: number;  std_spin: number;
-  avg_ivb: number;   std_ivb: number;
-  avg_hb: number;    std_hb: number;
-  avg_ext: number;   std_ext: number;
-}
+// League average structure lives in types.ts (it is part of the
+// scoring_config.json contract); re-exported here for existing importers.
+import type { LeagueAvgDetailed } from '../types';
+export type { LeagueAvgDetailed };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

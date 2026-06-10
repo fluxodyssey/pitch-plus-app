@@ -1,5 +1,5 @@
 import { useRef, useEffect, useMemo } from 'react';
-import { pitchColor, PITCH_TYPE_COLORS } from '../data/constants';
+import { pitchColor } from '../data/constants';
 import type { RawPitch } from '../types';
 
 interface Props {

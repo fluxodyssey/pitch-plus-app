@@ -114,13 +114,3 @@ export function useNovelMetrics(pitcherId: number | string | null | undefined): 
   return { data, meta, loading: !_cache };
 }
 
-/**
- * Get a sorted list of all metric keys by |r_test| (most predictive first).
- */
-export function sortedByPredictiveness(
-  meta: Record<NovelMetricKey, MetricMeta>
-): NovelMetricKey[] {
-  return (Object.keys(meta) as NovelMetricKey[]).sort(
-    (a, b) => Math.abs(meta[b].r_test) - Math.abs(meta[a].r_test)
-  );
-}

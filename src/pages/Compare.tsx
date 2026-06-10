@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useState } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useData } from '../data/useData';
 import { usePitchData } from '../data/usePitchData';
 import { useScoringConfig } from '../data/useScoringConfig';
@@ -20,7 +20,6 @@ export function Compare() {
   // Support both old route params (/compare/:id1/:id2) and new query params (?ids=1,2,3)
   const { id1, id2 } = useParams<{ id1?: string; id2?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   const { data, season } = useData();
   const { config: scoringConfig } = useScoringConfig();
 
@@ -209,7 +208,7 @@ export function Compare() {
                     {DIMS.map(d => (
                       <tr key={d} style={{ borderBottom: '1px solid #1e1e2e' }}>
                         <td style={{ padding: '6px 10px', color: '#a0a0b8', fontSize: 12 }}>{DIMENSION_LABELS[d]}</td>
-                        {selectedPitchers.map((p, i) => {
+                        {selectedPitchers.map((p) => {
                           const score = p.dimensions[d]?.score ?? 0;
                           return (
                             <td key={p.pitcher_id} style={{ padding: '6px 10px', textAlign: 'center' }}>
@@ -221,7 +220,7 @@ export function Compare() {
                     ))}
                     <tr style={{ borderTop: '2px solid #2a2a3e' }}>
                       <td style={{ padding: '8px 10px', color: '#e0e0e8', fontWeight: 600 }}>Pitch+</td>
-                      {selectedPitchers.map((p, i) => (
+                      {selectedPitchers.map((p) => (
                         <td key={p.pitcher_id} style={{ padding: '8px 10px', textAlign: 'center' }}>
                           <GradeBadge score={p.pitch_plus} size="sm" />
                         </td>

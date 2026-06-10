@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { rowNavProps } from '../data/rowNavigation';
 import { GradeBadge } from './GradeBadge';
-import { scoreColor, scoreColorContinuous, pitchColor } from '../data/constants';
+import { scoreColorContinuous, pitchColor } from '../data/constants';
 import { computePercentiles } from '../data/percentiles';
 import type { Pitcher, DimensionKey, PitchTypesData } from '../types';
 

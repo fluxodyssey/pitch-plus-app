@@ -17,7 +17,7 @@ function makePitcher(overrides: Partial<Pitcher> & { pitcher_id: number; pitcher
       outcomes: { score: 100, grade: 'B' },
       arsenal: { score: 100, grade: 'B' },
     },
-    metric_grades: {} as any,
+    metric_grades: {} as Pitcher['metric_grades'],
     ...overrides,
   };
 }
@@ -25,7 +25,7 @@ function makePitcher(overrides: Partial<Pitcher> & { pitcher_id: number; pitcher
 function makeData(pitchers: Pitcher[]): PitchersData {
   return {
     metadata: { generated: '2026-03-24', n_pitchers: pitchers.length, n_pitches: 1000, n_games: 10, model_version: 'v3.0' },
-    population_stats: {} as any,
+    population_stats: {} as PitchersData['population_stats'],
     dimension_weights: { stuff: 0.15, command: 0.21, deception: 0.18, tunnel_and_sequence: 0.09, outcomes: 0.22, arsenal: 0.15 },
     pitchers,
   };

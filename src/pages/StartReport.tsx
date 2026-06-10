@@ -24,7 +24,7 @@ import { usePitchData } from '../data/usePitchData';
 import { useData } from '../data/useData';
 import { useScoringConfig } from '../data/useScoringConfig';
 import { useGameGrades } from '../data/useMatchupData';
-import { pitchColor, PITCH_TYPE_COLORS, gradeColor } from '../data/constants';
+import { pitchColor, gradeColor } from '../data/constants';
 import { computePitchTypeGrades } from '../data/computePitchTypeGrades';
 import { PitchTypeGradeTable } from '../components/PitchTypeGradeTable';
 import type { RawPitch, GameGradeEntry, PitcherGameGrades } from '../types';
@@ -40,7 +40,6 @@ const PITCH_NAMES: Record<string, string> = {
 };
 
 function pName(pt: string) { return PITCH_NAMES[pt] ?? pt; }
-function pct(n: number, d: number) { return d > 0 ? (n / d * 100).toFixed(1) + '%' : '—'; }
 function fmt(v: number | null | undefined, dec = 1) { return v != null ? v.toFixed(dec) : '—'; }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -185,7 +184,6 @@ export function StartReport() {
     if (!pitches.length) return null;
     const swings   = pitches.filter(p => p.sw);
     const whiffs   = pitches.filter(p => p.wh);
-    const inPlay   = pitches.filter(p => p.ip);
     const strikeouts = pitches.filter(p => p.et === 'strikeout').length;
     const walks      = pitches.filter(p => p.et === 'walk').length;
     const hits       = pitches.filter(p => ['single','double','triple','home_run'].includes(p.et ?? '')).length;
@@ -258,7 +256,7 @@ export function StartReport() {
   // Per-pitch-type grades
   const ptGrades = useMemo(() => {
     if (!pitches.length || !scoringConfig) return [];
-    return computePitchTypeGrades(pitches, scoringConfig.league_averages as Record<string, any>);
+    return computePitchTypeGrades(pitches, scoringConfig.league_averages);
   }, [pitches, scoringConfig]);
 
   // Split pitches by batter hand for location charts

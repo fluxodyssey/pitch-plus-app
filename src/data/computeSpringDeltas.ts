@@ -1,4 +1,4 @@
-import type { PitchersData, PitchTypesData, Pitcher, DimensionKey, MetricKey } from '../types';
+import type { PitchersData, PitchTypesData, Pitcher, DimensionKey } from '../types';
 
 // ─── Delta Types ─────────────────────────────────────────────────────────────
 

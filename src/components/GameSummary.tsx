@@ -196,11 +196,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
   const tdNum = (
     value: number | null,
     fmt: (v: number) => string,
-    lgKey?: string,
-    higher = true
   ) => {
-    const lgVal = lgKey ? (lgAvgs[lgKey] as Record<string, number> | undefined) : undefined;
-    // lgAvgs are keyed by pitch type; for "all", we don't color-code
     const bg = 'transparent';
     return (
       <td
@@ -346,7 +342,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                         color: '#e0e0e8',
                         fontSize: 12,
                         fontFamily: 'monospace',
-                        background: diffBg(row.whiffRate, lg?.avg_whiff_rate, true),
+                        background: 'transparent',
                       }}
                     >
                       {row.whiffRate != null ? `${(row.whiffRate * 100).toFixed(1)}%` : '—'}
@@ -358,7 +354,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                         color: '#e0e0e8',
                         fontSize: 12,
                         fontFamily: 'monospace',
-                        background: diffBg(row.zoneRate, lg?.avg_zone_rate, true),
+                        background: 'transparent',
                       }}
                     >
                       {row.zoneRate != null ? `${(row.zoneRate * 100).toFixed(1)}%` : '—'}
@@ -370,7 +366,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                         color: '#e0e0e8',
                         fontSize: 12,
                         fontFamily: 'monospace',
-                        background: diffBg(row.chaseRate, lg?.avg_chase_rate, true),
+                        background: 'transparent',
                       }}
                     >
                       {row.chaseRate != null ? `${(row.chaseRate * 100).toFixed(1)}%` : '—'}

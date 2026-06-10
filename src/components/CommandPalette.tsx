@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useData, AVAILABLE_SEASONS, setGlobalSeason, getGlobalSeason, hasMatchupData } from '../data/useData';
 import { GradeBadge } from './GradeBadge';
-import type { Pitcher } from '../types';
 
 // ─── Fuzzy scoring ───────────────────────────────────────────────────────────
 

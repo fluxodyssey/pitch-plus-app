@@ -144,20 +144,10 @@ export interface Pitcher {
   trajectory_confidence?: number | null;
   seasons_observed?: number | null;
 
-  // IAA fields (from induced_attack_angle.py --merge)
-  // iaa_score composite NOT injected — failed decile monotonicity test (Spearman r≈0).
-  // iaa_fb:  YoY r=0.706, r=-0.126** vs avg EV — future Stuff candidate (display only for now)
-  // iaa_brk: YoY r=0.223 (unstable), r=-0.133* vs wRC+ — display only, MIN_n_brk=75
-  iaa_fb?: number | null;         // fastball IAA score (100=avg, σ=15) — validated
-  iaa_brk?: number | null;        // breaking ball IAA score — display only, small-sample caution
-  iaa_os?: number | null;         // offspeed IAA score — display only, no confirmed signal
-  iaa_n_contacts?: number | null; // total tracked contacts used for IAA
+  // IAA and per-pitcher bootstrap CI scalars were removed 2026-06-09: no
+  // pitchers_{year}.json has carried them (re-add when the model merges them;
+  // IAA validation notes live in models/CLAUDE.md).
 
-  // Bootstrap CI fields (from --bootstrap flag)
-  ci_p10?: number | null;
-  ci_p50?: number | null;
-  ci_p90?: number | null;
-  ci_width?: number | null;
   /** Per-dimension CI bands: { stuff: { p10, p90 }, command: { p10, p90 }, … } */
   dim_ci?: Partial<Record<DimensionKey, { p10: number; p90: number }>>;
   /** Per-count Markov absorption data for count-state heatmap */
@@ -468,6 +458,16 @@ export interface GameLogEntry {
   er?: number;  // earned runs
 }
 
+/** Per-pitch-type league averages in scoring_config.json (written by the Python pipeline). */
+export interface LeagueAvgDetailed {
+  n: number;
+  avg_velo: number;  std_velo: number;
+  avg_spin: number;  std_spin: number;
+  avg_ivb: number;   std_ivb: number;
+  avg_hb: number;    std_hb: number;
+  avg_ext: number;   std_ext: number;
+}
+
 export interface ScoringConfig {
   dimensions: Record<string, {
     label: string;
@@ -475,7 +475,7 @@ export interface ScoringConfig {
     metrics: Array<{ key: string; direction: string; weight: number }>;
   }>;
   population_stats: Record<string, { mean: number; std: number; p25: number; p75: number }>;
-  league_averages: Record<string, Record<string, number>>;
+  league_averages: Record<string, LeagueAvgDetailed>;
   fastball_types: string[];
   recomputable_metrics: string[];
   fullseason_only_metrics: string[];

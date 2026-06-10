@@ -1,6 +1,5 @@
 import type { Pitcher, DimensionKey, AttributeGrades } from '../types';
 import type { PercentileEntry } from './percentiles';
-import { DIMENSION_LABELS, METRIC_LABELS } from './constants';
 
 export interface GradeDriver {
   label: string;
@@ -13,28 +12,6 @@ export interface DimensionExplanation {
   score: number;
   drivers: GradeDriver[];   // up to 3, sorted by impact magnitude
   summary: string;
-}
-
-const ATTR_LABELS: Record<string, string> = {
-  velo: 'velocity',
-  spin: 'spin rate',
-  movement: 'movement',
-  location: 'location',
-  extension: 'extension',
-  spin_efficiency: 'spin efficiency',
-  overall: 'overall stuff',
-};
-
-function pitchTypeLabel(pt: string): string {
-  return pt; // just show the code; UI will resolve to full name
-}
-
-function pctLabel(pct: number): string {
-  if (pct >= 95) return `elite (${pct}th)`;
-  if (pct >= 80) return `above avg (${pct}th)`;
-  if (pct >= 55) return `avg (${pct}th)`;
-  if (pct >= 25) return `below avg (${pct}th)`;
-  return `poor (${pct}th)`;
 }
 
 function contribution(pct: number): GradeDriver['contribution'] {

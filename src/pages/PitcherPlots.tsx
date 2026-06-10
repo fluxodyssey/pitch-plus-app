@@ -181,7 +181,7 @@ export function PitcherPlots() {
 
   const pitchTypeGrades = useMemo(() => {
     if (filteredPitches.length === 0 || !scoringConfig) return [];
-    return computePitchTypeGrades(filteredPitches, scoringConfig.league_averages as Record<string, any>, PITCH_NAMES);
+    return computePitchTypeGrades(filteredPitches, scoringConfig.league_averages, PITCH_NAMES);
   }, [filteredPitches, scoringConfig]);
 
   return (

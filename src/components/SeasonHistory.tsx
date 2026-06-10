@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { LineChart, Line, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useData, AVAILABLE_SEASONS, type Season } from '../data/useData';
-import { scoreColorContinuous, gradeColor, PCT_METRICS } from '../data/constants';
+import { scoreColorContinuous, gradeColor } from '../data/constants';
 import { usePitcherSparklines, usePitcherTrajectory } from '../data/useSparklines';
 import type { MetricKey } from '../types';
 

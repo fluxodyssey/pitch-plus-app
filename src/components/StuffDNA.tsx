@@ -200,7 +200,6 @@ export function StuffDNA({
 
   }, [displayTypes, attributesByType, leagueMovement, hovered, highlightedTypes, width, height]);
 
-  const hoveredType = hovered ? displayTypes.find(pt => pt.pitch_type === hovered) : null;
   const hoveredAttrs = hovered ? attributesByType?.[hovered] : null;
 
   return (

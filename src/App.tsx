@@ -36,7 +36,7 @@ function SeasonPicker() {
   useEffect(() => {
     // Preload adjacent seasons on idle
     if ('requestIdleCallback' in window) {
-      (window as any).requestIdleCallback(() => {
+      window.requestIdleCallback(() => {
         AVAILABLE_SEASONS.forEach((s) => preloadSeason(s));
       });
     }

@@ -8,7 +8,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { rowNavProps } from '../data/rowNavigation';
 import { useData } from '../data/useData';
 import { GradeBadge } from '../components/GradeBadge';
-import { gradeColor, ALL_METRIC_OPTIONS, PCT_METRICS, METRIC_LABELS, DIMENSION_LABELS } from '../data/constants';
+import { gradeColor, PCT_METRICS, METRIC_LABELS, DIMENSION_LABELS } from '../data/constants';
 import { exportCsv } from '../data/exportCsv';
 import { getSavedFilters, saveFilter, deleteSavedFilter } from '../data/savedFilters';
 import type { Pitcher, MetricKey, DimensionKey } from '../types';
@@ -136,10 +136,6 @@ export function AdvancedSearch() {
   const [sortField,      setSortField]      = useState<SortField>(() => (searchParams.get('sort') as SortField) ?? 'pitch_plus');
   const [sortAsc,        setSortAsc]        = useState(() => searchParams.get('asc') === '1');
 
-  // Which columns to show (user-configurable)
-  const [shownDims,      setShownDims]      = useState<Set<DimensionKey>>(
-    new Set(SORTABLE_DIMS)
-  );
   const [shownMetric,    setShownMetric]    = useState<MetricKey | null>(null);
 
   // Metric range filters — restore from URL params (rf_<key>_min / rf_<key>_max)

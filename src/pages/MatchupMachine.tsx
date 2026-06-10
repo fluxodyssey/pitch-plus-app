@@ -13,7 +13,7 @@ import { useData, hasMatchupData, MATCHUP_DEFAULT_SEASON } from '../data/useData
 import { useSimilarityData, useBatterOutcomes } from '../data/useMatchupData';
 import { projectMatchup } from '../data/matchupEngine';
 import { InlineSearch } from '../components/InlineSearch';
-import type { Pitcher, BatterOutcomeProfile, MatchupProjection } from '../types';
+import type { MatchupProjection } from '../types';
 
 interface SearchItem { id: number; name: string; team: string; sub?: string }
 

@@ -50,7 +50,7 @@ describe('toScoutingGrade', () => {
 
 describe('DIMENSION_METRICS consistency', () => {
   it('all metrics in DIMENSION_METRICS have labels', () => {
-    for (const [dim, metrics] of Object.entries(DIMENSION_METRICS)) {
+    for (const metrics of Object.values(DIMENSION_METRICS)) {
       for (const metric of metrics) {
         expect(METRIC_LABELS[metric]).toBeDefined();
       }

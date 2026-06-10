@@ -1,5 +1,4 @@
 import type { Pitcher, DimensionKey, MetricKey } from '../types';
-import { LOWER_IS_BETTER } from './constants';
 
 export type PercentileMap = Map<number, PercentileEntry>;
 
@@ -66,7 +65,7 @@ export function computePercentiles(pitchers: Pitcher[]): PercentileMap {
     for (const mk of allMetrics) {
       const mg = p.metric_grades[mk];
       if (mg == null) continue;
-      let pctile = rankPercentile(metricGrades[mk]!, mg.grade);
+      const pctile = rankPercentile(metricGrades[mk]!, mg.grade);
       // For LOWER_IS_BETTER metrics, the grade system already inverts
       // (higher grade = better), so percentile is already correct.
       // No need to invert here.
