@@ -53,6 +53,33 @@ function makeSeasonFetcher<T>(urlFn: (season: Season) => string) {
   return { load, getCached };
 }
 
+type SeasonFetcher<T> = ReturnType<typeof makeSeasonFetcher<T>>;
+
+/**
+ * Shared hook body for season-keyed fetchers. Async results are tagged with
+ * their season so a late completion for a previous season is never shown;
+ * warm-cache reads happen during render (no synchronous setState in effects).
+ */
+function useSeasonFetch<T>(fetcher: SeasonFetcher<T>, season: Season) {
+  const [fetched, setFetched] = useState<{ season: Season; data: T | null; error: string | null } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetcher
+      .load(season)
+      .then((d) => { if (!cancelled) setFetched({ season, data: d, error: null }); })
+      .catch((e) => { if (!cancelled) setFetched({ season, data: null, error: String(e) }); });
+    return () => { cancelled = true; };
+  }, [fetcher, season]);
+
+  const fromFetch = fetched?.season === season ? fetched : null;
+  const data = fetcher.getCached(season) ?? fromFetch?.data ?? null;
+  const error = fromFetch?.error ?? null;
+  const loading = data == null && error == null;
+
+  return { data, loading, error };
+}
+
 // ── Similarity data ───────────────────────────────────────────────────────────
 
 const similarityFetcher = makeSeasonFetcher<SimilarityData>(
@@ -60,26 +87,7 @@ const similarityFetcher = makeSeasonFetcher<SimilarityData>(
 );
 
 export function useSimilarityData(season: Season) {
-  const [data, setData] = useState<SimilarityData | null>(similarityFetcher.getCached(season));
-  const [loading, setLoading] = useState(!similarityFetcher.getCached(season));
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const cached = similarityFetcher.getCached(season);
-    if (cached) {
-      setData(cached);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    similarityFetcher
-      .load(season)
-      .then((d) => { setData(d); setLoading(false); })
-      .catch((e) => { setError(String(e)); setLoading(false); });
-  }, [season]);
-
-  return { data, loading, error };
+  return useSeasonFetch(similarityFetcher, season);
 }
 
 // ── Batter outcomes data ──────────────────────────────────────────────────────
@@ -89,26 +97,7 @@ const batterOutcomesFetcher = makeSeasonFetcher<BatterOutcomesData>(
 );
 
 export function useBatterOutcomes(season: Season) {
-  const [data, setData] = useState<BatterOutcomesData | null>(batterOutcomesFetcher.getCached(season));
-  const [loading, setLoading] = useState(!batterOutcomesFetcher.getCached(season));
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const cached = batterOutcomesFetcher.getCached(season);
-    if (cached) {
-      setData(cached);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    batterOutcomesFetcher
-      .load(season)
-      .then((d) => { setData(d); setLoading(false); })
-      .catch((e) => { setError(String(e)); setLoading(false); });
-  }, [season]);
-
-  return { data, loading, error };
+  return useSeasonFetch(batterOutcomesFetcher, season);
 }
 
 // ── Game grades data ──────────────────────────────────────────────────────────
@@ -118,24 +107,5 @@ const gameGradesFetcher = makeSeasonFetcher<GameGradesData>(
 );
 
 export function useGameGrades(season: Season) {
-  const [data, setData] = useState<GameGradesData | null>(gameGradesFetcher.getCached(season));
-  const [loading, setLoading] = useState(!gameGradesFetcher.getCached(season));
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const cached = gameGradesFetcher.getCached(season);
-    if (cached) {
-      setData(cached);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    gameGradesFetcher
-      .load(season)
-      .then((d) => { setData(d); setLoading(false); })
-      .catch((e) => { setError(String(e)); setLoading(false); });
-  }, [season]);
-
-  return { data, loading, error };
+  return useSeasonFetch(gameGradesFetcher, season);
 }

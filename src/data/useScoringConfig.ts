@@ -10,12 +10,8 @@ export function useScoringConfig() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (cachedConfig) {
-      setConfig(cachedConfig);
-      setLoading(false);
-      return;
-    }
-
+    // Warm-cache mount is covered by the useState initializers; subscribing to
+    // the (possibly already-resolved) promise keeps every setState async.
     if (!configPromise) {
       configPromise = fetch('/data/scoring_config.json').then((r) => {
         if (!r.ok) throw new Error(`Failed to fetch scoring_config.json: ${r.status}`);
@@ -23,16 +19,22 @@ export function useScoringConfig() {
       });
     }
 
+    let cancelled = false;
     configPromise
       .then((cfg) => {
         cachedConfig = cfg;
-        setConfig(cfg);
-        setLoading(false);
+        if (!cancelled) {
+          setConfig(cfg);
+          setLoading(false);
+        }
       })
       .catch((err) => {
-        setError(String(err));
-        setLoading(false);
+        if (!cancelled) {
+          setError(String(err));
+          setLoading(false);
+        }
       });
+    return () => { cancelled = true; };
   }, []);
 
   return { config, loading, error };

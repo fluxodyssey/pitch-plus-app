@@ -37,6 +37,31 @@ function formatMetric(key: MetricKey, raw: number): string {
   return raw.toFixed(1);
 }
 
+const stickyTh = {
+  borderBottom: '2px solid #1e1e2e', background: '#0f0f1a',
+  position: 'sticky' as const, top: 0, zIndex: 1,
+  padding: '10px 12px', whiteSpace: 'nowrap' as const,
+  textTransform: 'uppercase' as const, letterSpacing: 0.5,
+  fontSize: 11,
+};
+
+// Module scope so React preserves <th> identity across renders (react-hooks/static-components).
+function SortTh({ k, label, sortMetric, sortDir, onSort }: {
+  k: MetricKey | 'pitch_plus'; label: string;
+  sortMetric: MetricKey | 'pitch_plus'; sortDir: 'asc' | 'desc';
+  onSort: (k: MetricKey | 'pitch_plus') => void;
+}) {
+  const active = sortMetric === k;
+  return (
+    <th onClick={() => onSort(k)} style={{
+      ...stickyTh, cursor: 'pointer', userSelect: 'none',
+      color: active ? '#4a9eff' : '#a0a0b8', fontWeight: active ? 700 : 500,
+    }}>
+      {label}{active ? (sortDir === 'desc' ? ' ▼' : ' ▲') : ''}
+    </th>
+  );
+}
+
 function MetricsTable({ pitchers }: { pitchers: Pitcher[] }) {
   const navigate = useNavigate();
   const [activeDim, setActiveDim] = useState<DimensionKey>('stuff');
@@ -63,25 +88,7 @@ function MetricsTable({ pitchers }: { pitchers: Pitcher[] }) {
     [pitchers, sortMetric, sortDir]
   );
 
-  const stickyTh = {
-    borderBottom: '2px solid #1e1e2e', background: '#0f0f1a',
-    position: 'sticky' as const, top: 0, zIndex: 1,
-    padding: '10px 12px', whiteSpace: 'nowrap' as const,
-    textTransform: 'uppercase' as const, letterSpacing: 0.5,
-    fontSize: 11,
-  };
-
-  function SortTh({ k, label }: { k: MetricKey | 'pitch_plus'; label: string }) {
-    const active = sortMetric === k;
-    return (
-      <th onClick={() => handleSort(k)} style={{
-        ...stickyTh, cursor: 'pointer', userSelect: 'none',
-        color: active ? '#4a9eff' : '#a0a0b8', fontWeight: active ? 700 : 500,
-      }}>
-        {label}{active ? (sortDir === 'desc' ? ' ▼' : ' ▲') : ''}
-      </th>
-    );
-  }
+  const sortCtx = { sortMetric, sortDir, onSort: handleSort };
 
   return (
     <div>
@@ -110,8 +117,8 @@ function MetricsTable({ pitchers }: { pitchers: Pitcher[] }) {
               <th style={{ ...stickyTh, color: '#a0a0b8', textAlign: 'left' }}>Name</th>
               <th style={{ ...stickyTh, color: '#a0a0b8' }}>Team</th>
               <th style={{ ...stickyTh, color: '#a0a0b8' }}>H</th>
-              <SortTh k="pitch_plus" label="Pitch+" />
-              {metrics.map(mk => <SortTh key={mk} k={mk} label={METRIC_LABELS[mk]} />)}
+              <SortTh k="pitch_plus" label="Pitch+" {...sortCtx} />
+              {metrics.map(mk => <SortTh key={mk} k={mk} label={METRIC_LABELS[mk]} {...sortCtx} />)}
             </tr>
           </thead>
           <tbody>

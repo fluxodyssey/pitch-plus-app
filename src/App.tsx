@@ -3,7 +3,8 @@ import { lazy, Suspense, useState, useEffect } from 'react';
 import { SEASON_LABELS, AVAILABLE_SEASONS, DEFAULT_SEASON, preloadSeason, useData, hasMatchupData } from './data/useData';
 import type { Season } from './data/useData';
 import { SearchAutocomplete } from './components/SearchAutocomplete';
-import { CommandPaletteProvider, useCommandPalette } from './components/CommandPalette';
+import { CommandPaletteProvider } from './components/CommandPalette';
+import { useCommandPalette } from './components/commandPaletteContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useKeyboardShortcuts, KEYBOARD_SHORTCUTS } from './hooks/useKeyboardShortcuts';
 

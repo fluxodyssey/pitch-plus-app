@@ -28,22 +28,21 @@ async function loadAttributes(season: Season): Promise<PitchAttributesData> {
 }
 
 export function usePitchAttributes(season: Season) {
-  const [data, setData] = useState<PitchAttributesData | null>(cache.get(season) ?? null);
-  const [loading, setLoading] = useState(!cache.has(season));
+  // Async results are tagged with their season so a late completion for a
+  // previous season is never shown; warm-cache reads happen during render.
+  const [fetched, setFetched] = useState<{ season: Season; data: PitchAttributesData | null } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    if (!cache.has(season)) {
-      setLoading(true);
-      loadAttributes(season)
-        .then((d) => { if (!cancelled) { setData(d); setLoading(false); } })
-        .catch(() => { if (!cancelled) setLoading(false); });
-    } else {
-      setData(cache.get(season)!);
-      setLoading(false);
-    }
+    loadAttributes(season)
+      .then((d) => { if (!cancelled) setFetched({ season, data: d }); })
+      .catch(() => { if (!cancelled) setFetched({ season, data: null }); });
     return () => { cancelled = true; };
   }, [season]);
+
+  const fromFetch = fetched?.season === season ? fetched : null;
+  const data = cache.get(season) ?? fromFetch?.data ?? null;
+  const loading = data == null && fromFetch == null;
 
   // Convenience: get a specific pitcher's attributes
   function getPitcherAttributes(pitcherId: number): Record<string, AttributeGrades> | null {

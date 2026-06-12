@@ -10,6 +10,8 @@ export interface PitchIndex {
 
 // Cache per season+pitcher: `${season}:${pitcherId}` → RawPitch[]
 const pitcherCache = new Map<string, RawPitch[]>();
+// Referentially stable empty result so consumers can use `pitches` as a dep.
+const EMPTY_PITCHES: RawPitch[] = [];
 // Cache games per season
 const gamesCache = new Map<Season, Record<string, GameInfo>>();
 const gamesFetching = new Map<Season, Promise<Record<string, GameInfo>>>();
@@ -75,5 +77,5 @@ export function usePitchData(season: Season = 2025) {
     }
   }, [season]);
 
-  return { loadForPitcher, pitches: pitches ?? [], games, loading, error };
+  return { loadForPitcher, pitches: pitches ?? EMPTY_PITCHES, games, loading, error };
 }

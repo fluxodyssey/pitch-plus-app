@@ -32,19 +32,22 @@ async function loadGameLogs(season: number): Promise<GameLogsData | null> {
 }
 
 export function useGameLogs(season: number) {
-  const [data, setData] = useState<GameLogsData | null>(cache.get(season) ?? null);
-  const [loading, setLoading] = useState(!cache.has(season));
-  const [error, setError] = useState<string | null>(null);
+  // Async results are tagged with their season so a late completion for a
+  // previous season is never shown; warm-cache reads happen during render.
+  const [fetched, setFetched] = useState<{ season: number; data: GameLogsData | null; error: string | null } | null>(null);
 
   useEffect(() => {
-    const cached = cache.get(season);
-    if (cached) { setData(cached); setLoading(false); setError(null); return; }
-    setLoading(true);
-    setError(null);
+    let cancelled = false;
     loadGameLogs(season)
-      .then((d) => { setData(d); setLoading(false); })
-      .catch((err) => { setData(null); setLoading(false); setError(err.message); });
+      .then((d) => { if (!cancelled) setFetched({ season, data: d, error: null }); })
+      .catch((err) => { if (!cancelled) setFetched({ season, data: null, error: err.message }); });
+    return () => { cancelled = true; };
   }, [season]);
+
+  const fromFetch = fetched?.season === season ? fetched : null;
+  const data = cache.get(season) ?? fromFetch?.data ?? null;
+  const error = fromFetch?.error ?? null;
+  const loading = data == null && error == null;
 
   function getPlayerGames(pitcherId: number): GameLogEntry[] {
     return data?.pitchers[String(pitcherId)] ?? [];

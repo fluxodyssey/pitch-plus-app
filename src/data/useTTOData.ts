@@ -22,14 +22,14 @@ const cache: Partial<Record<number, TTOData>> = {};
 const promises: Partial<Record<number, Promise<TTOData>>> = {};
 
 export function useTTOData(pitcherId: number | null, season: number) {
-  const [data, setData] = useState<TTOPitcherData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Async results are tagged with their request key so a late completion for a
+  // previous pitcher/season is never shown; warm-cache reads happen during render.
+  const key = pitcherId == null ? null : `${season}:${pitcherId}`;
+  const [fetched, setFetched] = useState<{ key: string; data: TTOPitcherData | null; error: string | null } | null>(null);
 
   useEffect(() => {
-    if (pitcherId == null) return;
-    setLoading(true);
-    setError(null);
+    if (key == null || pitcherId == null) return;
+    let cancelled = false;
 
     const load = (): Promise<TTOData> => {
       if (cache[season]) return Promise.resolve(cache[season]!);
@@ -41,15 +41,16 @@ export function useTTOData(pitcherId: number | null, season: number) {
     };
 
     load()
-      .then(d => {
-        setData(d[String(pitcherId)] ?? null);
-        setLoading(false);
-      })
-      .catch(e => {
-        setError(String(e));
-        setLoading(false);
-      });
-  }, [pitcherId, season]);
+      .then(d => { if (!cancelled) setFetched({ key, data: d[String(pitcherId)] ?? null, error: null }); })
+      .catch(e => { if (!cancelled) setFetched({ key, data: null, error: String(e) }); });
+    return () => { cancelled = true; };
+  }, [key, pitcherId, season]);
+
+  const seasonData = pitcherId == null ? null : cache[season];
+  const fromFetch = fetched?.key === key && key != null ? fetched : null;
+  const data = seasonData ? (seasonData[String(pitcherId)] ?? null) : (fromFetch?.data ?? null);
+  const error = fromFetch?.error ?? null;
+  const loading = key != null && seasonData == null && fromFetch == null;
 
   return { data, loading, error };
 }

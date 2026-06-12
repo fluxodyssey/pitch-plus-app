@@ -16,7 +16,7 @@ interface Props {
 
 type SortCol = 'date' | 'pitchCount' | 'innings' | 'strikeouts' | 'walks' | 'hits' | 'homeRuns' | 'runs' | 'pitchPlus';
 
-export function computeGameLog(
+function computeGameLog(
   pitches: RawPitch[],
   games: Record<string, GameInfo>,
   pitcherTeam: string

@@ -33,13 +33,15 @@ export function InlineSearch<T>({
   const [idx, setIdx] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Sync query when external value changes
-  useEffect(() => {
+  // Sync query when the external value changes — render-phase adjustment (the
+  // React-documented derived-state pattern; avoids an effect's double render).
+  const valueKey = value ? getKey(value) : null;
+  const [prevValueKey, setPrevValueKey] = useState(valueKey);
+  if (valueKey !== prevValueKey) {
+    setPrevValueKey(valueKey);
     setQuery(value ? getLabel(value) : '');
-  }, [value ? getKey(value) : null]);
-
-  // Reset highlight on query change
-  useEffect(() => { setIdx(0); }, [query]);
+    setIdx(0);
+  }
 
   // Click-outside-to-close
   useEffect(() => {
@@ -60,6 +62,7 @@ export function InlineSearch<T>({
   const handleSelect = (item: T) => {
     onSelect(item);
     setQuery(clearOnSelect ? '' : getLabel(item));
+    setIdx(0);
     setOpen(false);
   };
 
@@ -72,7 +75,7 @@ export function InlineSearch<T>({
       )}
       <input
         value={query}
-        onChange={e => { setQuery(e.target.value); setOpen(true); }}
+        onChange={e => { setQuery(e.target.value); setIdx(0); setOpen(true); }}
         onFocus={() => setOpen(true)}
         placeholder={placeholder}
         onKeyDown={e => {

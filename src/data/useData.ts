@@ -105,13 +105,11 @@ export interface UseDataResult {
 
 export function useData(overrideSeason?: Season): UseDataResult {
   const [season, setSeasonLocal] = useState<Season>(overrideSeason ?? globalSeason);
-  const cachedEntry = seasonCache.get(season);
-  const isFresh = cachedEntry != null && Date.now() - cachedEntry.ts < CACHE_TTL_MS;
-  const [state, setState] = useState<Omit<UseDataResult, 'season' | 'setSeason'>>({
-    data: isFresh ? cachedEntry.data : null,
-    loading: !isFresh,
-    error: null,
-  });
+  // Async results are tagged with their season so a late completion for a
+  // previous season is never shown. Render serves the cache even past its TTL
+  // (stale-while-revalidate); the effect's loadSeason() re-fetches when stale —
+  // TTL checks (Date.now) belong there, not in render.
+  const [fetched, setFetched] = useState<{ season: Season; data: AppData | null; error: string | null } | null>(null);
 
   // Listen for global season changes (unless overridden)
   useEffect(() => {
@@ -122,15 +120,11 @@ export function useData(overrideSeason?: Season): UseDataResult {
   }, [overrideSeason]);
 
   useEffect(() => {
-    const cached = seasonCache.get(season);
-    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
-      setState({ data: cached.data, loading: false, error: null });
-      return;
-    }
-    setState({ data: null, loading: true, error: null });
+    let cancelled = false;
     loadSeason(season)
-      .then((data) => setState({ data, loading: false, error: null }))
-      .catch((err) => setState({ data: null, loading: false, error: String(err) }));
+      .then((data) => { if (!cancelled) setFetched({ season, data, error: null }); })
+      .catch((err) => { if (!cancelled) setFetched({ season, data: null, error: String(err) }); });
+    return () => { cancelled = true; };
   }, [season]);
 
   const setSeason = useCallback((s: Season) => {
@@ -138,7 +132,12 @@ export function useData(overrideSeason?: Season): UseDataResult {
     if (!overrideSeason) setGlobalSeason(s);
   }, [overrideSeason]);
 
-  return { ...state, season, setSeason };
+  const fromFetch = fetched?.season === season ? fetched : null;
+  const data = fromFetch?.data ?? seasonCache.get(season)?.data ?? null;
+  const error = fromFetch?.error ?? null;
+  const loading = data == null && error == null;
+
+  return { data, loading, error, season, setSeason };
 }
 
 // Convenience: preload a season without rendering anything

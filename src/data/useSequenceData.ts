@@ -61,9 +61,13 @@ export function useSequenceData() {
   const [loading, setLoading] = useState(!cache);
 
   useEffect(() => {
-    if (cache) { setData(cache); setLoading(false); return; }
-    setLoading(true);
-    loadSequenceData().then((d) => { setData(d); setLoading(false); });
+    // Warm-cache mount is covered by the useState initializers; loadSequenceData
+    // dedupes via the module cache, so every setState here stays async.
+    let cancelled = false;
+    loadSequenceData().then((d) => {
+      if (!cancelled) { setData(d); setLoading(false); }
+    });
+    return () => { cancelled = true; };
   }, []);
 
   function getPitcher(id: number): SequencePitcher | null {

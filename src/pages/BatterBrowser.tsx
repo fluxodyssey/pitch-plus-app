@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import {
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, ResponsiveContainer, Cell,
@@ -18,22 +18,13 @@ type SwingMetricKey = keyof SwingPlusMetrics;
 // ─── Data Loading ─────────────────────────────────────────────────────────────
 
 function useBatterData(season: number) {
-  const [bdq, setBdq] = useState<BatterBDQData | null>(null);
-  const [rawHitters, setRawHitters] = useState<Hitter[] | null>(null);
-  const [bdqError, setBdqError] = useState<string | null>(null);
-  const [hittersError, setHittersError] = useState<string | null>(null);
-  const loadedSeason = useRef<number | null>(null);
+  // Async results are tagged with their season so a late completion for a
+  // previous season is never shown (no synchronous setState in the effect).
+  const [bdqState, setBdqState] = useState<{ season: number; data: BatterBDQData | null; error: string | null } | null>(null);
+  const [hittersState, setHittersState] = useState<{ season: number; data: Hitter[] | null; error: string | null } | null>(null);
 
-  // Year-specific load for both BDQ and Swing+. Fall back to legacy flat files
-  // only if they match the requested season (per their metadata.source).
   useEffect(() => {
-    if (loadedSeason.current === season) return;
-    loadedSeason.current = season;
-    setBdq(null);
-    setRawHitters(null);
-    setBdqError(null);
-    setHittersError(null);
-
+    let cancelled = false;
     const expectedSource = `mlb_${season}`;
 
     // Year-specific files only. No silent fallback to flat files — a missing or
@@ -50,9 +41,9 @@ function useBatterData(season: number) {
         if (data?.metadata?.source !== expectedSource) {
           throw new Error(`BDQ source mismatch for ${season}: file reports ${data?.metadata?.source}`);
         }
-        setBdq(data);
+        if (!cancelled) setBdqState({ season, data, error: null });
       })
-      .catch((e) => { console.error(e); setBdqError(String(e)); });
+      .catch((e) => { console.error(e); if (!cancelled) setBdqState({ season, data: null, error: String(e) }); });
 
     // ── Swing+ hitters (wrapped { hitters, metadata }) ──
     fetch(`/data/hitters_${season}.json`)
@@ -65,10 +56,17 @@ function useBatterData(season: number) {
         if (src !== expectedSource) {
           throw new Error(`Swing+ source mismatch for ${season}: file reports ${src}`);
         }
-        setRawHitters(data.hitters ?? []);
+        if (!cancelled) setHittersState({ season, data: data.hitters ?? [], error: null });
       })
-      .catch((e) => { console.error(e); setHittersError(String(e)); });
+      .catch((e) => { console.error(e); if (!cancelled) setHittersState({ season, data: null, error: String(e) }); });
+
+    return () => { cancelled = true; };
   }, [season]);
+
+  const bdq = bdqState?.season === season ? bdqState.data : null;
+  const bdqError = bdqState?.season === season ? bdqState.error : null;
+  const rawHitters = hittersState?.season === season ? hittersState.data : null;
+  const hittersError = hittersState?.season === season ? hittersState.error : null;
 
   const enriched = useMemo<EnrichedHitter[] | null>(() => {
     if (!bdq || !rawHitters) return null;
@@ -208,6 +206,36 @@ const stickyHeaderStyle = {
   position: 'sticky' as const, top: 0, zIndex: 1,
 };
 
+// Shared sortable-header cells (module scope so React preserves the th subtree).
+// Each tab spreads its own { sortKey, sortDir, onSort } context into these.
+
+function SortTh<K extends string>({ k, label, title, pad, sortKey, sortDir, onSort }: {
+  k: K; label: string; title?: string; pad: string;
+  sortKey: string; sortDir: 'asc' | 'desc'; onSort: (k: K) => void;
+}) {
+  const active = sortKey === k;
+  return (
+    <th onClick={() => onSort(k)} title={title} style={{
+      cursor: 'pointer', padding: pad, userSelect: 'none',
+      whiteSpace: 'nowrap', color: active ? '#4a9eff' : '#a0a0b8',
+      fontWeight: active ? 700 : 500, ...stickyHeaderStyle,
+    }}>
+      {label}{active ? (sortDir === 'desc' ? ' ▼' : ' ▲') : ''}
+    </th>
+  );
+}
+
+function SortHdr<K extends string>({ k, label, sortKey, sortDir, onSort }: {
+  k: K; label: string; sortKey: string; sortDir: 'asc' | 'desc'; onSort: (k: K) => void;
+}) {
+  const active = sortKey === k;
+  return (
+    <th onClick={() => onSort(k)} style={{ cursor: 'pointer', padding: '10px 14px', userSelect: 'none', color: active ? '#4a9eff' : '#a0a0b8', ...stickyHeaderStyle }}>
+      {label} {active ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+    </th>
+  );
+}
+
 // ─── Swing+ Leaderboard Tab ───────────────────────────────────────────────────
 
 function SwingPlusTab({ hitters }: { hitters: EnrichedHitter[] }) {
@@ -225,18 +253,17 @@ function SwingPlusTab({ hitters }: { hitters: EnrichedHitter[] }) {
     [hitters]
   );
 
-  function getSortValue(h: EnrichedHitter): number {
-    if (sortKey === 'swing_plus') return h.swing_plus;
-    if (sortKey === 'batting_plus') return h.batting_plus ?? h.swing_plus;
-    if (sortKey === 'decision_plus') return h.decision_plus ?? 100;
-    if (sortKey === 'n_pa') return h.n_pa;
-    if (sortKey.startsWith('dim_')) return h.dimensions[sortKey.slice(4) as typeof SWING_DIMS[number]] ?? 0;
-    if (sortKey.startsWith('metric_')) return h.metrics[sortKey.slice(7) as SwingMetricKey] ?? 0;
-    return 0;
-  }
-
-  const filtered = useMemo(() =>
-    hitters
+  const filtered = useMemo(() => {
+    function getSortValue(h: EnrichedHitter): number {
+      if (sortKey === 'swing_plus') return h.swing_plus;
+      if (sortKey === 'batting_plus') return h.batting_plus ?? h.swing_plus;
+      if (sortKey === 'decision_plus') return h.decision_plus ?? 100;
+      if (sortKey === 'n_pa') return h.n_pa;
+      if (sortKey.startsWith('dim_')) return h.dimensions[sortKey.slice(4) as typeof SWING_DIMS[number]] ?? 0;
+      if (sortKey.startsWith('metric_')) return h.metrics[sortKey.slice(7) as SwingMetricKey] ?? 0;
+      return 0;
+    }
+    return hitters
       .filter(h => h.n_pa >= minPA)
       .filter(h => !search || h.name.toLowerCase().includes(search.toLowerCase()))
       .filter(h => teamFilter === 'all' || h.team === teamFilter)
@@ -245,27 +272,15 @@ function SwingPlusTab({ hitters }: { hitters: EnrichedHitter[] }) {
       .sort((a, b) => {
         const d = getSortValue(b) - getSortValue(a);
         return sortDir === 'desc' ? d : -d;
-      }),
-    [hitters, search, teamFilter, handFilter, minPA, tierFilter, sortKey, sortDir]
-  );
+      });
+  }, [hitters, search, teamFilter, handFilter, minPA, tierFilter, sortKey, sortDir]);
 
   function handleSort(key: string) {
     if (key === sortKey) setSortDir(d => d === 'desc' ? 'asc' : 'desc');
     else { setSortKey(key); setSortDir('desc'); }
   }
 
-  function SortTh({ k, label, title }: { k: string; label: string; title?: string }) {
-    const active = sortKey === k;
-    return (
-      <th onClick={() => handleSort(k)} title={title} style={{
-        cursor: 'pointer', padding: '8px 10px', userSelect: 'none',
-        whiteSpace: 'nowrap', color: active ? '#4a9eff' : '#a0a0b8',
-        fontWeight: active ? 700 : 500, ...stickyHeaderStyle,
-      }}>
-        {label}{active ? (sortDir === 'desc' ? ' ▼' : ' ▲') : ''}
-      </th>
-    );
-  }
+  const sortCtx = { sortKey, sortDir, onSort: handleSort, pad: '8px 10px' };
 
   const activeGroup = metricGroup ? METRIC_GROUPS.find(g => g.label === metricGroup) : null;
 
@@ -344,17 +359,17 @@ function SwingPlusTab({ hitters }: { hitters: EnrichedHitter[] }) {
           <thead>
             <tr>
               <th style={{ padding: '8px 10px', color: '#a0a0b8', textAlign: 'center', ...stickyHeaderStyle }}>#</th>
-              <SortTh k="name" label="Batter" />
-              <SortTh k="team" label="Team" />
+              <SortTh {...sortCtx} k="name" label="Batter" />
+              <SortTh {...sortCtx} k="team" label="Team" />
               <th style={{ padding: '8px 6px', color: '#a0a0b8', textAlign: 'center', ...stickyHeaderStyle }}>H</th>
-              <SortTh k="swing_plus" label="Swing+" />
+              <SortTh {...sortCtx} k="swing_plus" label="Swing+" />
               <th style={{ padding: '8px 8px', color: '#a0a0b8', textAlign: 'center', ...stickyHeaderStyle }}>Tier</th>
-              <SortTh k="batting_plus" label="Bat+" title="Batting+ = 0.75×Swing+ + 0.25×Decision+" />
-              <SortTh k="decision_plus" label="Dec+" title="Decision+ (Thomas zone-weighted discipline)" />
-              <SortTh k="n_pa" label="PA" />
+              <SortTh {...sortCtx} k="batting_plus" label="Bat+" title="Batting+ = 0.75×Swing+ + 0.25×Decision+" />
+              <SortTh {...sortCtx} k="decision_plus" label="Dec+" title="Decision+ (Thomas zone-weighted discipline)" />
+              <SortTh {...sortCtx} k="n_pa" label="PA" />
               {activeGroup
-                ? activeGroup.keys.map(k => <SortTh key={k} k={`metric_${k}`} label={METRIC_CONFIG[k].label} />)
-                : SWING_DIMS.map(d => <SortTh key={d} k={`dim_${d}`} label={DIM_ABBR[d]} title={d} />)
+                ? activeGroup.keys.map(k => <SortTh {...sortCtx} key={k} k={`metric_${k}`} label={METRIC_CONFIG[k].label} />)
+                : SWING_DIMS.map(d => <SortTh {...sortCtx} key={d} k={`dim_${d}`} label={DIM_ABBR[d]} title={d} />)
               }
             </tr>
           </thead>
@@ -449,14 +464,7 @@ function BDQTab({ bdq }: { bdq: BatterBDQData }) {
     else { setSortKey(k); setSortDir(k === 'bad_chase_rate' ? 'asc' : 'desc'); }
   }
 
-  function SortHdr({ k, label }: { k: typeof sortKey; label: string }) {
-    const active = sortKey === k;
-    return (
-      <th onClick={() => handleSort(k)} style={{ cursor: 'pointer', padding: '10px 14px', userSelect: 'none', color: active ? '#4a9eff' : '#a0a0b8', ...stickyHeaderStyle }}>
-        {label} {active ? (sortDir === 'asc' ? '↑' : '↓') : ''}
-      </th>
-    );
-  }
+  const sortCtx = { sortKey, sortDir, onSort: handleSort };
 
   return (
     <div>
@@ -506,10 +514,10 @@ function BDQTab({ bdq }: { bdq: BatterBDQData }) {
               <th style={{ padding: '10px 14px', textAlign: 'left', color: '#606080', ...stickyHeaderStyle }}>Team</th>
               <th style={{ padding: '10px 14px', textAlign: 'center', color: '#606080', ...stickyHeaderStyle }}>H</th>
               <th style={{ padding: '10px 14px', textAlign: 'center', color: '#606080', ...stickyHeaderStyle }}>Grade</th>
-              <SortHdr k="ooz_decision_rv" label="Decision RV" />
-              <SortHdr k="bad_chase_rate" label="Bad Chase%" />
-              <SortHdr k="deceptive_chase_rate" label="Dec Chase%" />
-              <SortHdr k="n_chases" label="Chases" />
+              <SortHdr {...sortCtx} k="ooz_decision_rv" label="Decision RV" />
+              <SortHdr {...sortCtx} k="bad_chase_rate" label="Bad Chase%" />
+              <SortHdr {...sortCtx} k="deceptive_chase_rate" label="Dec Chase%" />
+              <SortHdr {...sortCtx} k="n_chases" label="Chases" />
               <th style={{ padding: '10px 14px', textAlign: 'right', color: '#606080', ...stickyHeaderStyle }}>Chase Whiff%</th>
               <th style={{ padding: '10px 14px', textAlign: 'right', color: '#606080', ...stickyHeaderStyle }}>N Bad</th>
               <th style={{ padding: '10px 14px', textAlign: 'right', color: '#606080', ...stickyHeaderStyle }}>N Dec</th>
@@ -648,18 +656,7 @@ function CombinedTab({ hitters, bdq, outcomes }: { hitters: EnrichedHitter[]; bd
     else { setSortKey(k); setSortDir(k === 'bad_chase_rate' ? 'asc' : 'desc'); }
   }
 
-  function SortTh({ k, label, title }: { k: CombinedSortKey; label: string; title?: string }) {
-    const active = sortKey === k;
-    return (
-      <th onClick={() => handleSort(k)} title={title} style={{
-        cursor: 'pointer', padding: '9px 12px', userSelect: 'none',
-        whiteSpace: 'nowrap', color: active ? '#4a9eff' : '#a0a0b8',
-        fontWeight: active ? 700 : 500, ...stickyHeaderStyle,
-      }}>
-        {label}{active ? (sortDir === 'desc' ? ' ▼' : ' ▲') : ''}
-      </th>
-    );
-  }
+  const sortCtx = { sortKey, sortDir, onSort: handleSort, pad: '9px 12px' };
 
   return (
     <div>
@@ -690,16 +687,16 @@ function CombinedTab({ hitters, bdq, outcomes }: { hitters: EnrichedHitter[]; bd
               <th style={{ padding: '9px 12px', color: '#a0a0b8', textAlign: 'left', ...stickyHeaderStyle }}>Batter</th>
               <th style={{ padding: '9px 10px', color: '#a0a0b8', ...stickyHeaderStyle }}>Team</th>
               <th style={{ padding: '9px 8px', color: '#a0a0b8', ...stickyHeaderStyle }}>H</th>
-              <SortTh k="swing_plus" label="Swing+" />
+              <SortTh {...sortCtx} k="swing_plus" label="Swing+" />
               <th style={{ padding: '9px 8px', color: '#a0a0b8', textAlign: 'center', ...stickyHeaderStyle }}>Tier</th>
-              <SortTh k="n_pa" label="PA" />
-              <SortTh k="bad_chase_rate" label="Bad Chase%" title="Lower is better — BDQ" />
+              <SortTh {...sortCtx} k="n_pa" label="PA" />
+              <SortTh {...sortCtx} k="bad_chase_rate" label="Bad Chase%" title="Lower is better — BDQ" />
               <th style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'center', ...stickyHeaderStyle }}>BDQ</th>
-              <SortTh k="xwoba" label="xwOBA" />
-              <SortTh k="barrel_rate" label="Barrel%" />
-              <SortTh k="avg_bat_speed" label="Bat Spd" />
-              <SortTh k="bipr_simple" label="BIPR%" title="Batter Ideal Process Rate — (Balls+BIP+HBP − CS−Whiff−FTip−FStrike) / Pitches" />
-              <SortTh k="wobacon" label="wOBACON" title="wOBA on Contact (BIP only)" />
+              <SortTh {...sortCtx} k="xwoba" label="xwOBA" />
+              <SortTh {...sortCtx} k="barrel_rate" label="Barrel%" />
+              <SortTh {...sortCtx} k="avg_bat_speed" label="Bat Spd" />
+              <SortTh {...sortCtx} k="bipr_simple" label="BIPR%" title="Batter Ideal Process Rate — (Balls+BIP+HBP − CS−Whiff−FTip−FStrike) / Pitches" />
+              <SortTh {...sortCtx} k="wobacon" label="wOBACON" title="wOBA on Contact (BIP only)" />
               <th style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>EV90</th>
               <th style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>Whiff%</th>
               <th style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>K%</th>
@@ -756,6 +753,42 @@ function CombinedTab({ hitters, bdq, outcomes }: { hitters: EnrichedHitter[]; bd
 
 // ─── Scatter Tab ──────────────────────────────────────────────────────────────
 
+interface ScatterPoint {
+  x: number; y: number; name: string; team: string; tier: string;
+  badChase: number; decChase: number; swingPlus: number; xwoba: number;
+  barrelRate: number; batSpeed: number; n_pa: number; n_chases: number;
+}
+
+function xwobaColor(xw: number): string {
+  if (xw >= 0.400) return '#d44040';
+  if (xw >= 0.360) return '#c85a5a';
+  if (xw >= 0.320) return '#a87070';
+  if (xw >= 0.290) return '#6878a0';
+  return '#4a6494';
+}
+
+function ScatterTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: ScatterPoint }> }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  if (!d) return null;
+  const g = bdqGrade(d.badChase);
+  const tc = tierColor(d.tier);
+  return (
+    <div style={{ background: '#16162a', border: '1px solid #2a2a3e', borderRadius: 8, padding: '10px 14px', fontSize: 13, minWidth: 180 }}>
+      <div style={{ color: '#e0e0e8', fontWeight: 700 }}>{d.name}</div>
+      <div style={{ color: '#606080', fontSize: 12, marginBottom: 6 }}>{d.team} · {d.n_pa} PA</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Swing+:</span> <span style={{ color: tc, fontWeight: 700 }}>{d.swingPlus.toFixed(1)}</span></span>
+        <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Tier:</span> <span style={{ color: tc }}>{d.tier.replace(/_/g, ' ')}</span></span>
+        <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Bad Chase%:</span> <span style={{ color: g.color }}>{pct(d.badChase)}</span> <span style={{ color: '#606080', fontSize: 11 }}>({g.label})</span></span>
+        <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Dec Chase%:</span> <span style={{ color: '#4a9eff' }}>{pct(d.decChase)}</span></span>
+        <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>xwOBA:</span> <span style={{ color: xwobaColor(d.xwoba) }}>{d.xwoba.toFixed(3)}</span></span>
+        <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Barrel%:</span> <span style={{ color: '#e0e0e8' }}>{pct(d.barrelRate)}</span></span>
+      </div>
+    </div>
+  );
+}
+
 function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBDQData }) {
   const [minPA, setMinPA] = useState(100);
   const [minChases, setMinChases] = useState(30);
@@ -793,38 +826,6 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
     points.length ? points.reduce((s, p) => s + p.badChase, 0) / points.length : 0.65,
     [points]
   );
-
-  function xwobaColor(xw: number): string {
-    if (xw >= 0.400) return '#d44040';
-    if (xw >= 0.360) return '#c85a5a';
-    if (xw >= 0.320) return '#a87070';
-    if (xw >= 0.290) return '#6878a0';
-    return '#4a6494';
-  }
-
-  type TooltipProps = { active?: boolean; payload?: Array<{ payload: typeof points[0] }> };
-
-  function CustomTooltip({ active, payload }: TooltipProps) {
-    if (!active || !payload?.length) return null;
-    const d = payload[0]?.payload;
-    if (!d) return null;
-    const g = bdqGrade(d.badChase);
-    const tc = tierColor(d.tier);
-    return (
-      <div style={{ background: '#16162a', border: '1px solid #2a2a3e', borderRadius: 8, padding: '10px 14px', fontSize: 13, minWidth: 180 }}>
-        <div style={{ color: '#e0e0e8', fontWeight: 700 }}>{d.name}</div>
-        <div style={{ color: '#606080', fontSize: 12, marginBottom: 6 }}>{d.team} · {d.n_pa} PA</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Swing+:</span> <span style={{ color: tc, fontWeight: 700 }}>{d.swingPlus.toFixed(1)}</span></span>
-          <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Tier:</span> <span style={{ color: tc }}>{d.tier.replace(/_/g, ' ')}</span></span>
-          <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Bad Chase%:</span> <span style={{ color: g.color }}>{pct(d.badChase)}</span> <span style={{ color: '#606080', fontSize: 11 }}>({g.label})</span></span>
-          <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Dec Chase%:</span> <span style={{ color: '#4a9eff' }}>{pct(d.decChase)}</span></span>
-          <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>xwOBA:</span> <span style={{ color: xwobaColor(d.xwoba) }}>{d.xwoba.toFixed(3)}</span></span>
-          <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Barrel%:</span> <span style={{ color: '#e0e0e8' }}>{pct(d.barrelRate)}</span></span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -880,7 +881,7 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
             stroke="#2a2a3e" tick={{ fill: '#606080', fontSize: 11 }}
             label={{ value: 'Swing+', angle: -90, position: 'insideLeft', offset: 15, fill: '#a0a0b8', fontSize: 12 }}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<ScatterTooltip />} />
           <ReferenceLine x={avgBadChase} stroke="#4a9eff" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: 'Avg', position: 'top', fill: '#4a9eff', fontSize: 10 }} />
           <ReferenceLine y={100} stroke="#4a9eff" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: 'Avg', position: 'right', fill: '#4a9eff', fontSize: 10 }} />
           <Scatter data={points} fillOpacity={0.75} r={4}>

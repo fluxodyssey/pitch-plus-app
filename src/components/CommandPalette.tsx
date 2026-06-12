@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, useMemo, createContext, useContext } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useData, AVAILABLE_SEASONS, setGlobalSeason, getGlobalSeason, hasMatchupData } from '../data/useData';
 import { GradeBadge } from './GradeBadge';
+import { CommandPaletteCtx } from './commandPaletteContext';
 
 // ─── Fuzzy scoring ───────────────────────────────────────────────────────────
 
@@ -20,11 +21,6 @@ function fuzzyScore(query: string, target: string): number {
   }
   return qi === q.length ? score : -1;
 }
-
-// ─── Context ─────────────────────────────────────────────────────────────────
-
-const CommandPaletteCtx = createContext<{ open: () => void }>({ open: () => {} });
-export function useCommandPalette() { return useContext(CommandPaletteCtx); }
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 
@@ -65,7 +61,7 @@ interface CmdItem {
 function CommandPaletteOverlay({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
   const { data } = useData();
-  const pitchers = data?.pitchers?.pitchers ?? [];
+  const pitchers = useMemo(() => data?.pitchers?.pitchers ?? [], [data]);
 
   const [query, setQuery] = useState('');
   const [idx, setIdx] = useState(0);

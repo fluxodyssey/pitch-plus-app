@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+﻿import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { rowNavProps } from '../data/rowNavigation';
 import { GradeBadge } from './GradeBadge';
@@ -48,6 +48,43 @@ const DIM_HEADERS: Record<DimensionKey, string> = {
 };
 
 const PAGE_SIZE = 50;
+
+interface SortHeaderProps {
+  label: string;
+  col: SortKey;
+  title?: string;
+  sortKey: SortKey;
+  sortAsc: boolean;
+  onSort: (col: SortKey) => void;
+}
+
+function SortHeader({ label, col, title, sortKey, sortAsc, onSort }: SortHeaderProps) {
+  const active = sortKey === col;
+  return (
+    <th
+      onClick={() => onSort(col)}
+      title={title}
+      style={{
+        cursor: 'pointer',
+        userSelect: 'none',
+        whiteSpace: 'nowrap',
+        color: active ? '#4a9eff' : '#a0a0b8',
+        fontWeight: active ? 700 : 500,
+        padding: '8px 10px',
+        borderBottom: '2px solid #1e1e2e',
+        background: '#14141f',
+        position: 'sticky',
+        top: 0,
+        zIndex: 1,
+      }}
+    >
+      {label}
+      {active && (
+        <span style={{ marginLeft: 4, fontSize: 10 }}>{sortAsc ? '▲' : '▼'}</span>
+      )}
+    </th>
+  );
+}
 
 export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchTypesData }: Props) {
   const navigate = useNavigate();
@@ -120,41 +157,7 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
     return sortAsc ? (av as number) - (bv as number) : (bv as number) - (av as number);
   });
 
-  function SortHeader({
-    label,
-    col,
-    title,
-  }: {
-    label: string;
-    col: SortKey;
-    title?: string;
-  }) {
-    const active = sortKey === col;
-    return (
-      <th
-        onClick={() => handleSort(col)}
-        title={title}
-        style={{
-          cursor: 'pointer',
-          userSelect: 'none',
-          whiteSpace: 'nowrap',
-          color: active ? '#4a9eff' : '#a0a0b8',
-          fontWeight: active ? 700 : 500,
-          padding: '8px 10px',
-          borderBottom: '2px solid #1e1e2e',
-          background: '#14141f',
-          position: 'sticky',
-          top: 0,
-          zIndex: 1,
-        }}
-      >
-        {label}
-        {active && (
-          <span style={{ marginLeft: 4, fontSize: 10 }}>{sortAsc ? '▲' : '▼'}</span>
-        )}
-      </th>
-    );
-  }
+  const sortHeaderCtx = { sortKey, sortAsc, onSort: handleSort };
 
   const pageItems = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
@@ -223,21 +226,22 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
             >
               Name{sortKey === 'pitcher_name' && <span style={{ marginLeft: 4, fontSize: 10 }}>{sortAsc ? '▲' : '▼'}</span>}
             </th>
-            <SortHeader label="Team" col="pitcher_team" />
+            <SortHeader {...sortHeaderCtx} label="Team" col="pitcher_team" />
             <th style={{ padding: '8px 6px', color: '#a0a0b8', borderBottom: '2px solid #1e1e2e', background: '#14141f', position: 'sticky', top: 0, zIndex: 1 }}>Hand</th>
-            <SortHeader label="Pitch+" col="pitch_plus" />
+            <SortHeader {...sortHeaderCtx} label="Pitch+" col="pitch_plus" />
             {pitchTypeFilter ? (
               <>
-                <SortHeader label="Usage%" col="pt_usage" title="Usage percentage" />
-                <SortHeader label="Velo" col="pt_velo" title="Average velocity" />
-                <SortHeader label="Spin" col="pt_spin" title="Average spin rate" />
-                <SortHeader label="IVB" col="pt_ivb" title="Induced vertical break" />
-                <SortHeader label="HB" col="pt_hb" title="Horizontal break" />
-                <SortHeader label="Whiff%" col="pt_whiff" title="Whiff rate" />
+                <SortHeader {...sortHeaderCtx} label="Usage%" col="pt_usage" title="Usage percentage" />
+                <SortHeader {...sortHeaderCtx} label="Velo" col="pt_velo" title="Average velocity" />
+                <SortHeader {...sortHeaderCtx} label="Spin" col="pt_spin" title="Average spin rate" />
+                <SortHeader {...sortHeaderCtx} label="IVB" col="pt_ivb" title="Induced vertical break" />
+                <SortHeader {...sortHeaderCtx} label="HB" col="pt_hb" title="Horizontal break" />
+                <SortHeader {...sortHeaderCtx} label="Whiff%" col="pt_whiff" title="Whiff rate" />
               </>
             ) : (
               DIMENSION_KEYS.map((d) => (
                 <SortHeader
+                  {...sortHeaderCtx}
                   key={d}
                   label={DIM_HEADERS[d]}
                   col={d}
@@ -245,9 +249,9 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
                 />
               ))
             )}
-            <SortHeader label="Pitches" col="n_pitches" />
-            <SortHeader label="IP" col="ip" title="Innings Pitched" />
-            <SortHeader label="G" col="n_games" title="Games" />
+            <SortHeader {...sortHeaderCtx} label="Pitches" col="n_pitches" />
+            <SortHeader {...sortHeaderCtx} label="IP" col="ip" title="Innings Pitched" />
+            <SortHeader {...sortHeaderCtx} label="G" col="n_games" title="Games" />
           </tr>
         </thead>
         <tbody>

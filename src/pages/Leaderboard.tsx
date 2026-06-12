@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { rowNavProps } from '../data/rowNavigation';
 import { useData } from '../data/useData';
@@ -90,8 +90,14 @@ export function Leaderboard() {
     });
   }, [data, selectedMetric, minPitches, handFilter, teamFilter, roleFilter, starterIds, pitchTypeFilter]);
 
-  // Reset to first page when filters/sort change
-  useEffect(() => { setPage(0); }, [selectedMetric, minPitches, handFilter, teamFilter, roleFilter, pitchTypeFilter]);
+  // Reset to first page when filters/sort change — render-phase adjustment
+  // (avoids the one-frame flash of a stale/out-of-range page an effect would cause)
+  const filterKey = `${selectedMetric}|${minPitches}|${handFilter}|${teamFilter}|${roleFilter}|${pitchTypeFilter}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
+    setPage(0);
+  }
 
   if (loading) return <SkeletonPage />;
   if (error) return <div className="error">Error: {error}</div>;

@@ -98,7 +98,7 @@ export function SimilarPitchers({ pitcher, n = 6, showDimensions = true }: Props
       }))
       .sort((a, b) => b.similarity - a.similarity)
       .slice(0, n);
-  }, [data, similarityData, pitcher, n, season]);
+  }, [data, similarityData, pitcher, n]);
 
   const usingJSON = similar[0]?.fromJSON ?? false;
 

@@ -24,10 +24,6 @@ export function SearchAutocomplete({ pitchers, compact = false, placeholder = 'S
     : [];
 
   useEffect(() => {
-    setSelectedIdx(0);
-  }, [query]);
-
-  useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
@@ -65,7 +61,7 @@ export function SearchAutocomplete({ pitchers, compact = false, placeholder = 'S
         ref={inputRef}
         type="text"
         value={query}
-        onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+        onChange={(e) => { setQuery(e.target.value); setSelectedIdx(0); setOpen(true); }}
         onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}

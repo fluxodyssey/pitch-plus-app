@@ -122,6 +122,29 @@ const INPUT_STYLE = {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+const stickyTh = {
+  background: 'var(--bg-surface)', borderBottom: '2px solid #1e1e2e',
+  position: 'sticky' as const, top: 0, zIndex: 2,
+  padding: '8px 10px', whiteSpace: 'nowrap' as const, userSelect: 'none' as const,
+};
+
+// Module scope so React preserves <th> identity across renders (react-hooks/static-components).
+function SortTh({ field, label, title, sortField, sortAsc, onSort }: {
+  field: SortField; label: string; title?: string;
+  sortField: SortField; sortAsc: boolean; onSort: (f: SortField) => void;
+}) {
+  const active = sortField === field;
+  return (
+    <th onClick={() => onSort(field)} title={title} style={{
+      ...stickyTh, cursor: 'pointer',
+      color: active ? 'var(--accent)' : '#a0a0b8',
+      fontWeight: active ? 700 : 500,
+    }}>
+      {label}{active ? (sortAsc ? ' ▲' : ' ▼') : ''}
+    </th>
+  );
+}
+
 export function AdvancedSearch() {
   const { data, loading, error, season } = useData();
   const navigate = useNavigate();
@@ -175,7 +198,7 @@ export function AdvancedSearch() {
       if (rf?.max) params.set(`rf_${mk}_max`, rf.max);
     }
     setSearchParams(params, { replace: true });
-  }, [search, teamFilter, handFilter, pitchTypeFilter, minPitches, sortField, sortAsc, activePreset, rangeFilters]);
+  }, [search, teamFilter, handFilter, pitchTypeFilter, minPitches, sortField, sortAsc, activePreset, rangeFilters, setSearchParams]);
 
   const teams = useMemo(() => {
     if (!data) return ['All'];
@@ -259,24 +282,7 @@ export function AdvancedSearch() {
   if (error)   return <div className="error">Error: {error}</div>;
   if (!data)   return null;
 
-  const stickyTh = {
-    background: 'var(--bg-surface)', borderBottom: '2px solid #1e1e2e',
-    position: 'sticky' as const, top: 0, zIndex: 2,
-    padding: '8px 10px', whiteSpace: 'nowrap' as const, userSelect: 'none' as const,
-  };
-
-  function SortTh({ field, label, title }: { field: SortField; label: string; title?: string }) {
-    const active = sortField === field;
-    return (
-      <th onClick={() => handleSortField(field)} title={title} style={{
-        ...stickyTh, cursor: 'pointer',
-        color: active ? 'var(--accent)' : '#a0a0b8',
-        fontWeight: active ? 700 : 500,
-      }}>
-        {label}{active ? (sortAsc ? ' ▲' : ' ▼') : ''}
-      </th>
-    );
-  }
+  const sortCtx = { sortField, sortAsc, onSort: handleSortField };
 
   return (
     <div className="page">
@@ -539,12 +545,12 @@ export function AdvancedSearch() {
                 <th style={{ ...stickyTh, textAlign: 'left', color: '#a0a0b8' }}>Pitcher</th>
                 <th style={{ ...stickyTh, color: '#a0a0b8' }}>Team</th>
                 <th style={{ ...stickyTh, color: '#a0a0b8' }}>H</th>
-                <SortTh field="pitch_plus" label="Pitch+" />
+                <SortTh field="pitch_plus" label="Pitch+" {...sortCtx} />
                 {SORTABLE_DIMS.map(d => (
-                  <SortTh key={d} field={d} label={DIMENSION_LABELS[d].slice(0, 4)} title={DIMENSION_LABELS[d]} />
+                  <SortTh key={d} field={d} label={DIMENSION_LABELS[d].slice(0, 4)} title={DIMENSION_LABELS[d]} {...sortCtx} />
                 ))}
                 {shownMetric && (
-                  <SortTh field={shownMetric} label={METRIC_LABELS[shownMetric]} />
+                  <SortTh field={shownMetric} label={METRIC_LABELS[shownMetric]} {...sortCtx} />
                 )}
                 <th style={{ ...stickyTh, color: '#a0a0b8' }}>Pitches</th>
                 <th style={{ ...stickyTh, color: '#a0a0b8' }}>G</th>

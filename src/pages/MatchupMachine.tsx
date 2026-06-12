@@ -159,7 +159,7 @@ function MatchupMachineInner() {
   const navigate = useNavigate();
   const { data, season } = useData();
 
-  const pitchers = data?.pitchers?.pitchers ?? [];
+  const pitchers = useMemo(() => data?.pitchers?.pitchers ?? [], [data]);
 
   const { data: similarityData, loading: simLoading, error: simError } = useSimilarityData(season);
   const { data: batterOutcomes, loading: boLoading, error: boError } = useBatterOutcomes(season);
@@ -208,7 +208,7 @@ function MatchupMachineInner() {
     if (selectedPitcherId && selectedBatterId) {
       navigate(`/matchup/${selectedPitcherId}/${selectedBatterId}`, { replace: true });
     }
-  }, [selectedPitcherId, selectedBatterId]);
+  }, [selectedPitcherId, selectedBatterId, navigate]);
 
   const dataLoading = simLoading || boLoading;
   const dataError   = simError ?? boError;

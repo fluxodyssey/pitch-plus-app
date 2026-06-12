@@ -261,7 +261,7 @@ function WhatIfSimulator({ pitchers }: { pitchers: Pitcher[] }) {
   const [selected, setSelected] = useState<Pitcher | null>(null);
   const [deltas, setDeltas] = useState<Record<string, number>>({});
 
-  const stats = config?.population_stats ?? {};
+  const stats = useMemo(() => config?.population_stats ?? {}, [config]);
 
   const projectedDelta = useMemo(() => {
     if (!config) return 0;
@@ -274,7 +274,7 @@ function WhatIfSimulator({ pitchers }: { pitchers: Pitcher[] }) {
       }
     }
     return total;
-  }, [deltas, stats]);
+  }, [deltas, stats, config]);
 
   const basePitchPlus = selected?.pitch_plus ?? 100;
   const projectedPitchPlus = Math.round(Math.max(20, Math.min(180, basePitchPlus + projectedDelta)));

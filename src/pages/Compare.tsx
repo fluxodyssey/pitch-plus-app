@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { useData } from '../data/useData';
+import { useData, type Season } from '../data/useData';
 import { usePitchData } from '../data/usePitchData';
 import { useScoringConfig } from '../data/useScoringConfig';
 import { GradeBadge } from '../components/GradeBadge';
@@ -8,13 +8,23 @@ import { DimensionRadarChart } from '../components/DimensionRadarChart';
 import { InlineSearch } from '../components/InlineSearch';
 import { computePitchTypeGrades, type LeagueAvgDetailed } from '../data/computePitchTypeGrades';
 import { gradeColor, DIMENSION_LABELS } from '../data/constants';
-import type { Pitcher, DimensionKey } from '../types';
+import type { Pitcher, DimensionKey, RawPitch } from '../types';
 
 const DIMS: DimensionKey[] = ['stuff', 'command', 'deception', 'tunnel_and_sequence', 'outcomes', 'arsenal'];
 const MAX_PITCHERS = 5;
 
 // A palette of distinct colors for the comparison series
 const SERIES_COLORS = ['#4a9eff', '#ff6b6b', '#34d399', '#fbbf24', '#a78bfa'];
+
+/** One comparison slot: loads pitch-level data whenever its pitcher changes. */
+function usePitchSlot(season: Season, pitcher: Pitcher | undefined): RawPitch[] {
+  const { loadForPitcher, pitches } = usePitchData(season);
+  const pitcherId = pitcher?.pitcher_id;
+  useEffect(() => {
+    if (pitcherId != null) loadForPitcher(pitcherId);
+  }, [pitcherId, loadForPitcher]);
+  return pitches;
+}
 
 export function Compare() {
   // Support both old route params (/compare/:id1/:id2) and new query params (?ids=1,2,3)
@@ -23,7 +33,7 @@ export function Compare() {
   const { data, season } = useData();
   const { config: scoringConfig } = useScoringConfig();
 
-  const pitchers = data?.pitchers.pitchers ?? [];
+  const pitchers = useMemo(() => data?.pitchers.pitchers ?? [], [data]);
 
   // Resolve pitcher IDs — prefer ?ids= param, fall back to route params
   const [ids, setIds] = useState<number[]>(() => {
@@ -34,41 +44,35 @@ export function Compare() {
   });
 
   // Sync ids → URL search param
+  const idsKey = ids.join(',');
   useEffect(() => {
-    if (ids.length > 0) {
-      setSearchParams({ ids: ids.join(',') }, { replace: true });
+    if (idsKey) {
+      setSearchParams({ ids: idsKey }, { replace: true });
     } else {
       setSearchParams({}, { replace: true });
     }
-  }, [ids.join(',')]);
+  }, [idsKey, setSearchParams]);
 
   const selectedPitchers = useMemo(
     () => ids.map(id => pitchers.find(p => p.pitcher_id === id)).filter(Boolean) as Pitcher[],
     [pitchers, ids],
   );
 
-  // Load pitch data for each selected pitcher
-  const pitchDataHooks = [
-    usePitchData(season),
-    usePitchData(season),
-    usePitchData(season),
-    usePitchData(season),
-    usePitchData(season),
-  ];
-
-  useEffect(() => {
-    selectedPitchers.forEach((p, i) => {
-      if (pitchDataHooks[i]) pitchDataHooks[i].loadForPitcher(p.pitcher_id);
-    });
-  }, [ids.join(','), season]);
+  // One fixed slot per MAX_PITCHERS — hooks must be called unconditionally.
+  const pitches0 = usePitchSlot(season, selectedPitchers[0]);
+  const pitches1 = usePitchSlot(season, selectedPitchers[1]);
+  const pitches2 = usePitchSlot(season, selectedPitchers[2]);
+  const pitches3 = usePitchSlot(season, selectedPitchers[3]);
+  const pitches4 = usePitchSlot(season, selectedPitchers[4]);
 
   const pitchGrades = useMemo(() => {
+    const pitchesBySlot = [pitches0, pitches1, pitches2, pitches3, pitches4];
     return selectedPitchers.map((_, i) => {
-      const pitches = pitchDataHooks[i]?.pitches ?? [];
+      const pitches = pitchesBySlot[i] ?? [];
       if (!pitches.length || !scoringConfig) return [];
       return computePitchTypeGrades(pitches, scoringConfig.league_averages as unknown as Record<string, LeagueAvgDetailed>);
     });
-  }, [selectedPitchers.map(p => p.pitcher_id).join(','), scoringConfig, ...pitchDataHooks.map(h => h.pitches.length)]);
+  }, [selectedPitchers, scoringConfig, pitches0, pitches1, pitches2, pitches3, pitches4]);
 
   const radarSeries = selectedPitchers.map(p =>
     DIMS.map(d => ({ dimension: d, score: p.dimensions[d]?.score ?? 0 }))

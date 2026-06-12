@@ -18,6 +18,25 @@ function getSortValue(d: SpringDelta, key: SortKey): number {
 
 const DIM_KEYS = ['stuff', 'command', 'deception', 'tunnel_and_sequence', 'outcomes', 'arsenal'] as const;
 
+// Module scope so React preserves <th> identity across renders (react-hooks/static-components).
+function SortHeader({ k, label, width, sortKey, sortAsc, onSort }: {
+  k: SortKey; label: string; width?: number;
+  sortKey: SortKey; sortAsc: boolean; onSort: (k: SortKey) => void;
+}) {
+  return (
+    <th
+      onClick={() => onSort(k)}
+      style={{
+        cursor: 'pointer', padding: '8px 6px', textAlign: 'center', fontSize: 11,
+        color: sortKey === k ? '#4a9eff' : '#808098', width,
+        userSelect: 'none', whiteSpace: 'nowrap',
+      }}
+    >
+      {label} {sortKey === k ? (sortAsc ? '▲' : '▼') : ''}
+    </th>
+  );
+}
+
 // ─── Top Movers Card ─────────────────────────────────────────────────────────
 
 function MoverCard({ player, rank, type }: { player: SpringDelta; rank: number; type: 'improve' | 'decline' }) {
@@ -141,18 +160,7 @@ export function SpringTraining() {
     else { setSortKey(key); setSortAsc(false); }
   };
 
-  const SortHeader = ({ k, label, width }: { k: SortKey; label: string; width?: number }) => (
-    <th
-      onClick={() => handleSort(k)}
-      style={{
-        cursor: 'pointer', padding: '8px 6px', textAlign: 'center', fontSize: 11,
-        color: sortKey === k ? '#4a9eff' : '#808098', width,
-        userSelect: 'none', whiteSpace: 'nowrap',
-      }}
-    >
-      {label} {sortKey === k ? (sortAsc ? '▲' : '▼') : ''}
-    </th>
-  );
+  const sortCtx = { sortKey, sortAsc, onSort: handleSort };
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px 16px' }}>
@@ -264,9 +272,9 @@ export function SpringTraining() {
                 <th style={{ ...thStyle, width: 50 }}>SP P</th>
                 <th style={{ ...thStyle, width: 50 }}>2025</th>
                 <th style={{ ...thStyle, width: 55 }}>Spring</th>
-                <SortHeader k="pitch_plus_delta" label="Delta" width={55} />
+                <SortHeader k="pitch_plus_delta" label="Delta" width={55} {...sortCtx} />
                 {DIM_KEYS.map(dk => (
-                  <SortHeader key={dk} k={dk} label={DIMENSION_LABELS[dk as keyof typeof DIMENSION_LABELS] ?? dk} width={65} />
+                  <SortHeader key={dk} k={dk} label={DIMENSION_LABELS[dk as keyof typeof DIMENSION_LABELS] ?? dk} width={65} {...sortCtx} />
                 ))}
               </tr>
             </thead>

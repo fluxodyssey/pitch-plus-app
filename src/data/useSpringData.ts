@@ -54,14 +54,13 @@ export function useSpringData(): UseSpringDataResult {
   });
 
   useEffect(() => {
-    if (cachedResult) {
-      setState({ deltas: cachedResult.deltas, loading: false, error: null, springMeta: cachedResult.meta });
-      return;
-    }
-    setState(s => ({ ...s, loading: true, error: null }));
+    // Warm-cache mount is covered by the useState initializer; loadSpringDeltas
+    // resolves instantly from cache, so every setState here stays async.
+    let cancelled = false;
     loadSpringDeltas()
-      .then(r => setState({ deltas: r.deltas, loading: false, error: null, springMeta: r.meta }))
-      .catch(err => setState({ deltas: null, loading: false, error: String(err), springMeta: null }));
+      .then(r => { if (!cancelled) setState({ deltas: r.deltas, loading: false, error: null, springMeta: r.meta }); })
+      .catch(err => { if (!cancelled) setState({ deltas: null, loading: false, error: String(err), springMeta: null }); });
+    return () => { cancelled = true; };
   }, []);
 
   return state;

@@ -84,7 +84,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export function PitcherPlots() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data, season } = useData();
-  const pitchers = data?.pitchers?.pitchers ?? [];
+  const pitchers = useMemo(() => data?.pitchers?.pitchers ?? [], [data]);
 
   const initialId = searchParams.get('pitcher') ? Number(searchParams.get('pitcher')) : null;
   const [selectedId, setSelectedId] = useState<number | null>(initialId);
@@ -98,7 +98,7 @@ export function PitcherPlots() {
       loadForPitcher(selectedId);
       setSearchParams({ pitcher: String(selectedId) }, { replace: true });
     }
-  }, [selectedId, loadForPitcher]);
+  }, [selectedId, loadForPitcher, setSearchParams]);
 
   const selectedPitcher = useMemo(
     () => pitchers.find((p) => p.pitcher_id === selectedId) ?? null,
@@ -111,12 +111,15 @@ export function PitcherPlots() {
     return Array.from(new Set(allPitches.map((p) => p.pt))).sort();
   }, [allPitches]);
 
-  const [selectedPitchTypes, setSelectedPitchTypes] = useState<Set<string>>(new Set());
-
-  // Reset pitch type filter when pitcher changes
-  useEffect(() => {
+  // Initializer covers a warm-cache mount (pitch types already known); the
+  // render-phase adjustment below resets the filter when the pitcher changes.
+  const [selectedPitchTypes, setSelectedPitchTypes] = useState<Set<string>>(() => new Set(pitchTypes));
+  const pitchTypesKey = pitchTypes.join(',');
+  const [prevPitchTypesKey, setPrevPitchTypesKey] = useState(pitchTypesKey);
+  if (pitchTypesKey !== prevPitchTypesKey) {
+    setPrevPitchTypesKey(pitchTypesKey);
     if (pitchTypes.length > 0) setSelectedPitchTypes(new Set(pitchTypes));
-  }, [pitchTypes.join(',')]);
+  }
 
   function togglePitchType(pt: string) {
     setSelectedPitchTypes((prev) => {

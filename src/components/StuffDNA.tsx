@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { pitchColor, scoreColorContinuous } from '../data/constants';
 import { AttributeGauges } from './AttributeGauges';
 import type { PitchType, AttributeGrades, PitchAttributesData } from '../types';
@@ -41,8 +41,10 @@ export function StuffDNA({
   const W = width - PAD.left - PAD.right;
   const H = height - PAD.top - PAD.bottom;
 
-  function toX(hb: number) { return PAD.left + ((hb - HB_RANGE[0]) / (HB_RANGE[1] - HB_RANGE[0])) * W; }
-  function toY(ivb: number) { return PAD.top + H - ((ivb - IVB_RANGE[0]) / (IVB_RANGE[1] - IVB_RANGE[0])) * H; }
+  // useCallback so these can sit in the draw effect's deps without re-running
+  // it every render — identity only changes when the plot area resizes.
+  const toX = useCallback((hb: number) => PAD.left + ((hb - HB_RANGE[0]) / (HB_RANGE[1] - HB_RANGE[0])) * W, [W]);
+  const toY = useCallback((ivb: number) => PAD.top + H - ((ivb - IVB_RANGE[0]) / (IVB_RANGE[1] - IVB_RANGE[0])) * H, [H]);
 
   function hitTest(mx: number, my: number): string | null {
     for (const pt of displayTypes) {
@@ -198,7 +200,7 @@ export function StuffDNA({
       }
     }
 
-  }, [displayTypes, attributesByType, leagueMovement, hovered, highlightedTypes, width, height]);
+  }, [displayTypes, attributesByType, leagueMovement, hovered, highlightedTypes, width, height, W, H, toX, toY]);
 
   const hoveredAttrs = hovered ? attributesByType?.[hovered] : null;
 
