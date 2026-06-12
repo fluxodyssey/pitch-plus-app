@@ -466,6 +466,11 @@ export interface LeagueAvgDetailed {
   avg_ivb: number;   std_ivb: number;
   avg_hb: number;    std_hb: number;
   avg_ext: number;   std_ext: number;
+  avg_spin_eff?: number;  std_spin_eff?: number;
+  /** League whiff/zone/chase rates (2026-06-10) — drive GameSummary cell shading. */
+  avg_whiff_rate?: number | null;
+  avg_zone_rate?: number | null;
+  avg_chase_rate?: number | null;
 }
 
 export interface ScoringConfig {

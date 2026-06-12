@@ -534,7 +534,10 @@
       "avg_ext": 6.5,
       "std_ext": 0.44,
       "avg_spin_eff": 7.84,
-      "std_spin_eff": 1.408
+      "std_spin_eff": 1.408,
+      "avg_whiff_rate": 0.217,
+      "avg_zone_rate": 0.565,
+      "avg_chase_rate": 0.235
     },
     "SI": {
       "n": 111114,
@@ -549,7 +552,10 @@
       "avg_ext": 6.4,
       "std_ext": 0.45,
       "avg_spin_eff": 8.12,
-      "std_spin_eff": 1.259
+      "std_spin_eff": 1.259,
+      "avg_whiff_rate": 0.139,
+      "avg_zone_rate": 0.579,
+      "avg_chase_rate": 0.246
     },
     "SL": {
       "n": 105358,
@@ -564,7 +570,10 @@
       "avg_ext": 6.4,
       "std_ext": 0.46,
       "avg_spin_eff": 2.65,
-      "std_spin_eff": 1.436
+      "std_spin_eff": 1.436,
+      "avg_whiff_rate": 0.332,
+      "avg_zone_rate": 0.467,
+      "avg_chase_rate": 0.319
     },
     "CH": {
       "n": 73225,
@@ -579,7 +588,10 @@
       "avg_ext": 6.4,
       "std_ext": 0.44,
       "avg_spin_eff": 9.03,
-      "std_spin_eff": 2.186
+      "std_spin_eff": 2.186,
+      "avg_whiff_rate": 0.311,
+      "avg_zone_rate": 0.39,
+      "avg_chase_rate": 0.335
     },
     "FC": {
       "n": 53921,
@@ -594,7 +606,10 @@
       "avg_ext": 6.4,
       "std_ext": 0.4,
       "avg_spin_eff": 3.84,
-      "std_spin_eff": 1.38
+      "std_spin_eff": 1.38,
+      "avg_whiff_rate": 0.224,
+      "avg_zone_rate": 0.538,
+      "avg_chase_rate": 0.268
     },
     "ST": {
       "n": 51649,
@@ -609,7 +624,10 @@
       "avg_ext": 6.3,
       "std_ext": 0.44,
       "avg_spin_eff": 5.59,
-      "std_spin_eff": 1.637
+      "std_spin_eff": 1.637,
+      "avg_whiff_rate": 0.317,
+      "avg_zone_rate": 0.451,
+      "avg_chase_rate": 0.301
     },
     "CU": {
       "n": 48218,
@@ -624,7 +642,10 @@
       "avg_ext": 6.4,
       "std_ext": 0.45,
       "avg_spin_eff": 5.65,
-      "std_spin_eff": 1.964
+      "std_spin_eff": 1.964,
+      "avg_whiff_rate": 0.31,
+      "avg_zone_rate": 0.438,
+      "avg_chase_rate": 0.285
     },
     "FS": {
       "n": 23990,
@@ -639,7 +660,10 @@
       "avg_ext": 6.6,
       "std_ext": 0.42,
       "avg_spin_eff": 9.71,
-      "std_spin_eff": 3.105
+      "std_spin_eff": 3.105,
+      "avg_whiff_rate": 0.351,
+      "avg_zone_rate": 0.379,
+      "avg_chase_rate": 0.347
     },
     "KC": {
       "n": 12904,
@@ -654,7 +678,10 @@
       "avg_ext": 6.4,
       "std_ext": 0.41,
       "avg_spin_eff": 4.98,
-      "std_spin_eff": 2.008
+      "std_spin_eff": 2.008,
+      "avg_whiff_rate": 0.364,
+      "avg_zone_rate": 0.412,
+      "avg_chase_rate": 0.335
     },
     "SV": {
       "n": 3569,
@@ -669,7 +696,10 @@
       "avg_ext": 6.2,
       "std_ext": 0.44,
       "avg_spin_eff": 5.39,
-      "std_spin_eff": 1.566
+      "std_spin_eff": 1.566,
+      "avg_whiff_rate": 0.328,
+      "avg_zone_rate": 0.426,
+      "avg_chase_rate": 0.301
     },
     "EP": {
       "n": 938,
@@ -684,7 +714,10 @@
       "avg_ext": 4.3,
       "std_ext": 0.63,
       "avg_spin_eff": 15.27,
-      "std_spin_eff": 5.931
+      "std_spin_eff": 5.931,
+      "avg_whiff_rate": 0.038,
+      "avg_zone_rate": 0.381,
+      "avg_chase_rate": 0.291
     },
     "FA": {
       "n": 879,
@@ -699,7 +732,10 @@
       "avg_ext": 4.7,
       "std_ext": 0.66,
       "avg_spin_eff": 10.62,
-      "std_spin_eff": 2.43
+      "std_spin_eff": 2.43,
+      "avg_whiff_rate": 0.067,
+      "avg_zone_rate": 0.45,
+      "avg_chase_rate": 0.245
     },
     "FO": {
       "n": 541,
@@ -714,7 +750,10 @@
       "avg_ext": 6.3,
       "std_ext": 0.17,
       "avg_spin_eff": 8.98,
-      "std_spin_eff": 2.525
+      "std_spin_eff": 2.525,
+      "avg_whiff_rate": 0.418,
+      "avg_zone_rate": 0.274,
+      "avg_chase_rate": 0.457
     },
     "CS": {
       "n": 341,
@@ -729,7 +768,10 @@
       "avg_ext": 5.6,
       "std_ext": 0.57,
       "avg_spin_eff": 7.92,
-      "std_spin_eff": 5.924
+      "std_spin_eff": 5.924,
+      "avg_whiff_rate": 0.283,
+      "avg_zone_rate": 0.437,
+      "avg_chase_rate": 0.261
     },
     "KN": {
       "n": 136,
@@ -744,7 +786,10 @@
       "avg_ext": 5.9,
       "std_ext": 0.88,
       "avg_spin_eff": 34.77,
-      "std_spin_eff": 39.657
+      "std_spin_eff": 39.657,
+      "avg_whiff_rate": 0.16,
+      "avg_zone_rate": 0.382,
+      "avg_chase_rate": 0.167
     },
     "UN": {
       "n": 10,
@@ -759,7 +804,10 @@
       "avg_ext": 6.6,
       "std_ext": 0.58,
       "avg_spin_eff": 9.63,
-      "std_spin_eff": 8.598
+      "std_spin_eff": 8.598,
+      "avg_whiff_rate": 0.0,
+      "avg_zone_rate": 0.143,
+      "avg_chase_rate": 0.0
     },
     "SC": {
       "n": 7,
@@ -774,7 +822,10 @@
       "avg_ext": 5.8,
       "std_ext": 0.41,
       "avg_spin_eff": 9.73,
-      "std_spin_eff": 2.143
+      "std_spin_eff": 2.143,
+      "avg_whiff_rate": 0.0,
+      "avg_zone_rate": 0.571,
+      "avg_chase_rate": 0.0
     }
   },
   "fastball_types": [

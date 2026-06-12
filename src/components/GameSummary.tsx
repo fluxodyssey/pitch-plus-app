@@ -267,7 +267,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
             <tbody>
               {arsenal.map((row) => {
                 const lg = lgAvgs[row.pt];
-                function diffBg(val: number | null, lgVal: number | undefined, higher: boolean) {
+                function diffBg(val: number | null, lgVal: number | null | undefined, higher: boolean) {
                   return cellBg(val, lgVal ?? null, higher);
                 }
                 return (
@@ -342,7 +342,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                         color: '#e0e0e8',
                         fontSize: 12,
                         fontFamily: 'monospace',
-                        background: 'transparent',
+                        background: diffBg(row.whiffRate, lg?.avg_whiff_rate, true),
                       }}
                     >
                       {row.whiffRate != null ? `${(row.whiffRate * 100).toFixed(1)}%` : '—'}
@@ -354,7 +354,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                         color: '#e0e0e8',
                         fontSize: 12,
                         fontFamily: 'monospace',
-                        background: 'transparent',
+                        background: diffBg(row.zoneRate, lg?.avg_zone_rate, true),
                       }}
                     >
                       {row.zoneRate != null ? `${(row.zoneRate * 100).toFixed(1)}%` : '—'}
@@ -366,7 +366,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                         color: '#e0e0e8',
                         fontSize: 12,
                         fontFamily: 'monospace',
-                        background: 'transparent',
+                        background: diffBg(row.chaseRate, lg?.avg_chase_rate, true),
                       }}
                     >
                       {row.chaseRate != null ? `${(row.chaseRate * 100).toFixed(1)}%` : '—'}
