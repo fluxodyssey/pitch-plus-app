@@ -130,6 +130,13 @@ export interface Pitcher {
   trajectory_confidence?: number | null;
   seasons_observed?: number | null;
 
+  // IAA fields (from induced_attack_angle.py --merge, 2025+ after bat-tracking
+  // merge). Display-only — iaa_score composite failed validation, never score it.
+  iaa_fb?: number | null;
+  iaa_brk?: number | null;
+  iaa_os?: number | null;
+  iaa_n_contacts?: number | null;
+
   // IAA and per-pitcher bootstrap CI scalars were removed 2026-06-09: no
   // pitchers_{year}.json has carried them (re-add when the model merges them;
   // IAA validation notes live in models/CLAUDE.md).
