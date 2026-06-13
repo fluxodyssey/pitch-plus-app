@@ -160,6 +160,8 @@ export function computeMetrics(pitches: RawPitch[], config: ScoringConfig): Comp
     k_rate: kRate,
     bb_rate: bbRate,
     k_bb_pct: kBbPct,
+    // K%×1.3 − BB% — mirrors novel_metrics.py; the scored Command metric
+    bip_adjusted_kbb: kRate != null && bbRate != null ? 1.3 * kRate - bbRate : null,
     avg_extension: mean(extValues),
     avg_perceived_velo: mean(pvValues),
     fb_vaa: mean(fbVaaValues),

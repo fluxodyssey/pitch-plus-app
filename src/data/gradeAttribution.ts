@@ -91,12 +91,13 @@ export function computeGradeAttribution(
       .slice(0, 2);
     drivers.push(...locDrivers);
 
-    // K-BB% from metric percentiles
-    if (percentiles?.metrics.k_bb_pct != null) {
+    // BIP-adjusted K-BB% — the scored Command signal (k_bb_pct was purged from
+    // metric_grades, so the old driver could never fire)
+    if (percentiles?.metrics.bip_adjusted_kbb != null) {
       drivers.push({
-        label: 'K-BB%',
-        percentile: percentiles.metrics.k_bb_pct,
-        contribution: contribution(percentiles.metrics.k_bb_pct),
+        label: 'BIP-Adj K-BB%',
+        percentile: percentiles.metrics.bip_adjusted_kbb,
+        contribution: contribution(percentiles.metrics.bip_adjusted_kbb),
       });
     }
 
