@@ -62,6 +62,20 @@ describe('DIMENSION_METRICS consistency', () => {
       expect(DIMENSION_LABELS[dim as keyof typeof DIMENSION_LABELS]).toBeDefined();
     }
   });
+
+  // Guards the contract with models/constants.py:PITCH_PLUS_DIMENSIONS — the
+  // drill-down must show exactly what the composite scores (38 metrics, no
+  // phantoms, no omissions). Update BOTH sides when the model changes.
+  it('mirrors the canonical 38 scored metrics with correct per-dimension counts', () => {
+    const counts: Record<string, number> = {
+      stuff: 5, command: 8, deception: 7, tunnel_and_sequence: 3, outcomes: 10, arsenal: 5,
+    };
+    for (const [dim, metrics] of Object.entries(DIMENSION_METRICS)) {
+      expect({ dim, n: metrics.length }).toEqual({ dim, n: counts[dim] });
+    }
+    const flat = Object.values(DIMENSION_METRICS).flat();
+    expect(new Set(flat).size).toBe(38);
+  });
 });
 
 describe('LOWER_IS_BETTER', () => {

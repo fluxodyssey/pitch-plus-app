@@ -24,11 +24,18 @@ function avg(values: number[]): number | null {
   return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
-function zToGrade(value: number | null, mean: number, std: number): number {
+function zToGrade(value: number | null, mean: number, std: number, lowerIsBetter = false): number {
   if (value == null || std === 0) return 100;
-  const z = (value - mean) / std;
+  let z = (value - mean) / std;
+  if (lowerIsBetter) z = -z;
   return Math.max(20, Math.min(180, Math.round(100 + z * 15)));
 }
+
+// iVB direction by pitch family — mirrors models/pitch_plus.py stuff_z_for_row:
+// rise-seekers reward high iVB, sinkers and breaking/offspeed reward drop,
+// cutters are not directionally scored on iVB.
+const RISE_SEEKING = new Set(['FF', 'FA', 'FT']);
+const NEUTRAL_IVB = new Set(['FC']);
 
 // ─── Main computation ────────────────────────────────────────────────────────
 
@@ -91,22 +98,32 @@ export function computePitchTypeGrades(
 
     // Grade against league averages for this pitch type
     let veloGrade = 100, spinGrade = 100, ivbGrade = 100, hbGrade = 100, extGrade = 100;
+    const ivbInComposite = !NEUTRAL_IVB.has(pt);
     if (la) {
       veloGrade = zToGrade(avgVelo, la.avg_velo, la.std_velo);
       spinGrade = zToGrade(avgSpin, la.avg_spin, la.std_spin);
-      ivbGrade = zToGrade(avgIvb, la.avg_ivb, la.std_ivb);
-      hbGrade = zToGrade(avgHb, la.avg_hb, la.std_hb);
+      if (ivbInComposite) {
+        ivbGrade = zToGrade(avgIvb, la.avg_ivb, la.std_ivb, !RISE_SEEKING.has(pt));
+      }
+      // HB graded on absolute movement: league avg_hb pools L/R signs, so a
+      // signed z-score misgrades LHP. Neutral 100 if config lacks abs stats.
+      hbGrade = la.avg_abs_hb != null && la.std_abs_hb != null
+        ? zToGrade(avgHb == null ? null : Math.abs(avgHb), la.avg_abs_hb, la.std_abs_hb)
+        : 100;
       extGrade = zToGrade(avgExt, la.avg_ext, la.std_ext);
     }
 
     // Composite stuff grade: weighted average of physical attribute grades
-    const stuffGrade = Math.round(
-      veloGrade * 0.30 +
-      spinGrade * 0.15 +
-      ivbGrade * 0.25 +
-      hbGrade * 0.15 +
-      extGrade * 0.15
-    );
+    // (re-normalized when iVB is excluded for cutters)
+    const parts: Array<[number, number]> = [
+      [veloGrade, 0.30],
+      [spinGrade, 0.15],
+      [hbGrade, 0.15],
+      [extGrade, 0.15],
+    ];
+    if (ivbInComposite) parts.push([ivbGrade, 0.25]);
+    const wSum = parts.reduce((s, [, w]) => s + w, 0);
+    const stuffGrade = Math.round(parts.reduce((s, [g, w]) => s + g * w, 0) / wSum);
 
     grades.push({
       pitchType: pt,

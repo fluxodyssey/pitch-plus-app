@@ -1,79 +1,64 @@
-import type { DimensionKey, MetricKey } from '../types';
+import type { DimensionKey, MetricKey, ScoredMetricKey } from '../types';
 
 // ─── Metric Labels ─────────────────────────────────────────────────────────
 
+// Labels for every MetricKey (scored 38 from constants.py:PITCH_PLUS_DIMENSIONS
+// + display-only keys). Exhaustive by type — pruned to the canonical metric set
+// 2026-06-12 (phantom v3-era metrics removed from the union).
 export const METRIC_LABELS: Record<MetricKey, string> = {
+  // ── Stuff ────────────────────────────────────────────────────────────────
   stuff_z: 'Stuff Z-Score',
-  ssw_proxy: 'Seam-Shifted Wake',
+  swing_plus_suppression: 'Swing+ Suppression',
   avg_perceived_velo: 'Perceived Velocity',
-  k_bb_pct: 'K-BB%',
-  zone_rate: 'Zone%',
-  edge_rate: 'Edge%',
+  bat_speed_suppression: 'Bat Speed Suppression',
+  ssw_proxy: 'Seam-Shifted Wake',
+  // ── Command ──────────────────────────────────────────────────────────────
+  bip_adjusted_kbb: 'BIP-Adj K-BB%',
+  race_to_2_strikes: 'Race to 2 Strikes',
   loc_precision: 'Location Precision',
+  zone_rate: 'Zone%',
   first_pitch_strike_rate: 'First Pitch K%',
+  take_rv_against: 'Take RV Against',
+  edge_rate: 'Edge%',
+  markov_efficiency: 'Markov Efficiency',
+  // ── Deception ────────────────────────────────────────────────────────────
   in_zone_whiff_rate: 'In-Zone Whiff%',
-  chase_rate: 'Chase%',
   csw_rate: 'CSW%',
+  chase_rate: 'Chase%',
   avg_extension: 'Extension',
-  fb_vaa: 'Fastball VAA',
+  regime_whiff_delta: 'Regime Whiff Delta',
+  swing_length_inducement: 'Swing Length Inducement',
   release_consistency: 'Release Consistency',
-  // v3: Tango 167ms commit point tunneling
-  temporal_tunnel_tightness: 'Temporal Tunnel (167ms)',
-  temporal_tunnel_effectiveness: 'Temporal Tunnel Effect.',
-  tunnel_tightness: 'Tunnel Tightness',
-  tunnel_effectiveness: 'Tunnel Effectiveness',
-  release_uniqueness: 'Release Uniqueness',
-  speed_differential: 'Speed Differential',
+  // ── Tunnel & Sequence ────────────────────────────────────────────────────
   movement_differential: 'Movement Differential',
   sequence_surprise: 'Sequence Surprise',
+  speed_differential: 'Speed Differential',
+  // ── Outcomes ─────────────────────────────────────────────────────────────
+  markov_dominance: 'Markov Dominance',
   wrc_plus_against: 'wRC+ Against',
   k_rate: 'K%',
-  bb_rate: 'BB%',
   avg_launch_speed_against: 'EV Against',
+  bb_rate: 'BB%',
   gb_rate: 'GB%',
-  pitch_entropy: 'Pitch Entropy',
-  // v3: count-conditional entropy + synergy
-  count_conditional_entropy: 'Count-Cond. Entropy',
-  arsenal_synergy: 'Arsenal Synergy',
-  n_pitch_types: '# Pitch Types',
-  best_secondary_whiff: 'Best Secondary Whiff%',
-  platoon_resistance: 'Platoon Resistance',
-  // v3: Pitcher Deception Index
-  pitcher_deception_index: 'Deception Index (PDI)',
-  // v3.1: Stuff — spin quality & swing suppression
-  spin_direction_efficiency: 'Spin Direction Eff.',
-  bat_speed_suppression: 'Bat Speed Suppression',
-  swing_plus_suppression: 'Swing+ Suppression',
-  // v3.1: Command — novel metrics
-  obp_hr_residual: 'OBP-HR Residual',
-  race_to_2_strikes: 'Race to 2 Strikes',
-  // v3.1: Deception — zone-weighted & swing inducement
-  zone_weighted_chase: 'Zone-Weighted Chase%',
-  swing_length_inducement: 'Swing Length Inducement',
-  // v3.1: Outcomes — swing run values & barrel suppression
+  bip_rate: 'BIP Rate',
   swing_rv_against: 'Swing RV Against',
   in_zone_swing_rv: 'In-Zone Swing RV',
-  barrel_rate_against: 'Barrel Rate Against',
   chase_swing_rv: 'Chase Swing RV',
-  // v3.1: Arsenal — diversity metrics
-  spin_diversity: 'Spin Diversity',
-  speed_diversity: 'Speed Diversity',
-  // v3.1: backtest-validated novel metrics
-  bip_adjusted_kbb: 'BIP-Adj K-BB%',
-  bip_rate: 'BIP Rate',
-  take_rv_against: 'Take RV Against',
+  // ── Arsenal ──────────────────────────────────────────────────────────────
+  best_secondary_whiff: 'Best Secondary Whiff%',
+  count_conditional_entropy: 'Count-Cond. Entropy',
+  platoon_resistance: 'Platoon Resistance',
+  n_pitch_types: '# Pitch Types',
+  pitch_entropy: 'Pitch Entropy',
+  // ── Display-only keys (not in the composite) ─────────────────────────────
+  k_bb_pct: 'K-BB%',
   called_strike_rv: 'Called Strike RV',
   ball_rv: 'Ball RV',
-  regime_whiff_delta: 'Regime Whiff Delta',
   velocity_adaptation: 'Velocity Adaptation',
   mix_adaptation: 'Mix Adaptation',
-  // Markov chain metrics
-  markov_dominance: 'Markov Dominance',
   markov_walk_risk: 'Markov Walk Risk',
-  markov_efficiency: 'Markov Efficiency',
   markov_recovery_score: 'Markov Recovery',
   markov_k_from_behind: 'K% from Behind',
-  // Stuff alpha / trajectory metrics
   non_stuff_alpha: 'Non-Stuff Alpha',
   command_alpha: 'Command Alpha',
   trajectory_slope: 'Trajectory Slope',
@@ -92,65 +77,56 @@ export const DIMENSION_LABELS: Record<DimensionKey, string> = {
 
 // ─── Dimension to Metrics Mapping ─────────────────────────────────────────
 
-export const DIMENSION_METRICS: Record<DimensionKey, MetricKey[]> = {
-  stuff: ['stuff_z', 'ssw_proxy', 'avg_perceived_velo', 'spin_direction_efficiency', 'bat_speed_suppression', 'swing_plus_suppression'],
+// Mirrors models/constants.py:PITCH_PLUS_DIMENSIONS exactly (metric membership
+// AND weight order) — this map drives the dimension drill-down panels, so any
+// drift here misrepresents what the composite actually scores.
+export const DIMENSION_METRICS: Record<DimensionKey, ScoredMetricKey[]> = {
+  stuff: [
+    'stuff_z',
+    'swing_plus_suppression',
+    'avg_perceived_velo',
+    'bat_speed_suppression',
+    'ssw_proxy',
+  ],
   command: [
     'bip_adjusted_kbb',
-    'k_bb_pct',
-    'zone_rate',
-    'edge_rate',
-    'loc_precision',
-    'first_pitch_strike_rate',
-    'obp_hr_residual',
-    'take_rv_against',
     'race_to_2_strikes',
+    'loc_precision',
+    'zone_rate',
+    'first_pitch_strike_rate',
+    'take_rv_against',
+    'edge_rate',
     'markov_efficiency',
-    'called_strike_rv',
-    'ball_rv',
   ],
   deception: [
     'in_zone_whiff_rate',
-    'zone_weighted_chase',
-    'chase_rate',
     'csw_rate',
+    'chase_rate',
     'avg_extension',
-    'fb_vaa',
+    'regime_whiff_delta',
     'swing_length_inducement',
     'release_consistency',
-    'pitcher_deception_index',
-    'regime_whiff_delta',
-    'velocity_adaptation',
-    'mix_adaptation',
   ],
   tunnel_and_sequence: [
-    'temporal_tunnel_tightness',
-    'temporal_tunnel_effectiveness',
-    'tunnel_tightness',
-    'tunnel_effectiveness',
-    'release_uniqueness',
-    'speed_differential',
     'movement_differential',
     'sequence_surprise',
+    'speed_differential',
   ],
   outcomes: [
+    'markov_dominance',
+    'wrc_plus_against',
+    'k_rate',
+    'avg_launch_speed_against',
+    'bb_rate',
+    'gb_rate',
+    'bip_rate',
     'swing_rv_against',
     'in_zone_swing_rv',
-    'barrel_rate_against',
     'chase_swing_rv',
-    'k_rate',
-    'bb_rate',
-    'bip_rate',
-    'wrc_plus_against',
-    'avg_launch_speed_against',
-    'gb_rate',
-    'markov_dominance',
   ],
   arsenal: [
-    'count_conditional_entropy',
-    'arsenal_synergy',
     'best_secondary_whiff',
-    'spin_diversity',
-    'speed_diversity',
+    'count_conditional_entropy',
     'platoon_resistance',
     'n_pitch_types',
     'pitch_entropy',
@@ -159,23 +135,21 @@ export const DIMENSION_METRICS: Record<DimensionKey, MetricKey[]> = {
 
 // ─── Metrics where LOWER is better ────────────────────────────────────────
 
+// Must agree with the "lower" direction flags in constants.py:PITCH_PLUS_DIMENSIONS
+// for every scored metric (display-only keys: markov_walk_risk, ball_rv).
 export const LOWER_IS_BETTER = new Set<MetricKey>([
   'loc_precision',
   'release_consistency',
-  'temporal_tunnel_tightness',   // lower = pitches look identical at commit point
-  'tunnel_tightness',
   'wrc_plus_against',
   'bb_rate',
   'avg_launch_speed_against',
-  // v3.1: run-value metrics (lower RV = pitcher wins)
+  // run-value metrics (lower RV = pitcher wins)
   'swing_rv_against',
   'in_zone_swing_rv',
   'chase_swing_rv',
   'take_rv_against',
-  'barrel_rate_against',
   'bip_rate',
   'race_to_2_strikes',           // fewer pitches to 2 strikes = better
-  'obp_hr_residual',             // FIP-buster indicator
   'markov_walk_risk',
   'markov_efficiency',           // fewer pitches per PA = more efficient
   'ball_rv',                     // lower ball RV = better passive command
@@ -190,7 +164,6 @@ export const PCT_METRICS = new Set<MetricKey>([
   'edge_rate',
   'first_pitch_strike_rate',
   'in_zone_whiff_rate',
-  'zone_weighted_chase',
   'chase_rate',
   'csw_rate',
   'k_rate',
@@ -198,8 +171,10 @@ export const PCT_METRICS = new Set<MetricKey>([
   'bip_rate',
   'gb_rate',
   'best_secondary_whiff',
-  'pitcher_deception_index',     // shown as %
   'platoon_resistance',
+  'markov_dominance',            // P(K | 0-0) — a probability
+  'regime_whiff_delta',          // whiff% delta — percentage points
+  'markov_walk_risk',            // P(BB | 0-0) — display-only
 ]);
 
 // ─── Grade Thresholds ─────────────────────────────────────────────────────
@@ -320,9 +295,14 @@ export const ALL_METRIC_OPTIONS: Array<{ key: string; label: string; group: stri
     label: v,
     group: 'Dimensions',
   })),
-  ...Object.entries(METRIC_LABELS).map(([k, v]) => ({
-    key: `metric_${k}`,
-    label: v,
-    group: 'Metrics',
-  })),
+  // Scored metrics only, grouped by their dimension — display-only keys have no
+  // metric_grades entry, so offering them would rank every pitcher as missing.
+  ...(Object.entries(DIMENSION_METRICS) as [DimensionKey, ScoredMetricKey[]][]).flatMap(
+    ([dim, metrics]) =>
+      metrics.map((m) => ({
+        key: `metric_${m}`,
+        label: METRIC_LABELS[m],
+        group: `${DIMENSION_LABELS[dim]} Metrics`,
+      })),
+  ),
 ];

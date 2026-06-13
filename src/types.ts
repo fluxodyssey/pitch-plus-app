@@ -13,61 +13,47 @@ export type DimensionKey =
 // The sync-types skill validates this contract; the PostToolUse hook surfaces drift.
 // Use this type wherever scoring math runs.
 export type ScoredMetricKey =
-  // ── Stuff ──────────────────────────────────────────────────────────────────
+  // ── Stuff (ordered by 2026-05-28 reweight weights) ─────────────────────────
   | 'stuff_z'
-  | 'ssw_proxy'
+  | 'swing_plus_suppression'     // swing quality degradation composite
   | 'avg_perceived_velo'
-  | 'spin_direction_efficiency'  // cos(axis) × spin efficiency (Stuff)
-  | 'bat_speed_suppression'      // pitcher degrades batter bat speed (Stuff)
-  | 'swing_plus_suppression'     // swing quality degradation composite (Stuff)
+  | 'bat_speed_suppression'      // pitcher degrades batter bat speed
+  | 'ssw_proxy'
   // ── Command ────────────────────────────────────────────────────────────────
   | 'bip_adjusted_kbb'           // K%×1.3 − BB% — replaces k_bb_pct in scoring
-  | 'zone_rate'
-  | 'edge_rate'
+  | 'race_to_2_strikes'          // pitches to reach 2-strike count
   | 'loc_precision'
+  | 'zone_rate'
   | 'first_pitch_strike_rate'
-  | 'obp_hr_residual'            // FIP-buster indicator (Command)
   | 'take_rv_against'            // passive command: mean RV on takes
-  | 'race_to_2_strikes'          // pitches to reach 2-strike count (Command)
-  | 'markov_efficiency'          // expected pitches/PA from 0-0 (Command)
+  | 'edge_rate'
+  | 'markov_efficiency'          // expected pitches/PA from 0-0
   // ── Deception ─────────────────────────────────────────────────────────────
   | 'in_zone_whiff_rate'
-  | 'zone_weighted_chase'        // Decision+ zone-weighted chase rate (Deception)
-  | 'chase_rate'
   | 'csw_rate'
+  | 'chase_rate'
   | 'avg_extension'
-  | 'fb_vaa'
-  | 'swing_length_inducement'    // longer swings = confused batter (Deception)
+  | 'regime_whiff_delta'         // whiff% ahead − whiff% behind
+  | 'swing_length_inducement'    // longer swings = confused batter
   | 'release_consistency'
-  | 'pitcher_deception_index'
-  | 'regime_whiff_delta'         // whiff% ahead − whiff% behind (Deception)
   // ── Tunnel & Sequence ─────────────────────────────────────────────────────
-  | 'temporal_tunnel_tightness'
-  | 'temporal_tunnel_effectiveness'
-  | 'tunnel_tightness'
-  | 'tunnel_effectiveness'
-  | 'release_uniqueness'
-  | 'speed_differential'
   | 'movement_differential'
   | 'sequence_surprise'
+  | 'speed_differential'
   // ── Outcomes ──────────────────────────────────────────────────────────────
-  | 'swing_rv_against'           // mean RV on swings — best ERA predictor (r=0.854)
-  | 'in_zone_swing_rv'           // in-zone contact quality suppression (r=0.799)
-  | 'barrel_rate_against'        // barrel rate allowed
-  | 'chase_swing_rv'             // bad contact on chases (r=0.354)
-  | 'k_rate'
-  | 'bb_rate'
-  | 'bip_rate'                   // BIP per PA (BIP avoidance)
+  | 'markov_dominance'           // P(K | start 0-0) — top Outcomes weight
   | 'wrc_plus_against'
+  | 'k_rate'
   | 'avg_launch_speed_against'
+  | 'bb_rate'
   | 'gb_rate'
-  | 'markov_dominance'           // P(K | start 0-0)
+  | 'bip_rate'                   // BIP per PA (BIP avoidance)
+  | 'swing_rv_against'           // mean RV on swings against
+  | 'in_zone_swing_rv'           // in-zone contact quality suppression
+  | 'chase_swing_rv'             // bad contact on chases
   // ── Arsenal ───────────────────────────────────────────────────────────────
-  | 'count_conditional_entropy'
-  | 'arsenal_synergy'
   | 'best_secondary_whiff'
-  | 'spin_diversity'             // decorrelated spin profiles (Arsenal)
-  | 'speed_diversity'            // decorrelated speed profiles (Arsenal)
+  | 'count_conditional_entropy'
   | 'platoon_resistance'
   | 'n_pitch_types'
   | 'pitch_entropy';
@@ -465,6 +451,8 @@ export interface LeagueAvgDetailed {
   avg_spin: number;  std_spin: number;
   avg_ivb: number;   std_ivb: number;
   avg_hb: number;    std_hb: number;
+  /** Hand-neutral |HB| stats (2026-06-12) — grade HB against these, not signed avg_hb. */
+  avg_abs_hb?: number;  std_abs_hb?: number;
   avg_ext: number;   std_ext: number;
   avg_spin_eff?: number;  std_spin_eff?: number;
   /** League whiff/zone/chase rates (2026-06-10) — drive GameSummary cell shading. */

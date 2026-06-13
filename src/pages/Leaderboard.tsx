@@ -8,19 +8,21 @@ import { exportCsv } from '../data/exportCsv';
 import { SkeletonPage } from '../components/Skeleton';
 import type { Pitcher, DimensionKey, MetricKey } from '../types';
 
-function getMetricValue(pitcher: Pitcher, key: string): { grade: number; raw: string } {
+// grade: null = pitcher has no value for this metric (sorts last, shows '—',
+// exports blank — never a fake 0, per the app's N/A convention).
+function getMetricValue(pitcher: Pitcher, key: string): { grade: number | null; raw: string } {
   if (key === 'pitch_plus') {
     return { grade: pitcher.pitch_plus, raw: String(pitcher.pitch_plus) };
   }
   if (key.startsWith('dim_')) {
     const dimKey = key.slice(4) as DimensionKey;
     const dim = pitcher.dimensions[dimKey];
-    return { grade: dim?.score ?? 0, raw: String(dim?.score ?? 0) };
+    return dim ? { grade: dim.score, raw: String(dim.score) } : { grade: null, raw: '—' };
   }
   if (key.startsWith('metric_')) {
     const mk = key.slice(7) as MetricKey;
     const mg = pitcher.metric_grades[mk];
-    if (!mg) return { grade: 0, raw: '—' };
+    if (!mg) return { grade: null, raw: '—' };
     const rawDisplay = PCT_METRICS.has(mk)
       ? `${(mg.raw * 100).toFixed(1)}%`
       : mk === 'n_pitch_types'
@@ -30,7 +32,7 @@ function getMetricValue(pitcher: Pitcher, key: string): { grade: number; raw: st
       : mg.raw.toFixed(1);
     return { grade: mg.grade, raw: rawDisplay };
   }
-  return { grade: 0, raw: '—' };
+  return { grade: null, raw: '—' };
 }
 
 export function Leaderboard() {
@@ -84,8 +86,8 @@ export function Leaderboard() {
       return true;
     });
     return [...pitchers].sort((a, b) => {
-      const av = getMetricValue(a, selectedMetric).grade;
-      const bv = getMetricValue(b, selectedMetric).grade;
+      const av = getMetricValue(a, selectedMetric).grade ?? -Infinity;
+      const bv = getMetricValue(b, selectedMetric).grade ?? -Infinity;
       return bv - av || a.pitcher_name.localeCompare(b.pitcher_name);
     });
   }, [data, selectedMetric, minPitches, handFilter, teamFilter, roleFilter, starterIds, pitchTypeFilter]);
@@ -123,13 +125,13 @@ export function Leaderboard() {
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <p className="subtitle" style={{ margin: 0 }}>Rank any of 33 metrics across all pitchers · {data.pitchers.metadata.n_pitchers.toLocaleString()} pitchers · {data.pitchers.metadata.n_games} games</p>
+          <p className="subtitle" style={{ margin: 0 }}>Rank any of {ALL_METRIC_OPTIONS.length} metrics across all pitchers · {data.pitchers.metadata.n_pitchers.toLocaleString()} pitchers · {data.pitchers.metadata.n_games} games</p>
           <button
             onClick={() => {
               const headers = ['Rank', 'Name', 'Team', 'H', selectedOption?.label ?? 'Value', 'Grade', 'Pitches', 'IP', 'Games'];
               const rows = sorted.map((p, i) => {
-                const { raw } = getMetricValue(p, selectedMetric);
-                return [i + 1, p.pitcher_name, p.pitcher_team, p.pitcher_hand, raw, getMetricValue(p, selectedMetric).grade, p.n_pitches, p.ip?.toFixed(1) ?? '', p.n_games];
+                const { raw, grade } = getMetricValue(p, selectedMetric);
+                return [i + 1, p.pitcher_name, p.pitcher_team, p.pitcher_hand, raw, grade ?? '', p.n_pitches, p.ip?.toFixed(1) ?? '', p.n_games];
               });
               exportCsv(headers, rows, `leaderboard-${selectedMetric}-${season}.csv`);
             }}
@@ -298,7 +300,7 @@ export function Leaderboard() {
             <tbody>
               {sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((pitcher, idx) => {
                 const { grade, raw } = getMetricValue(pitcher, selectedMetric);
-                const color = gradeColor(grade);
+                const color = grade != null ? gradeColor(grade) : '#606080';
                 const rank = page * PAGE_SIZE + idx + 1;
                 return (
                   <tr
@@ -331,7 +333,9 @@ export function Leaderboard() {
                       {raw}
                     </td>
                     <td style={{ padding: '7px 12px', textAlign: 'right' }}>
-                      <GradeBadge score={grade} size="sm" />
+                      {grade != null
+                        ? <GradeBadge score={grade} size="sm" />
+                        : <span style={{ color: '#606080' }}>—</span>}
                     </td>
                     <td style={{ padding: '7px 12px', color: '#a0a0b8', textAlign: 'right' }}>
                       {pitcher.n_pitches.toLocaleString()}
