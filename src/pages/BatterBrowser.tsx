@@ -135,9 +135,6 @@ const METRIC_CONFIG: Record<SwingMetricKey, MetricDef> = {
   xwoba:                 { label: 'xwOBA',        fmt: v => v.toFixed(3) },
   xslg:                  { label: 'xSLG',         fmt: v => v.toFixed(3) },
   bat_speed_efficiency:  { label: 'BS Eff',       fmt: v => v.toFixed(3) },
-  aa_opt_fb:             { label: 'AA Opt FB%',   fmt: v => `${(v*100).toFixed(1)}%` },
-  aa_opt_brk:            { label: 'AA Opt Brk%',  fmt: v => `${(v*100).toFixed(1)}%` },
-  aa_opt_os:             { label: 'AA Opt OS%',   fmt: v => `${(v*100).toFixed(1)}%` },
 };
 
 const METRIC_GROUPS: { label: string; keys: SwingMetricKey[] }[] = [
@@ -160,15 +157,6 @@ const TIER_COLORS: Record<string, string> = {
 function tierColor(t: string) { return TIER_COLORS[t] ?? '#e0e0e8'; }
 
 function pct(v: number) { return `${(v * 100).toFixed(1)}%`; }
-
-function bdqGrade(r: number): { label: string; color: string } {
-  if (r < 0.45) return { label: 'Elite', color: '#d44040' };
-  if (r < 0.55) return { label: 'Above Avg', color: '#c85a5a' };
-  if (r < 0.65) return { label: 'Average', color: '#a87070' };
-  if (r < 0.75) return { label: 'Below Avg', color: '#6878a0' };
-  if (r < 0.85) return { label: 'Poor', color: '#4a6494' };
-  return { label: 'Very Poor', color: '#3a5080' };
-}
 
 // Primary discipline grade: swing-decision run value per 100 OOZ pitches
 // (higher = better). League average ≈ +2.5; elite takers clear +3.5.
@@ -690,7 +678,7 @@ function CombinedTab({ hitters, bdq, outcomes }: { hitters: EnrichedHitter[]; bd
               <SortTh {...sortCtx} k="swing_plus" label="Swing+" />
               <th style={{ padding: '9px 8px', color: '#a0a0b8', textAlign: 'center', ...stickyHeaderStyle }}>Tier</th>
               <SortTh {...sortCtx} k="n_pa" label="PA" />
-              <SortTh {...sortCtx} k="bad_chase_rate" label="Bad Chase%" title="Lower is better — BDQ" />
+              <SortTh {...sortCtx} k="bad_chase_rate" label="Bad Chase%" title="Bad chases ÷ chases — chase composition only; the BDQ grade uses Decision RV" />
               <th style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'center', ...stickyHeaderStyle }}>BDQ</th>
               <SortTh {...sortCtx} k="xwoba" label="xwOBA" />
               <SortTh {...sortCtx} k="barrel_rate" label="Barrel%" />
@@ -705,7 +693,10 @@ function CombinedTab({ hitters, bdq, outcomes }: { hitters: EnrichedHitter[]; bd
           </thead>
           <tbody>
             {filtered.map((p, i) => {
-              const g = bdqGrade(p.bdq.bad_chase_rate);
+              // BDQ grade uses Decision RV (higher = better), not bad_chase_rate
+              // — bad_chase_rate conditions on chasing and inverts elite low-chase
+              // hitters (Soto/Kwan), so it must not drive the grade (H3 fix).
+              const g = rvGrade(p.bdq.ooz_decision_rv);
               const tc = tierColor(p.tier);
               return (
                 <tr key={p.id} style={{ borderBottom: '1px solid #1a1a2e', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
@@ -723,7 +714,7 @@ function CombinedTab({ hitters, bdq, outcomes }: { hitters: EnrichedHitter[]; bd
                   </td>
                   <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'center' }}>{p.n_pa}</td>
                   <td style={{ padding: '7px 10px', textAlign: 'right' }}>
-                    <span style={{ color: g.color, fontFamily: 'monospace' }}>{pct(p.bdq.bad_chase_rate)}</span>
+                    <span style={{ color: '#a0a0b8', fontFamily: 'monospace' }}>{pct(p.bdq.bad_chase_rate)}</span>
                   </td>
                   <td style={{ padding: '7px 8px', textAlign: 'center' }}>
                     <span style={{ background: g.color + '22', color: g.color, borderRadius: 4, padding: '2px 6px', fontSize: 11, fontWeight: 600 }}>{g.label}</span>
@@ -755,7 +746,7 @@ function CombinedTab({ hitters, bdq, outcomes }: { hitters: EnrichedHitter[]; bd
 
 interface ScatterPoint {
   x: number; y: number; name: string; team: string; tier: string;
-  badChase: number; decChase: number; swingPlus: number; xwoba: number;
+  oozRV: number; badChase: number; decChase: number; swingPlus: number; xwoba: number;
   barrelRate: number; batSpeed: number; n_pa: number; n_chases: number;
 }
 
@@ -771,7 +762,7 @@ function ScatterTooltip({ active, payload }: { active?: boolean; payload?: Array
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload;
   if (!d) return null;
-  const g = bdqGrade(d.badChase);
+  const g = rvGrade(d.oozRV);
   const tc = tierColor(d.tier);
   return (
     <div style={{ background: '#16162a', border: '1px solid #2a2a3e', borderRadius: 8, padding: '10px 14px', fontSize: 13, minWidth: 180 }}>
@@ -780,7 +771,8 @@ function ScatterTooltip({ active, payload }: { active?: boolean; payload?: Array
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Swing+:</span> <span style={{ color: tc, fontWeight: 700 }}>{d.swingPlus.toFixed(1)}</span></span>
         <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Tier:</span> <span style={{ color: tc }}>{d.tier.replace(/_/g, ' ')}</span></span>
-        <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Bad Chase%:</span> <span style={{ color: g.color }}>{pct(d.badChase)}</span> <span style={{ color: '#606080', fontSize: 11 }}>({g.label})</span></span>
+        <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Decision RV:</span> <span style={{ color: g.color }}>{d.oozRV.toFixed(1)}</span> <span style={{ color: '#606080', fontSize: 11 }}>({g.label})</span></span>
+        <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Bad Chase%:</span> <span style={{ color: '#a0a0b8' }}>{pct(d.badChase)}</span> <span style={{ color: '#606080', fontSize: 11 }}>composition</span></span>
         <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Dec Chase%:</span> <span style={{ color: '#4a9eff' }}>{pct(d.decChase)}</span></span>
         <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>xwOBA:</span> <span style={{ color: xwobaColor(d.xwoba) }}>{d.xwoba.toFixed(3)}</span></span>
         <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Barrel%:</span> <span style={{ color: '#e0e0e8' }}>{pct(d.barrelRate)}</span></span>
@@ -803,11 +795,12 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
         const b = bdqMap.get(h.id);
         if (!b || b.n_chases < minChases) return null;
         return {
-          x: b.bad_chase_rate,
+          x: b.ooz_decision_rv ?? 0,
           y: h.swing_plus,
           name: h.name,
           team: h.team,
           tier: h.tier,
+          oozRV: b.ooz_decision_rv ?? 0,
           badChase: b.bad_chase_rate,
           decChase: b.deceptive_chase_rate,
           swingPlus: h.swing_plus,
@@ -822,8 +815,8 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
     [hitters, bdqMap, minPA, minChases]
   );
 
-  const avgBadChase = useMemo(() =>
-    points.length ? points.reduce((s, p) => s + p.badChase, 0) / points.length : 0.65,
+  const avgOozRv = useMemo(() =>
+    points.length ? points.reduce((s, p) => s + p.oozRV, 0) / points.length : 2.5,
     [points]
   );
 
@@ -833,7 +826,7 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
         <h3 style={{ color: '#e0e0e8', margin: '0 0 6px 0', fontSize: 16 }}>Swing Quality vs. Plate Discipline</h3>
         <p style={{ color: '#a0a0b8', fontSize: 13, margin: 0 }}>
           Each dot is a batter with both Swing+ and BDQ data. Ideal batters are{' '}
-          <strong style={{ color: '#d44040' }}>top-left</strong> (high Swing+ + low bad chase rate).
+          <strong style={{ color: '#d44040' }}>top-right</strong> (high Swing+ + high decision run value).
           n = {points.length} batters.
         </p>
       </div>
@@ -861,8 +854,8 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
 
       {/* Quadrant labels */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 4, paddingLeft: 60 }}>
-        <div style={{ textAlign: 'center', color: '#d44040', fontSize: 11, fontWeight: 600 }}>DISCIPLINED ELITE ↑</div>
         <div style={{ textAlign: 'center', color: '#a87070', fontSize: 11, fontWeight: 600 }}>AGGRESSIVE ELITE ↑</div>
+        <div style={{ textAlign: 'center', color: '#d44040', fontSize: 11, fontWeight: 600 }}>DISCIPLINED ELITE ↑</div>
       </div>
 
       <ResponsiveContainer width="100%" height={500}>
@@ -870,10 +863,10 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
           <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" />
           <XAxis
             dataKey="x" type="number"
-            domain={[0.25, 1.0]}
-            tickFormatter={v => `${(v * 100).toFixed(0)}%`}
+            domain={['auto', 'auto']}
+            tickFormatter={v => v.toFixed(1)}
             stroke="#2a2a3e" tick={{ fill: '#606080', fontSize: 11 }}
-            label={{ value: 'Bad Chase% (lower = better)', position: 'insideBottom', offset: -30, fill: '#a0a0b8', fontSize: 12 }}
+            label={{ value: 'Decision RV / 100 OOZ pitches (higher = better)', position: 'insideBottom', offset: -30, fill: '#a0a0b8', fontSize: 12 }}
           />
           <YAxis
             dataKey="y" type="number"
@@ -882,7 +875,7 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
             label={{ value: 'Swing+', angle: -90, position: 'insideLeft', offset: 15, fill: '#a0a0b8', fontSize: 12 }}
           />
           <Tooltip content={<ScatterTooltip />} />
-          <ReferenceLine x={avgBadChase} stroke="#4a9eff" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: 'Avg', position: 'top', fill: '#4a9eff', fontSize: 10 }} />
+          <ReferenceLine x={avgOozRv} stroke="#4a9eff" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: 'Avg', position: 'top', fill: '#4a9eff', fontSize: 10 }} />
           <ReferenceLine y={100} stroke="#4a9eff" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: 'Avg', position: 'right', fill: '#4a9eff', fontSize: 10 }} />
           <Scatter data={points} fillOpacity={0.75} r={4}>
             {points.map((p) => (
@@ -893,8 +886,8 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
       </ResponsiveContainer>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, paddingLeft: 60, marginTop: 4 }}>
-        <div style={{ textAlign: 'center', color: '#a0a0b8', fontSize: 11 }}>DISCIPLINED / LOW OUTPUT ↓</div>
         <div style={{ textAlign: 'center', color: '#3a5080', fontSize: 11 }}>NEEDS WORK ↓</div>
+        <div style={{ textAlign: 'center', color: '#a0a0b8', fontSize: 11 }}>DISCIPLINED / LOW OUTPUT ↓</div>
       </div>
 
       {/* Legend */}

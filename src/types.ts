@@ -323,10 +323,6 @@ export interface SwingPlusMetrics {
   xwoba: number;
   xslg: number;
   bat_speed_efficiency: number;
-  // IAA batter-side fields (from induced_attack_angle.py)
-  aa_opt_fb?: number | null;    // % contacts in optimal AA window vs fastballs
-  aa_opt_brk?: number | null;   // % contacts in optimal AA window vs breaking balls
-  aa_opt_os?: number | null;    // % contacts in optimal AA window vs offspeed
 }
 
 export interface DecisionPlusComponents {
