@@ -22,6 +22,7 @@ const SpringTraining   = lazy(() => import('./pages/SpringTraining').then(m => (
 const PitchDesign      = lazy(() => import('./pages/PitchDesign').then(m => ({ default: m.PitchDesign })));
 const FAQ              = lazy(() => import('./pages/FAQ').then(m => ({ default: m.FAQ })));
 const PitcherPlots     = lazy(() => import('./pages/PitcherPlots').then(m => ({ default: m.PitcherPlots })));
+const PitchLocationSim = lazy(() => import('./pages/PitchLocationSimulator').then(m => ({ default: m.PitchLocationSimulator })));
 const MatchupMachine   = lazy(() => import('./pages/MatchupMachine').then(m => ({ default: m.MatchupMachine })));
 const Glossary         = lazy(() => import('./pages/Glossary').then(m => ({ default: m.Glossary })));
 const PitchGrades      = lazy(() => import('./pages/PitchGrades').then(m => ({ default: m.PitchGrades })));
@@ -116,6 +117,7 @@ function Nav() {
           <NavLink to="/compare" className={navLinkClass} onClick={closeMenu}>Compare</NavLink>
           <NavLink to="/plots" className={navLinkClass} onClick={closeMenu}>Plots</NavLink>
           <NavLink to="/grades" className={navLinkClass} onClick={closeMenu}>Grades</NavLink>
+          <NavLink to="/simulator" className={navLinkClass} onClick={closeMenu}>Simulator</NavLink>
           <NavLink to="/design" className={navLinkClass} onClick={closeMenu}>Design Lab</NavLink>
           <NavLink to="/spring" className={navLinkClass} onClick={closeMenu} style={{ position: 'relative' }}>
             Spring
@@ -172,6 +174,7 @@ function AppShell() {
             <Route path="/design"                        element={<PitchDesign />} />
             <Route path="/faq"                           element={<FAQ />} />
             <Route path="/plots"                         element={<PitcherPlots />} />
+            <Route path="/simulator"                     element={<PitchLocationSim />} />
             <Route path="/matchup"                       element={<MatchupMachine />} />
             <Route path="/matchup/:pitcherId/:batterId"  element={<MatchupMachine />} />
             <Route path="/glossary"                      element={<Glossary />} />
