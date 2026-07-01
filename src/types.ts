@@ -673,3 +673,29 @@ export interface PitchTypeGrade {
   hbGrade: number;
   extGrade: number;
 }
+
+// ─── Graded Pitch Slices (models/score_slice.py → graded_slices_{year}.json) ───
+// The per-pitch grade foundation aggregated to sliceable grains. Every grade is
+// 100/σ=15, standardized across all pitchers' cells AT THAT GRAIN and
+// reliability-shrunk toward league mean (small samples pulled to average).
+export interface SliceGrades {
+  stuff: number | null;   // Stuff+/xRV — expected run value from shape+location (higher = better)
+  xwhiff: number | null;  // expected whiff from shape
+  whiff: number | null;   // realized whiff rate
+  velo: number | null;
+}
+export interface GameSlice extends SliceGrades { date: string; n: number; }
+export interface CellSlice extends SliceGrades { n: number; }
+export interface GradedPitcher {
+  name: string;
+  hand: string | null;
+  n: number;
+  season: SliceGrades;
+  games: GameSlice[];
+  counts: Record<string, CellSlice>;   // 'ahead' | 'even' | 'behind'
+  hands: Record<string, CellSlice>;    // 'L' | 'R'
+}
+export interface GradedSlices {
+  metadata: { season: number; n_pitchers: number; metrics: Record<string, string> };
+  pitchers: Record<string, GradedPitcher>;
+}
