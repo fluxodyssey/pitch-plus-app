@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# pitch-level slice exports (models/score_slice.py --export-pitches; ~40MB/season)
+# NOTE: public/data/pitches/ is generate_pitch_json.py output and IS committed
+public/data/slice_pitches/

@@ -700,3 +700,23 @@ export interface GradedSlices {
   metadata: { season: number; n_pitchers: number; metrics: Record<string, string> };
   pitchers: Record<string, GradedPitcher>;
 }
+export type SliceMetricKey = keyof SliceGrades;
+
+// ─── Pitch-level custom slicing (models/score_slice.py --export-pitches) ───
+// slice_pitches/{year}/{pitcher_id}.json is compact {f: field names, p: rows};
+// the files are gitignored (regenerate via the pipeline). NOT pitches/{year}/ —
+// that is usePitchData's older, incompatible schema. pitch_calibration.json
+// (committed) carries season-grain calibration per year+metric so the client
+// grades any filtered slice on the SEASON scale: aggregate raw → shrink toward
+// league → z vs (mu, sd) → 100/σ=15.
+export interface PitcherPitchFile { f: string[]; p: (number | string | null)[][]; }
+export interface PitchMetricCal {
+  league: number;   // league per-pitch mean of the raw source
+  mu: number;       // mean of shrunk pitcher-season values
+  sd: number;       // sd (ddof=0) of shrunk pitcher-season values
+  k: number;        // reliability shrinkage constant (denominator units)
+  higher: boolean;  // true if higher raw = better for the pitcher
+  label: string;
+}
+// year (as string) → metric key → calibration
+export type PitchCalibration = Record<string, Record<string, PitchMetricCal>>;

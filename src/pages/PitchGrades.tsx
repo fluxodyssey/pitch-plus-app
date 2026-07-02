@@ -8,9 +8,12 @@
  * are 100/σ=15, standardized across all pitchers at each grain and reliability-
  * shrunk toward league mean (short outings pulled toward average).
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import type { SliceFilters } from '../data/customSlice';
+import { EMPTY_FILTERS, filterPitches, gradeSlice } from '../data/customSlice';
 import { useData } from '../data/useData';
 import { useGradedSlices } from '../data/useGradedSlices';
+import { usePitchCalibration, usePitcherPitches } from '../data/usePitcherPitches';
 import type { SliceGrades } from '../types';
 
 const METRICS = [
@@ -74,10 +77,47 @@ const card = {
   padding: 16,
 };
 
+const selStyle = {
+  background: 'var(--bg-input)', border: '1px solid var(--border-plus)', color: 'var(--text-1)',
+  borderRadius: 'var(--radius-sm)', padding: '5px 8px', fontSize: 12, fontFamily: 'var(--sans)',
+  cursor: 'pointer',
+} as const;
+
+function Labeled({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <span style={{ color: 'var(--text-4)', fontFamily: 'var(--sans)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
+      {children}
+    </label>
+  );
+}
+
 export function PitchGrades() {
   const { season } = useData();
   const data = useGradedSlices(season);
   const [pid, setPid] = useState<string>('');
+  const [filters, setFilters] = useState<SliceFilters>(EMPTY_FILTERS);
+  const pitchState = usePitcherPitches(season, pid);
+  const calibration = usePitchCalibration();
+
+  const pitchTypes = useMemo(() => {
+    if (pitchState.status !== 'ready') return [];
+    return [...new Set(pitchState.rows.map((r) => r.pt))].filter(Boolean).sort();
+  }, [pitchState]);
+
+  // a pitch-type filter left over from another pitcher would be an INVISIBLE
+  // active filter (controlled select with no matching option renders blank)
+  useEffect(() => {
+    if (filters.pitchType != null && pitchTypes.length > 0 && !pitchTypes.includes(filters.pitchType)) {
+      setFilters((f) => ({ ...f, pitchType: null }));
+    }
+  }, [pitchTypes, filters.pitchType]);
+
+  const custom = useMemo(() => {
+    const cal = calibration.status === 'ready' ? calibration.data[String(season)] : undefined;
+    if (pitchState.status !== 'ready' || !cal) return null;
+    return gradeSlice(filterPitches(pitchState.rows, filters), cal);
+  }, [pitchState, filters, calibration, season]);
 
   const pitchers = useMemo(() => {
     if (!data) return [];
@@ -145,6 +185,109 @@ export function PitchGrades() {
                 <GradeNum v={gp.season[m.key]} size={26} />
               </div>
             ))}
+          </div>
+
+          {/* Custom slice: client-side filter over the raw per-pitch file */}
+          <div style={{ ...card, marginBottom: 16 }}>
+            <div style={{ color: 'var(--text-2)', fontFamily: 'var(--sans)', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+              Custom slice{' '}
+              <span style={{ color: 'var(--text-4)', fontWeight: 400 }}>
+                (any filter, graded on the season scale)
+              </span>
+            </div>
+            {pitchState.status === 'loading' && (
+              <div style={{ color: 'var(--text-3)', fontFamily: 'var(--sans)', fontSize: 13 }}>Loading pitch data…</div>
+            )}
+            {pitchState.status === 'missing' && (
+              <div style={{ color: 'var(--text-3)', fontFamily: 'var(--sans)', fontSize: 13 }}>
+                Pitch-level export not found for this pitcher/season. Generate it with{' '}
+                <code style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>python models/score_slice.py --export-pitches --years {String(season)}</code>.
+              </div>
+            )}
+            {pitchState.status === 'ready' && calibration.status === 'loading' && (
+              <div style={{ color: 'var(--text-3)', fontFamily: 'var(--sans)', fontSize: 13 }}>Loading calibration…</div>
+            )}
+            {pitchState.status === 'ready' && calibration.status === 'missing' && (
+              <div style={{ color: 'var(--text-3)', fontFamily: 'var(--sans)', fontSize: 13 }}>
+                pitch_calibration.json missing — generate it with{' '}
+                <code style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>python models/score_slice.py --export-pitches</code>.
+              </div>
+            )}
+            {pitchState.status === 'ready' && calibration.status === 'ready' && !custom && (
+              <div style={{ color: 'var(--text-3)', fontFamily: 'var(--sans)', fontSize: 13 }}>
+                No calibration for {String(season)} — rerun{' '}
+                <code style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>python models/score_slice.py --export-pitches --years {String(season)}</code>.
+              </div>
+            )}
+            {pitchState.status === 'ready' && custom && (
+              <>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end', margin: '10px 0 14px' }}>
+                  <Labeled label="Balls">
+                    <select style={selStyle} value={filters.balls ?? ''}
+                      onChange={(e) => setFilters({ ...filters, balls: e.target.value === '' ? null : Number(e.target.value) })}>
+                      <option value="">Any</option>
+                      {[0, 1, 2, 3].map((v) => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </Labeled>
+                  <Labeled label="Strikes">
+                    <select style={selStyle} value={filters.strikes ?? ''}
+                      onChange={(e) => setFilters({ ...filters, strikes: e.target.value === '' ? null : Number(e.target.value) })}>
+                      <option value="">Any</option>
+                      {[0, 1, 2].map((v) => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </Labeled>
+                  <Labeled label="Batter">
+                    <select style={selStyle} value={filters.hand ?? ''}
+                      onChange={(e) => setFilters({ ...filters, hand: e.target.value === '' ? null : (e.target.value as 'L' | 'R') })}>
+                      <option value="">Any</option>
+                      <option value="L">LHB</option>
+                      <option value="R">RHB</option>
+                    </select>
+                  </Labeled>
+                  <Labeled label="Pitch">
+                    <select style={selStyle} value={filters.pitchType ?? ''}
+                      onChange={(e) => setFilters({ ...filters, pitchType: e.target.value === '' ? null : e.target.value })}>
+                      <option value="">Any</option>
+                      {pitchTypes.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </Labeled>
+                  <Labeled label="Zone">
+                    <select style={selStyle} value={filters.zone ?? ''}
+                      onChange={(e) => setFilters({ ...filters, zone: e.target.value === '' ? null : (e.target.value as 'in' | 'out') })}>
+                      <option value="">Any</option>
+                      <option value="in">In zone</option>
+                      <option value="out">Out of zone</option>
+                    </select>
+                  </Labeled>
+                  <Labeled label="From">
+                    <input type="date" style={selStyle} value={filters.from ?? ''}
+                      onChange={(e) => setFilters({ ...filters, from: e.target.value || null })} />
+                  </Labeled>
+                  <Labeled label="To">
+                    <input type="date" style={selStyle} value={filters.to ?? ''}
+                      onChange={(e) => setFilters({ ...filters, to: e.target.value || null })} />
+                  </Labeled>
+                  <button
+                    onClick={() => setFilters(EMPTY_FILTERS)}
+                    style={{ ...selStyle, color: 'var(--text-3)' }}
+                  >
+                    Reset
+                  </button>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 28, flexWrap: 'wrap' }}>
+                  <div style={{ color: 'var(--text-4)', fontFamily: 'var(--mono)', fontSize: 12, minWidth: 130 }}>
+                    {custom.n.toLocaleString()} pitches
+                    <br />{custom.swings.toLocaleString()} swings
+                  </div>
+                  {METRICS.map((m) => (
+                    <div key={m.key} style={{ textAlign: 'center' }}>
+                      <div style={{ color: 'var(--text-4)', fontFamily: 'var(--sans)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>{m.label}</div>
+                      <GradeNum v={custom.grades[m.key]} size={22} />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Splits: count state + batter hand */}
