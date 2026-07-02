@@ -679,7 +679,8 @@ export interface PitchTypeGrade {
 // 100/σ=15, standardized across all pitchers' cells AT THAT GRAIN and
 // reliability-shrunk toward league mean (small samples pulled to average).
 export interface SliceGrades {
-  stuff: number | null;   // Stuff+/xRV — expected run value from shape+location (higher = better)
+  quality: number | null; // Quality+ (xRV) — expected run value from shape+location (higher = better)
+  stuff: number | null;   // Stuff+ — expected run value from shape ONLY (location-free; quality−stuff ≈ command)
   xwhiff: number | null;  // expected whiff from shape
   whiff: number | null;   // realized whiff rate
   velo: number | null;

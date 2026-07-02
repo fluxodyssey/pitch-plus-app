@@ -14,6 +14,7 @@ import { useGradedSlices } from '../data/useGradedSlices';
 import type { SliceGrades } from '../types';
 
 const METRICS = [
+  { key: 'quality', label: 'Quality+' },
   { key: 'stuff', label: 'Stuff+' },
   { key: 'xwhiff', label: 'xWhiff+' },
   { key: 'whiff', label: 'Whiff+' },
@@ -107,7 +108,9 @@ export function PitchGrades() {
       <p style={{ color: 'var(--text-3)', fontFamily: 'var(--sans)', fontSize: 13, marginTop: 0, marginBottom: 18, maxWidth: 720 }}>
         One per-pitch grade table, sliced. Every pitch is scored once (leakage-safe); the same grades
         re-aggregate by appearance, count, or batter hand. 100 = MLB average, σ = 15, reliability-shrunk
-        (short outings pull toward average). Use the season picker in the nav to change year.
+        (short outings pull toward average). Quality+ grades the pitch as thrown (shape + location);
+        Stuff+ is location-free — a Quality+ above Stuff+ reads as good command, below as poor.
+        Use the season picker in the nav to change year.
       </p>
 
       <select
