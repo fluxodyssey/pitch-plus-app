@@ -321,7 +321,7 @@ function SwingPlusTab({ hitters }: { hitters: EnrichedHitter[] }) {
         <select value={sortKey} onChange={e => { setSortKey(e.target.value); setSortDir('desc'); }}
           style={{ ...filterInputStyle, minWidth: 180 }}>
           <optgroup label="Overall">
-            <option value="batting_plus">Batting+ (Swing×75% + Decision×25%)</option>
+            <option value="batting_plus">Batting+ (Swing×85% + Decision×15%)</option>
             <option value="swing_plus">Swing+</option>
             <option value="decision_plus">Decision+</option>
             <option value="n_pa">PA</option>
@@ -352,7 +352,7 @@ function SwingPlusTab({ hitters }: { hitters: EnrichedHitter[] }) {
               <th style={{ padding: '8px 6px', color: '#a0a0b8', textAlign: 'center', ...stickyHeaderStyle }}>H</th>
               <SortTh {...sortCtx} k="swing_plus" label="Swing+" />
               <th style={{ padding: '8px 8px', color: '#a0a0b8', textAlign: 'center', ...stickyHeaderStyle }}>Tier</th>
-              <SortTh {...sortCtx} k="batting_plus" label="Bat+" title="Batting+ = 0.75×Swing+ + 0.25×Decision+" />
+              <SortTh {...sortCtx} k="batting_plus" label="Bat+" title="Batting+ = 0.85×Swing+ + 0.15×Decision+ (RV-calibrated blend)" />
               <SortTh {...sortCtx} k="decision_plus" label="Dec+" title="Decision+ (Thomas zone-weighted discipline)" />
               <SortTh {...sortCtx} k="n_pa" label="PA" />
               {activeGroup
