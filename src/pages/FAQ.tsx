@@ -244,8 +244,8 @@ export function FAQ() {
       <Accordion title="Data Sources">
         <ul style={{ paddingLeft: 20 }}>
           <li><strong>Pitch data:</strong> Statcast (via pybaseball), 2021–2025 MLB seasons</li>
-          <li><strong>Player IDs:</strong> MLBAM IDs from Statcast; FanGraphs IDs via the Chadwick Bureau register crosswalk</li>
-          <li><strong>wOBA weights:</strong> FanGraphs Guts page — updated each off-season</li>
+          <li><strong>Player IDs:</strong> MLBAM IDs from Statcast throughout; player names backfilled via the Chadwick Bureau register</li>
+          <li><strong>wOBA weights:</strong> static FanGraphs-published linear weights, maintained manually as constants in the model — not a live data feed (the FanGraphs API integration was removed in 2026)</li>
           <li><strong>Bat tracking:</strong> Statcast bat speed & swing length data (available 2024–2025 only)</li>
           <li><strong>Markov chain:</strong> Custom absorbing Markov chain over MLB pitch data, computing K/BB/BIP absorption probabilities from each count state</li>
         </ul>

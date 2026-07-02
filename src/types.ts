@@ -141,6 +141,16 @@ export interface Pitcher {
   // pitchers_{year}.json has carried them (re-add when the model merges them;
   // IAA validation notes live in models/CLAUDE.md).
 
+  // Swing-timing display fields (swing_timing.py --merge, 2023+)
+  timing_disruption?: number | null;        // inches, higher = better (displaces swing timing)
+  plane_mismatch_induced?: number | null;   // degrees, higher = better (forces off-plane swings)
+  miss_distance_against?: number | null;    // inches, neutral descriptor (mean bat-miss on whiffs)
+
+  // Tunnel display fields (tunnel_metrics.py --merge)
+  temporal_tunnel_tightness?: number | null;     // feet, lower = better (spread at 167ms commit)
+  temporal_tunnel_effectiveness?: number | null; // ratio, higher = better (plate ÷ commit spread)
+  release_uniqueness?: number | null;            // population-σ units, neutral descriptor
+
   /** Per-dimension CI bands: { stuff: { p10, p90 }, command: { p10, p90 }, … } */
   dim_ci?: Partial<Record<DimensionKey, { p10: number; p90: number }>>;
   /** Per-count Markov absorption data for count-state heatmap */
@@ -346,6 +356,10 @@ export interface Hitter {
   decision_plus?: number;
   decision_plus_components?: DecisionPlusComponents;
   batting_plus?: number;
+  // Swing-timing display fields (swing_timing.py --merge, 2023+)
+  timing_consistency?: number | null;  // inches σ, lower = steadier (neutral descriptor)
+  barrel_accuracy?: number | null;     // inches, mean whiff miss distance (neutral descriptor)
+  perfect_swing_rate?: number | null;  // 0-1 fraction, higher = better (league ≈ 20%)
 }
 
 export type EnrichedHitter = Hitter & { team: string; hand: string };

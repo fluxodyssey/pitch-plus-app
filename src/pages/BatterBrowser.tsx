@@ -689,6 +689,9 @@ function CombinedTab({ hitters, bdq, outcomes }: { hitters: EnrichedHitter[]; bd
               <th style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>Whiff%</th>
               <th style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>K%</th>
               <th style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>BB%</th>
+              <th title="Timing Consistency — σ (inches) of contact-point timing. Steadier ≠ better outcomes (descriptive)." style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>Timing σ</th>
+              <th title="Barrel Accuracy — mean whiff miss distance (inches). Big-miss hitters skew power (descriptive)." style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>Whiff Miss</th>
+              <th title="Perfect Swing Rate — share of swings on-time + centered + on-plane vs the batter's own baselines (league ≈ 20%, higher = better)." style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>Perfect Sw%</th>
             </tr>
           </thead>
           <tbody>
@@ -732,6 +735,15 @@ function CombinedTab({ hitters, bdq, outcomes }: { hitters: EnrichedHitter[]; bd
                   <td style={{ padding: '7px 10px', textAlign: 'right', color: '#a0a0b8', fontFamily: 'monospace' }}>{pct(p.metrics.whiff_rate)}</td>
                   <td style={{ padding: '7px 10px', textAlign: 'right', color: '#a0a0b8', fontFamily: 'monospace' }}>{pct(p.metrics.k_rate)}</td>
                   <td style={{ padding: '7px 10px', textAlign: 'right', color: '#a0a0b8', fontFamily: 'monospace' }}>{pct(p.metrics.bb_rate)}</td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: p.timing_consistency != null ? '#a0a0b8' : '#606080', fontFamily: 'monospace' }}>
+                    {p.timing_consistency != null ? p.timing_consistency.toFixed(1) : 'N/A'}
+                  </td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: p.barrel_accuracy != null ? '#a0a0b8' : '#606080', fontFamily: 'monospace' }}>
+                    {p.barrel_accuracy != null ? p.barrel_accuracy.toFixed(2) : 'N/A'}
+                  </td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: p.perfect_swing_rate != null ? '#e0e0e8' : '#606080', fontFamily: 'monospace' }}>
+                    {p.perfect_swing_rate != null ? `${(p.perfect_swing_rate * 100).toFixed(1)}%` : 'N/A'}
+                  </td>
                 </tr>
               );
             })}

@@ -26,6 +26,7 @@ import { SimilarPitchers } from '../components/SimilarPitchers';
 import { CountStateHeatmap } from '../components/CountStateHeatmap';
 import { StuffDNA } from '../components/StuffDNA';
 import { NovelMetricsPanel } from '../components/NovelMetricsPanel';
+import { SwingDisruptionPanel } from '../components/SwingDisruptionPanel';
 import { TTOChart } from '../components/TTOChart';
 import { TabBar } from '../components/TabBar';
 import { useTTOData } from '../data/useTTOData';
@@ -1002,6 +1003,9 @@ function PlayerDetailInner({
       {/* ══════════════════════ RESEARCH LAB TAB ══════════════════════ */}
       {activeTab === 'research' && <>
       <NovelMetricsPanel pitcherId={pitcher.pitcher_id} />
+
+      {/* Swing Disruption & Tunneling (display-only fields from swing_timing.py / tunnel_metrics.py) */}
+      <SwingDisruptionPanel pitcher={pitcher} allPitchers={data.pitchers.pitchers} />
 
       {ttoData && (
         <div className="card">

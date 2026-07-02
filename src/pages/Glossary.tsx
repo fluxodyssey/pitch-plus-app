@@ -45,8 +45,12 @@ const ENTRIES: GlossaryEntry[] = [
   { term: 'Platoon Resistance', category: 'metric', definition: 'How well the pitcher performs against opposite-hand batters. A RHP with high platoon resistance doesn\'t give up the typical RHP vs LHB disadvantage.' },
   { term: 'FB VAA', category: 'metric', definition: 'Vertical approach angle on fastballs (degrees). Flatter angle = harder to lift = fewer home runs allowed. Below -4° is generally good; elite "rising" fastballs can hit -3° or flatter.' },
   { term: 'Release Consistency', category: 'metric', definition: 'Standard deviation of release point across all pitches (inches). Lower = more consistent — batters can\'t pick up pitch type from release point variation.' },
-  { term: 'Temporal Tunnel Tightness', category: 'metric', definition: 'How similar different pitches look at Tango\'s 167ms commit point. Lower value = pitches look more similar (better tunneled). See also: Commit Point.', seeAlso: ['Tango 167ms', 'Commit Point'] },
-  { term: 'Temporal Tunnel Effectiveness', category: 'metric', definition: 'How much pitches diverge after the 167ms commit point. Higher = more break after the batter has committed. Combined with tightness, this is the foundation of effective tunneling.' },
+  { term: 'Temporal Tunnel Tightness', category: 'metric', definition: 'Pitch-location spread (feet) at Tango\'s ~167ms commit point. Lower = pitches look more similar at the moment batters must commit (better tunneled). See also: Commit Point.', seeAlso: ['Tango 167ms', 'Commit Point'] },
+  { term: 'Temporal Tunnel Effectiveness', category: 'metric', definition: 'Ratio of plate spread to commit-point spread — "looks the same, ends different". Higher = more divergence after the batter has committed. Combined with tightness, this is the foundation of effective tunneling.' },
+  { term: 'Timing Disruption', category: 'metric', definition: 'How far (inches) a pitcher displaces batters\' swing timing off their own baseline. Higher = better — batters are consistently early or late against this pitcher.' },
+  { term: 'Plane Mismatch Induced', category: 'metric', definition: 'How far (degrees, angle proxy) a pitcher forces swings off the batter\'s preferred swing plane. Higher = better — swings against this pitcher are less well-matched to the pitch.' },
+  { term: 'Miss Distance Against', category: 'metric', definition: 'Mean bat-miss distance (inches) on whiffs against a pitcher. A neutral descriptor of how badly batters miss — carries no outcome signal by itself.' },
+  { term: 'Release Uniqueness', category: 'metric', definition: 'How far a pitcher\'s release slot sits from the same-hand league average, in population-σ units. A neutral descriptor of arm-slot rarity — submariners max it out.' },
 
   // ── Baseball terms ──
   { term: 'VAA', category: 'baseball', definition: 'Vertical Approach Angle. The angle at which a pitch descends into the hitting zone, measured in degrees. A flatter VAA (less negative) on fastballs is associated with swing-and-miss and reduced hard contact.' },
@@ -64,13 +68,16 @@ const ENTRIES: GlossaryEntry[] = [
   { term: 'Attack Angle', category: 'baseball', definition: 'The angle (degrees) at which the bat moves through the hitting zone at contact. Optimal attack angle (~10–15°) matches the pitch\'s descent angle, maximizing hard contact probability.' },
   { term: 'Bat Speed', category: 'baseball', definition: 'Linear speed of the sweet spot at contact (mph). Tracked by Statcast since 2023. Higher bat speed = more power, but also harder to control the barrel.' },
   { term: 'Swing Length', category: 'baseball', definition: 'Total distance the bat\'s sweet spot travels from start of swing to contact (feet). Longer swings are harder to control; shorter swings allow later contact decisions.' },
-  { term: 'MLBAM ID', category: 'baseball', definition: 'MLB Advanced Media player identifier. The numeric ID used in Statcast and Baseball Savant. Different from FanGraphs ID (IDfg). This app uses MLBAM IDs internally.' },
+  { term: 'MLBAM ID', category: 'baseball', definition: 'MLB Advanced Media player identifier. The numeric ID used in Statcast and Baseball Savant. This app uses MLBAM IDs exclusively (site-specific IDs like FanGraphs\' IDfg are no longer used anywhere in the pipeline).' },
 
   // ── Swing/batter terms ──
   { term: 'BDQ', category: 'swing', definition: 'Batter Decision Quality. The Decision+ model\'s primary output. Grades each pitch-level swing or take decision independent of the outcome, based on pitch location, count, and approach.' },
   { term: 'Swing RV', category: 'swing', definition: 'Run value added per swing decision — how much value the batter creates by choosing to swing (vs take) on a given pitch.' },
   { term: 'Take RV', category: 'swing', definition: 'Run value added per take (non-swing) decision — how much value the batter creates by laying off a pitch. High Take RV on pitches outside the zone = elite plate discipline.' },
   { term: 'IAA', category: 'swing', definition: 'Induced Attack Angle. A Pitch+ model measuring how much a pitcher forces batters to alter their swing angle — specifically suppressing bat speed (iaa_fb) or inducing breaking ball adjustments (iaa_brk).' },
+  { term: 'Timing Consistency', category: 'swing', definition: 'Standard deviation (inches) of a batter\'s contact-point timing. Lower = steadier timing, but steadier does not mean better outcomes — a neutral descriptor of swing style.' },
+  { term: 'Barrel Accuracy (Miss Distance)', category: 'swing', definition: 'Mean whiff miss distance (inches) for a batter. A neutral descriptor — big-miss hitters often skew toward power rather than being simply worse.' },
+  { term: 'Perfect Swing Rate', category: 'swing', definition: 'Share of swings that are simultaneously on-time, centered, and on-plane versus the batter\'s own baselines. League average ≈ 20% (Savant-comparable); higher = better.' },
 ];
 
 const CATEGORIES = [
