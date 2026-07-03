@@ -1,4 +1,4 @@
-interface DeltaBadgeProps {
+﻿interface DeltaBadgeProps {
   delta: number | null;
   format?: 'integer' | 'decimal' | 'percent';
   size?: 'sm' | 'md';
@@ -24,7 +24,7 @@ function deltaColor(delta: number, invert: boolean): string {
 
 export function DeltaBadge({ delta, format = 'integer', size = 'md', invertColor = false }: DeltaBadgeProps) {
   if (delta == null || isNaN(delta)) {
-    return <span style={{ color: '#606080', fontSize: size === 'sm' ? 11 : 13 }}>—</span>;
+    return <span style={{ color: 'var(--text-3)', fontSize: size === 'sm' ? 11 : 13 }}>—</span>;
   }
 
   const color = deltaColor(delta, invertColor);

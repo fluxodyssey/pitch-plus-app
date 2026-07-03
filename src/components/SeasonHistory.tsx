@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+﻿import { useMemo } from 'react';
 import { LineChart, Line, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useData, AVAILABLE_SEASONS, type Season } from '../data/useData';
 import { scoreColorContinuous, gradeColor } from '../data/constants';
@@ -138,8 +138,8 @@ function SeasonRow({ pitcherId, season }: { pitcherId: number; season: Season })
   };
 
   return (
-    <tr style={{ borderBottom: '1px solid #1a1a2e' }}>
-      <td style={{ padding: '6px 10px', color: '#a0a0b8', fontWeight: 600, fontSize: 12 }}>{season}</td>
+    <tr style={{ borderBottom: '1px solid var(--bg-elevated)' }}>
+      <td style={{ padding: '6px 10px', color: 'var(--text-2)', fontWeight: 600, fontSize: 12 }}>{season}</td>
       <td style={{ padding: '6px 10px', textAlign: 'center' }}>
         <span style={{
           display: 'inline-block',
@@ -154,8 +154,8 @@ function SeasonRow({ pitcherId, season }: { pitcherId: number; season: Season })
           {pitcher.pitch_plus}
         </span>
       </td>
-      <td style={{ ...thCell, color: '#a0a0b8' }}>{pitcher.n_pitches.toLocaleString()}</td>
-      <td style={{ ...thCell, color: '#a0a0b8' }}>{pitcher.n_games}</td>
+      <td style={{ ...thCell, color: 'var(--text-2)' }}>{pitcher.n_pitches.toLocaleString()}</td>
+      <td style={{ ...thCell, color: 'var(--text-2)' }}>{pitcher.n_games}</td>
       {/* Dimension scores */}
       {(['stuff','command','deception','tunnel_and_sequence','outcomes','arsenal'] as const).map((dk) => {
         const score = pitcher.dimensions[dk]?.score ?? 0;
@@ -173,7 +173,7 @@ function SeasonRow({ pitcherId, season }: { pitcherId: number; season: Season })
       {/* Key metrics */}
       {SHOW_METRICS.map(({ key, pct }) => {
         const mg = pitcher.metric_grades[key];
-        if (!mg) return <td key={key} style={{ ...thCell, color: '#404060' }}>—</td>;
+        if (!mg) return <td key={key} style={{ ...thCell, color: 'var(--text-4)' }}>—</td>;
         const display = pct ? `${(mg.raw * 100).toFixed(1)}%` : mg.raw.toFixed(1);
         return (
           <td key={key} style={{
@@ -193,12 +193,12 @@ export function SeasonHistory({ pitcherId }: Props) {
   const seasons = [...AVAILABLE_SEASONS].reverse(); // newest first
   const thStyle: React.CSSProperties = {
     padding: '7px 10px',
-    color: '#a0a0b8',
+    color: 'var(--text-2)',
     fontWeight: 500,
     fontSize: 11,
     textAlign: 'right',
-    borderBottom: '2px solid #1e1e2e',
-    background: '#0f0f1a',
+    borderBottom: '2px solid var(--border)',
+    background: 'var(--bg-input)',
     whiteSpace: 'nowrap',
     position: 'sticky',
     top: 0,
@@ -240,7 +240,7 @@ export function SeasonHistory({ pitcherId }: Props) {
           ))}
         </tbody>
       </table>
-      <p style={{ color: '#404060', fontSize: 10, marginTop: 6 }}>
+      <p style={{ color: 'var(--text-4)', fontSize: 10, marginTop: 6 }}>
         Cell shading: green = above average, red = below average · Seasons with no data are hidden
       </p>
     </div>  {/* end overflowX wrapper */}

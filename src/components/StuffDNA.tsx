@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+﻿import { useRef, useEffect, useState, useCallback } from 'react';
 import { pitchColor, scoreColorContinuous } from '../data/constants';
 import { AttributeGauges } from './AttributeGauges';
 import type { PitchType, AttributeGrades, PitchAttributesData } from '../types';
@@ -72,7 +72,7 @@ export function StuffDNA({
     ctx.clearRect(0, 0, width, height);
 
     // ── Grid ─────────────────────────────────────────────────────────────────
-    ctx.strokeStyle = '#1e1e2e';
+    ctx.strokeStyle = '#242428';
     ctx.lineWidth = 1;
     for (let hb = -24; hb <= 24; hb += 6) {
       ctx.beginPath(); ctx.moveTo(toX(hb), PAD.top); ctx.lineTo(toX(hb), PAD.top + H); ctx.stroke();
@@ -82,7 +82,7 @@ export function StuffDNA({
     }
 
     // Zero axes
-    ctx.strokeStyle = '#2a2a3e';
+    ctx.strokeStyle = '#313136';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([4, 3]);
     ctx.beginPath(); ctx.moveTo(toX(0), PAD.top); ctx.lineTo(toX(0), PAD.top + H); ctx.stroke();
@@ -90,7 +90,7 @@ export function StuffDNA({
     ctx.setLineDash([]);
 
     // Axis labels
-    ctx.fillStyle = '#404060';
+    ctx.fillStyle = '#4d4d55';
     ctx.font = `${9}px monospace`;
     ctx.textAlign = 'center';
     for (let hb = -24; hb <= 24; hb += 12) {
@@ -102,7 +102,7 @@ export function StuffDNA({
     }
 
     // Axis titles
-    ctx.fillStyle = '#606080';
+    ctx.fillStyle = '#6f6f78';
     ctx.font = '10px system-ui';
     ctx.textAlign = 'center';
     ctx.fillText('Horizontal Break (in)', PAD.left + W / 2, height - 6);
@@ -235,7 +235,7 @@ export function StuffDNA({
           position: 'absolute',
           left: tooltipPos.x + 12,
           top: tooltipPos.y - 20,
-          background: '#14141f',
+          background: '#141416',
           border: `1px solid ${pitchColor(hovered)}`,
           borderRadius: 8,
           padding: '10px 14px',
@@ -262,7 +262,7 @@ export function StuffDNA({
             </span>
           </div>
           <AttributeGauges attrs={hoveredAttrs} compact />
-          <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 11, color: '#606080' }}>
+          <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 11, color: '#6f6f78' }}>
             <span>{hoveredAttrs.avg_velo.toFixed(1)} mph</span>
             <span>iVB {hoveredAttrs.avg_ivb.toFixed(1)}"</span>
             <span>HB {hoveredAttrs.avg_hb.toFixed(1)}"</span>

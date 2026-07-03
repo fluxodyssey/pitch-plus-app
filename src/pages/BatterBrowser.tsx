@@ -154,7 +154,7 @@ const TIER_COLORS: Record<string, string> = {
   POOR: '#4a6494',
 };
 
-function tierColor(t: string) { return TIER_COLORS[t] ?? '#e0e0e8'; }
+function tierColor(t: string) { return TIER_COLORS[t] ?? 'var(--text-1)'; }
 
 function pct(v: number) { return `${(v * 100).toFixed(1)}%`; }
 
@@ -164,7 +164,7 @@ function rvGrade(rv: number | undefined): { label: string; color: string } {
   const v = rv ?? 0;
   if (v >= 3.5) return { label: 'Elite', color: '#2ec27e' };
   if (v >= 3.0) return { label: 'Above Avg', color: '#5fb87a' };
-  if (v >= 2.3) return { label: 'Average', color: '#a0a0b8' };
+  if (v >= 2.3) return { label: 'Average', color: 'var(--text-2)' };
   if (v >= 1.7) return { label: 'Below Avg', color: '#c89060' };
   if (v >= 1.0) return { label: 'Poor', color: '#c85a5a' };
   return { label: 'Very Poor', color: '#a04040' };
@@ -172,25 +172,13 @@ function rvGrade(rv: number | undefined): { label: string; color: string } {
 
 // ─── Shared UI ────────────────────────────────────────────────────────────────
 
-function SourceBadge({ label, color = '#4a9eff' }: { label: string; color?: string }) {
-  return (
-    <span style={{
-      background: `${color}18`, border: `1px solid ${color}40`,
-      color, borderRadius: 4, padding: '2px 8px', fontSize: 11,
-      fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8,
-    }}>
-      {label}
-    </span>
-  );
-}
-
 const filterInputStyle = {
-  background: '#1a1a2e', border: '1px solid #2a2a3e',
-  color: '#e0e0e8', borderRadius: 6, padding: '8px 12px', fontSize: 14,
+  background: 'var(--bg-elevated)', border: '1px solid var(--border-plus)',
+  color: 'var(--text-1)', borderRadius: 6, padding: '8px 12px', fontSize: 14,
 };
 
 const stickyHeaderStyle = {
-  borderBottom: '2px solid #1e1e2e', background: '#14141f',
+  borderBottom: '2px solid var(--border)', background: 'var(--bg-surface)',
   position: 'sticky' as const, top: 0, zIndex: 1,
 };
 
@@ -205,7 +193,7 @@ function SortTh<K extends string>({ k, label, title, pad, sortKey, sortDir, onSo
   return (
     <th onClick={() => onSort(k)} title={title} style={{
       cursor: 'pointer', padding: pad, userSelect: 'none',
-      whiteSpace: 'nowrap', color: active ? '#4a9eff' : '#a0a0b8',
+      whiteSpace: 'nowrap', color: active ? '#4a9eff' : 'var(--text-2)',
       fontWeight: active ? 700 : 500, ...stickyHeaderStyle,
     }}>
       {label}{active ? (sortDir === 'desc' ? ' ▼' : ' ▲') : ''}
@@ -218,7 +206,7 @@ function SortHdr<K extends string>({ k, label, sortKey, sortDir, onSort }: {
 }) {
   const active = sortKey === k;
   return (
-    <th onClick={() => onSort(k)} style={{ cursor: 'pointer', padding: '10px 14px', userSelect: 'none', color: active ? '#4a9eff' : '#a0a0b8', ...stickyHeaderStyle }}>
+    <th onClick={() => onSort(k)} style={{ cursor: 'pointer', padding: '10px 14px', userSelect: 'none', color: active ? '#4a9eff' : 'var(--text-2)', ...stickyHeaderStyle }}>
       {label} {active ? (sortDir === 'asc' ? '↑' : '↓') : ''}
     </th>
   );
@@ -291,23 +279,23 @@ function SwingPlusTab({ hitters }: { hitters: EnrichedHitter[] }) {
           {Object.keys(TIER_COLORS).map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
         </select>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ color: '#a0a0b8', fontSize: 13 }}>Min PA:</span>
+          <span style={{ color: 'var(--text-2)', fontSize: 13 }}>Min PA:</span>
           <input type="number" value={minPA} onChange={e => setMinPA(Number(e.target.value))}
             min={0} max={800} step={25} style={{ ...filterInputStyle, width: 70 }} />
         </div>
-        <span style={{ color: '#606080', fontSize: 13, marginLeft: 'auto' }}>{filtered.length} batters</span>
+        <span style={{ color: 'var(--text-3)', fontSize: 13, marginLeft: 'auto' }}>{filtered.length} batters</span>
       </div>
 
       {/* Metric group selector */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-        <span style={{ color: '#a0a0b8', fontSize: 12, marginRight: 4 }}>Show metrics:</span>
+        <span style={{ color: 'var(--text-2)', fontSize: 12, marginRight: 4 }}>Show metrics:</span>
         {[null, ...METRIC_GROUPS.map(g => g.label)].map(g => (
           <button key={g ?? 'dims'} onClick={() => setMetricGroup(g)}
             style={{
               padding: '4px 12px', fontSize: 12, border: '1px solid',
-              borderColor: metricGroup === g ? '#4a9eff' : '#2a2a3e',
+              borderColor: metricGroup === g ? '#4a9eff' : 'var(--border-plus)',
               background: metricGroup === g ? 'rgba(74,158,255,0.15)' : 'transparent',
-              color: metricGroup === g ? '#4a9eff' : '#a0a0b8',
+              color: metricGroup === g ? '#4a9eff' : 'var(--text-2)',
               borderRadius: 4, cursor: 'pointer',
             }}>
             {g ?? 'Dimensions'}
@@ -317,7 +305,7 @@ function SwingPlusTab({ hitters }: { hitters: EnrichedHitter[] }) {
 
       {/* Sort bar */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
-        <span style={{ color: '#a0a0b8', fontSize: 13 }}>Sort by:</span>
+        <span style={{ color: 'var(--text-2)', fontSize: 13 }}>Sort by:</span>
         <select value={sortKey} onChange={e => { setSortKey(e.target.value); setSortDir('desc'); }}
           style={{ ...filterInputStyle, minWidth: 180 }}>
           <optgroup label="Overall">
@@ -342,16 +330,16 @@ function SwingPlusTab({ hitters }: { hitters: EnrichedHitter[] }) {
       </div>
 
       {/* Table */}
-      <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid #1e1e2e' }}>
+      <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid var(--border)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr>
-              <th style={{ padding: '8px 10px', color: '#a0a0b8', textAlign: 'center', ...stickyHeaderStyle }}>#</th>
+              <th style={{ padding: '8px 10px', color: 'var(--text-2)', textAlign: 'center', ...stickyHeaderStyle }}>#</th>
               <SortTh {...sortCtx} k="name" label="Batter" />
               <SortTh {...sortCtx} k="team" label="Team" />
-              <th style={{ padding: '8px 6px', color: '#a0a0b8', textAlign: 'center', ...stickyHeaderStyle }}>H</th>
+              <th style={{ padding: '8px 6px', color: 'var(--text-2)', textAlign: 'center', ...stickyHeaderStyle }}>H</th>
               <SortTh {...sortCtx} k="swing_plus" label="Swing+" />
-              <th style={{ padding: '8px 8px', color: '#a0a0b8', textAlign: 'center', ...stickyHeaderStyle }}>Tier</th>
+              <th style={{ padding: '8px 8px', color: 'var(--text-2)', textAlign: 'center', ...stickyHeaderStyle }}>Tier</th>
               <SortTh {...sortCtx} k="batting_plus" label="Bat+" title="Batting+ = 0.85×Swing+ + 0.15×Decision+ (RV-calibrated blend)" />
               <SortTh {...sortCtx} k="decision_plus" label="Dec+" title="Decision+ (Thomas zone-weighted discipline)" />
               <SortTh {...sortCtx} k="n_pa" label="PA" />
@@ -363,11 +351,11 @@ function SwingPlusTab({ hitters }: { hitters: EnrichedHitter[] }) {
           </thead>
           <tbody>
             {filtered.map((h, i) => (
-              <tr key={h.id} style={{ borderBottom: '1px solid #1a1a2e', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
-                <td style={{ padding: '7px 10px', color: '#606080', textAlign: 'center' }}>{i + 1}</td>
-                <td style={{ padding: '7px 10px', color: '#e0e0e8', fontWeight: 500, whiteSpace: 'nowrap' }}>{h.name}</td>
-                <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'center' }}>{h.team}</td>
-                <td style={{ padding: '7px 6px', color: '#a0a0b8', textAlign: 'center' }}>{h.hand}</td>
+              <tr key={h.id} style={{ borderBottom: '1px solid var(--bg-elevated)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
+                <td style={{ padding: '7px 10px', color: 'var(--text-3)', textAlign: 'center' }}>{i + 1}</td>
+                <td style={{ padding: '7px 10px', color: 'var(--text-1)', fontWeight: 500, whiteSpace: 'nowrap' }}>{h.name}</td>
+                <td style={{ padding: '7px 10px', color: 'var(--text-2)', textAlign: 'center' }}>{h.team}</td>
+                <td style={{ padding: '7px 6px', color: 'var(--text-2)', textAlign: 'center' }}>{h.hand}</td>
                 <td style={{ padding: '7px 8px', textAlign: 'center' }}>
                   <GradeBadge score={Math.round(h.swing_plus)} size="sm" />
                 </td>
@@ -379,24 +367,24 @@ function SwingPlusTab({ hitters }: { hitters: EnrichedHitter[] }) {
                 <td style={{ padding: '7px 8px', textAlign: 'center' }}>
                   {h.batting_plus != null
                     ? <GradeBadge score={Math.round(h.batting_plus)} size="sm" />
-                    : <span style={{ color: '#606080' }}>—</span>}
+                    : <span style={{ color: 'var(--text-3)' }}>—</span>}
                 </td>
                 <td style={{ padding: '7px 8px', textAlign: 'center', fontFamily: 'monospace', fontSize: 12,
                   color: h.decision_plus != null && h.decision_plus >= 115 ? '#d44040'
                        : h.decision_plus != null && h.decision_plus >= 105 ? '#c85a5a'
-                       : h.decision_plus != null && h.decision_plus <= 85  ? '#4a6494' : '#e0e0e8' }}>
+                       : h.decision_plus != null && h.decision_plus <= 85  ? '#4a6494' : 'var(--text-1)' }}>
                   {h.decision_plus != null ? Math.round(h.decision_plus) : '—'}
                 </td>
-                <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'center' }}>{h.n_pa}</td>
+                <td style={{ padding: '7px 10px', color: 'var(--text-2)', textAlign: 'center' }}>{h.n_pa}</td>
                 {activeGroup
                   ? activeGroup.keys.map(k => {
                       const v = h.metrics[k];
-                      return <td key={k} style={{ padding: '7px 10px', textAlign: 'center', color: '#e0e0e8', fontFamily: 'monospace' }}>{v != null ? METRIC_CONFIG[k].fmt(v) : '—'}</td>;
+                      return <td key={k} style={{ padding: '7px 10px', textAlign: 'center', color: 'var(--text-1)', fontFamily: 'monospace' }}>{v != null ? METRIC_CONFIG[k].fmt(v) : '—'}</td>;
                     })
                   : SWING_DIMS.map(d => {
                       const score = h.dimensions[d] ?? 0;
                       return (
-                        <td key={d} style={{ padding: '7px 8px', textAlign: 'center', background: scoreColor(score), color: score >= 105 ? '#0a0a0f' : '#e0e0e8', fontWeight: score >= 115 ? 700 : 400, fontSize: 12 }}>
+                        <td key={d} style={{ padding: '7px 8px', textAlign: 'center', background: scoreColor(score), color: score >= 105 ? 'var(--bg-base)' : 'var(--text-1)', fontWeight: score >= 115 ? 700 : 400, fontSize: 12 }}>
                           {Math.round(score)}
                         </td>
                       );
@@ -410,8 +398,8 @@ function SwingPlusTab({ hitters }: { hitters: EnrichedHitter[] }) {
 
       {/* Key */}
       {!activeGroup && (
-        <div style={{ marginTop: 10, display: 'flex', gap: 14, flexWrap: 'wrap', color: '#606080', fontSize: 12 }}>
-          {SWING_DIMS.map(d => <span key={d}><strong style={{ color: '#a0a0b8' }}>{DIM_ABBR[d]}</strong> = {d}</span>)}
+        <div style={{ marginTop: 10, display: 'flex', gap: 14, flexWrap: 'wrap', color: 'var(--text-3)', fontSize: 12 }}>
+          {SWING_DIMS.map(d => <span key={d}><strong style={{ color: 'var(--text-2)' }}>{DIM_ABBR[d]}</strong> = {d}</span>)}
         </div>
       )}
     </div>
@@ -459,18 +447,18 @@ function BDQTab({ bdq }: { bdq: BatterBDQData }) {
       <div style={{ background: 'rgba(74,158,255,0.06)', border: '1px solid rgba(74,158,255,0.2)', borderRadius: 8, padding: '12px 18px', marginBottom: 20, display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
         <div>
           <div style={{ color: '#4a9eff', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Commit Point</div>
-          <div style={{ color: '#e0e0e8', fontSize: 18, fontWeight: 700, marginTop: 4 }}>167ms before plate</div>
-          <div style={{ color: '#a0a0b8', fontSize: 12 }}>Tom Tango's batter decision threshold</div>
+          <div style={{ color: 'var(--text-1)', fontSize: 18, fontWeight: 700, marginTop: 4 }}>167ms before plate</div>
+          <div style={{ color: 'var(--text-2)', fontSize: 12 }}>Tom Tango's batter decision threshold</div>
         </div>
         <div>
           <div style={{ color: '#4a9eff', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Validation</div>
-          <div style={{ color: '#e0e0e8', fontSize: 18, fontWeight: 700, marginTop: 4 }}>+28.5% whiff rate</div>
-          <div style={{ color: '#a0a0b8', fontSize: 12 }}>Deceptive vs bad chases (2025 MLB)</div>
+          <div style={{ color: 'var(--text-1)', fontSize: 18, fontWeight: 700, marginTop: 4 }}>+28.5% whiff rate</div>
+          <div style={{ color: 'var(--text-2)', fontSize: 12 }}>Deceptive vs bad chases (2025 MLB)</div>
         </div>
         <div>
           <div style={{ color: '#4a9eff', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Primary Metric</div>
-          <div style={{ color: '#e0e0e8', fontSize: 18, fontWeight: 700, marginTop: 4 }}>Decision RV / 100 OOZ</div>
-          <div style={{ color: '#a0a0b8', fontSize: 12 }}>Run value of swing/take on out-of-zone pitches (higher = better)</div>
+          <div style={{ color: 'var(--text-1)', fontSize: 18, fontWeight: 700, marginTop: 4 }}>Decision RV / 100 OOZ</div>
+          <div style={{ color: 'var(--text-2)', fontSize: 12 }}>Run value of swing/take on out-of-zone pitches (higher = better)</div>
         </div>
       </div>
 
@@ -486,29 +474,29 @@ function BDQTab({ bdq }: { bdq: BatterBDQData }) {
           <option value="L">LHB</option>
         </select>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ color: '#a0a0b8', fontSize: 13 }}>Min chases:</span>
+          <span style={{ color: 'var(--text-2)', fontSize: 13 }}>Min chases:</span>
           <input type="number" value={minChases} onChange={e => setMinChases(Number(e.target.value))}
             min={10} max={500} step={10} style={{ ...filterInputStyle, width: 70 }} />
         </div>
-        <span style={{ color: '#606080', fontSize: 13, marginLeft: 'auto' }}>{filtered.length} batters</span>
+        <span style={{ color: 'var(--text-3)', fontSize: 13, marginLeft: 'auto' }}>{filtered.length} batters</span>
       </div>
 
-      <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid #1e1e2e' }}>
+      <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid var(--border)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
           <thead>
             <tr style={{ background: '#0d0d16' }}>
-              <th style={{ padding: '10px 14px', textAlign: 'left', color: '#606080', ...stickyHeaderStyle }}>#</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', color: '#606080', ...stickyHeaderStyle }}>Batter</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', color: '#606080', ...stickyHeaderStyle }}>Team</th>
-              <th style={{ padding: '10px 14px', textAlign: 'center', color: '#606080', ...stickyHeaderStyle }}>H</th>
-              <th style={{ padding: '10px 14px', textAlign: 'center', color: '#606080', ...stickyHeaderStyle }}>Grade</th>
+              <th style={{ padding: '10px 14px', textAlign: 'left', color: 'var(--text-3)', ...stickyHeaderStyle }}>#</th>
+              <th style={{ padding: '10px 14px', textAlign: 'left', color: 'var(--text-3)', ...stickyHeaderStyle }}>Batter</th>
+              <th style={{ padding: '10px 14px', textAlign: 'left', color: 'var(--text-3)', ...stickyHeaderStyle }}>Team</th>
+              <th style={{ padding: '10px 14px', textAlign: 'center', color: 'var(--text-3)', ...stickyHeaderStyle }}>H</th>
+              <th style={{ padding: '10px 14px', textAlign: 'center', color: 'var(--text-3)', ...stickyHeaderStyle }}>Grade</th>
               <SortHdr {...sortCtx} k="ooz_decision_rv" label="Decision RV" />
               <SortHdr {...sortCtx} k="bad_chase_rate" label="Bad Chase%" />
               <SortHdr {...sortCtx} k="deceptive_chase_rate" label="Dec Chase%" />
               <SortHdr {...sortCtx} k="n_chases" label="Chases" />
-              <th style={{ padding: '10px 14px', textAlign: 'right', color: '#606080', ...stickyHeaderStyle }}>Chase Whiff%</th>
-              <th style={{ padding: '10px 14px', textAlign: 'right', color: '#606080', ...stickyHeaderStyle }}>N Bad</th>
-              <th style={{ padding: '10px 14px', textAlign: 'right', color: '#606080', ...stickyHeaderStyle }}>N Dec</th>
+              <th style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--text-3)', ...stickyHeaderStyle }}>Chase Whiff%</th>
+              <th style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--text-3)', ...stickyHeaderStyle }}>N Bad</th>
+              <th style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--text-3)', ...stickyHeaderStyle }}>N Dec</th>
             </tr>
           </thead>
           <tbody>
@@ -516,21 +504,21 @@ function BDQTab({ bdq }: { bdq: BatterBDQData }) {
               const g = rvGrade(b.ooz_decision_rv);
               const rv = b.ooz_decision_rv ?? 0;
               return (
-                <tr key={b.batter_id} style={{ borderBottom: '1px solid #1a1a2e', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
-                  <td style={{ padding: '9px 14px', color: '#606080' }}>{i + 1}</td>
-                  <td style={{ padding: '9px 14px', color: '#e0e0e8', fontWeight: 500 }}>{b.batter_name}</td>
-                  <td style={{ padding: '9px 14px', color: '#a0a0b8' }}>{b.batter_team}</td>
-                  <td style={{ padding: '9px 14px', color: '#a0a0b8', textAlign: 'center' }}>{b.batter_hand}</td>
+                <tr key={b.batter_id} style={{ borderBottom: '1px solid var(--bg-elevated)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
+                  <td style={{ padding: '9px 14px', color: 'var(--text-3)' }}>{i + 1}</td>
+                  <td style={{ padding: '9px 14px', color: 'var(--text-1)', fontWeight: 500 }}>{b.batter_name}</td>
+                  <td style={{ padding: '9px 14px', color: 'var(--text-2)' }}>{b.batter_team}</td>
+                  <td style={{ padding: '9px 14px', color: 'var(--text-2)', textAlign: 'center' }}>{b.batter_hand}</td>
                   <td style={{ padding: '9px 14px', textAlign: 'center' }}>
                     <span style={{ background: g.color + '22', color: g.color, borderRadius: 4, padding: '2px 8px', fontSize: 12, fontWeight: 600 }}>{g.label}</span>
                   </td>
                   <td style={{ padding: '9px 14px', textAlign: 'right', color: g.color, fontFamily: 'monospace', fontWeight: 600 }}>{rv >= 0 ? '+' : ''}{rv.toFixed(2)}</td>
-                  <td style={{ padding: '9px 14px', textAlign: 'right', color: '#a0a0b8', fontFamily: 'monospace' }}>{pct(b.bad_chase_rate)}</td>
+                  <td style={{ padding: '9px 14px', textAlign: 'right', color: 'var(--text-2)', fontFamily: 'monospace' }}>{pct(b.bad_chase_rate)}</td>
                   <td style={{ padding: '9px 14px', textAlign: 'right', color: '#4a9eff', fontFamily: 'monospace' }}>{pct(b.deceptive_chase_rate)}</td>
-                  <td style={{ padding: '9px 14px', textAlign: 'right', color: '#a0a0b8' }}>{b.n_chases}</td>
-                  <td style={{ padding: '9px 14px', textAlign: 'right', color: '#a0a0b8', fontFamily: 'monospace' }}>{pct(b.chase_whiff_rate)}</td>
-                  <td style={{ padding: '9px 14px', textAlign: 'right', color: '#a0a0b8' }}>{b.n_bad}</td>
-                  <td style={{ padding: '9px 14px', textAlign: 'right', color: '#a0a0b8' }}>{b.n_deceptive}</td>
+                  <td style={{ padding: '9px 14px', textAlign: 'right', color: 'var(--text-2)' }}>{b.n_chases}</td>
+                  <td style={{ padding: '9px 14px', textAlign: 'right', color: 'var(--text-2)', fontFamily: 'monospace' }}>{pct(b.chase_whiff_rate)}</td>
+                  <td style={{ padding: '9px 14px', textAlign: 'right', color: 'var(--text-2)' }}>{b.n_bad}</td>
+                  <td style={{ padding: '9px 14px', textAlign: 'right', color: 'var(--text-2)' }}>{b.n_deceptive}</td>
                 </tr>
               );
             })}
@@ -549,12 +537,12 @@ function BDQTab({ bdq }: { bdq: BatterBDQData }) {
         ].map(({ label, desc, color }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ width: 10, height: 10, borderRadius: 2, background: color }} />
-            <span style={{ color: '#a0a0b8', fontSize: 12 }}>{label} ({desc})</span>
+            <span style={{ color: 'var(--text-2)', fontSize: 12 }}>{label} ({desc})</span>
           </div>
         ))}
       </div>
-      <div style={{ marginTop: 10, color: '#606080', fontSize: 12 }}>
-        <strong style={{ color: '#a0a0b8' }}>Bad Chase%</strong> — out-of-zone swings where pitch was already outside at 167ms commit point (lower = better).{' '}
+      <div style={{ marginTop: 10, color: 'var(--text-3)', fontSize: 12 }}>
+        <strong style={{ color: 'var(--text-2)' }}>Bad Chase%</strong> — out-of-zone swings where pitch was already outside at 167ms commit point (lower = better).{' '}
         <strong style={{ color: '#4a9eff' }}>Dec Chase%</strong> — chases where pitch was inside zone at commit but moved out (pitcher-induced, understandable).
       </div>
     </div>
@@ -648,7 +636,7 @@ function CombinedTab({ hitters, bdq, outcomes }: { hitters: EnrichedHitter[]; bd
 
   return (
     <div>
-      <p style={{ color: '#a0a0b8', fontSize: 13, margin: '0 0 16px 0' }}>
+      <p style={{ color: 'var(--text-2)', fontSize: 13, margin: '0 0 16px 0' }}>
         {combined.length} batters with both <strong style={{ color: '#4a9eff' }}>Swing+</strong> and <strong style={{ color: '#c85a5a' }}>BDQ</strong> data.
         Combines raw bat quality metrics with plate discipline quality scores for a complete batter profile.
       </p>
@@ -664,34 +652,34 @@ function CombinedTab({ hitters, bdq, outcomes }: { hitters: EnrichedHitter[]; bd
           <option value="R">RHB</option>
           <option value="L">LHB</option>
         </select>
-        <span style={{ color: '#606080', fontSize: 13, marginLeft: 'auto' }}>{filtered.length} batters</span>
+        <span style={{ color: 'var(--text-3)', fontSize: 13, marginLeft: 'auto' }}>{filtered.length} batters</span>
       </div>
 
-      <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid #1e1e2e' }}>
+      <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid var(--border)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr>
-              <th style={{ padding: '9px 10px', color: '#606080', textAlign: 'center', ...stickyHeaderStyle }}>#</th>
-              <th style={{ padding: '9px 12px', color: '#a0a0b8', textAlign: 'left', ...stickyHeaderStyle }}>Batter</th>
-              <th style={{ padding: '9px 10px', color: '#a0a0b8', ...stickyHeaderStyle }}>Team</th>
-              <th style={{ padding: '9px 8px', color: '#a0a0b8', ...stickyHeaderStyle }}>H</th>
+              <th style={{ padding: '9px 10px', color: 'var(--text-3)', textAlign: 'center', ...stickyHeaderStyle }}>#</th>
+              <th style={{ padding: '9px 12px', color: 'var(--text-2)', textAlign: 'left', ...stickyHeaderStyle }}>Batter</th>
+              <th style={{ padding: '9px 10px', color: 'var(--text-2)', ...stickyHeaderStyle }}>Team</th>
+              <th style={{ padding: '9px 8px', color: 'var(--text-2)', ...stickyHeaderStyle }}>H</th>
               <SortTh {...sortCtx} k="swing_plus" label="Swing+" />
-              <th style={{ padding: '9px 8px', color: '#a0a0b8', textAlign: 'center', ...stickyHeaderStyle }}>Tier</th>
+              <th style={{ padding: '9px 8px', color: 'var(--text-2)', textAlign: 'center', ...stickyHeaderStyle }}>Tier</th>
               <SortTh {...sortCtx} k="n_pa" label="PA" />
               <SortTh {...sortCtx} k="bad_chase_rate" label="Bad Chase%" title="Bad chases ÷ chases — chase composition only; the BDQ grade uses Decision RV" />
-              <th style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'center', ...stickyHeaderStyle }}>BDQ</th>
+              <th style={{ padding: '9px 10px', color: 'var(--text-2)', textAlign: 'center', ...stickyHeaderStyle }}>BDQ</th>
               <SortTh {...sortCtx} k="xwoba" label="xwOBA" />
               <SortTh {...sortCtx} k="barrel_rate" label="Barrel%" />
               <SortTh {...sortCtx} k="avg_bat_speed" label="Bat Spd" />
               <SortTh {...sortCtx} k="bipr_simple" label="BIPR%" title="Batter Ideal Process Rate — (Balls+BIP+HBP − CS−Whiff−FTip−FStrike) / Pitches" />
               <SortTh {...sortCtx} k="wobacon" label="wOBACON" title="wOBA on Contact (BIP only)" />
-              <th style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>EV90</th>
-              <th style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>Whiff%</th>
-              <th style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>K%</th>
-              <th style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>BB%</th>
-              <th title="Timing Consistency — σ (inches) of contact-point timing. Steadier ≠ better outcomes (descriptive)." style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>Timing σ</th>
-              <th title="Barrel Accuracy — mean whiff miss distance (inches). Big-miss hitters skew power (descriptive)." style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>Whiff Miss</th>
-              <th title="Perfect Swing Rate — share of swings on-time + centered + on-plane vs the batter's own baselines (league ≈ 20%, higher = better)." style={{ padding: '9px 10px', color: '#a0a0b8', textAlign: 'right', ...stickyHeaderStyle }}>Perfect Sw%</th>
+              <th style={{ padding: '9px 10px', color: 'var(--text-2)', textAlign: 'right', ...stickyHeaderStyle }}>EV90</th>
+              <th style={{ padding: '9px 10px', color: 'var(--text-2)', textAlign: 'right', ...stickyHeaderStyle }}>Whiff%</th>
+              <th style={{ padding: '9px 10px', color: 'var(--text-2)', textAlign: 'right', ...stickyHeaderStyle }}>K%</th>
+              <th style={{ padding: '9px 10px', color: 'var(--text-2)', textAlign: 'right', ...stickyHeaderStyle }}>BB%</th>
+              <th title="Timing Consistency — σ (inches) of contact-point timing. Steadier ≠ better outcomes (descriptive)." style={{ padding: '9px 10px', color: 'var(--text-2)', textAlign: 'right', ...stickyHeaderStyle }}>Timing σ</th>
+              <th title="Barrel Accuracy — mean whiff miss distance (inches). Big-miss hitters skew power (descriptive)." style={{ padding: '9px 10px', color: 'var(--text-2)', textAlign: 'right', ...stickyHeaderStyle }}>Whiff Miss</th>
+              <th title="Perfect Swing Rate — share of swings on-time + centered + on-plane vs the batter's own baselines (league ≈ 20%, higher = better)." style={{ padding: '9px 10px', color: 'var(--text-2)', textAlign: 'right', ...stickyHeaderStyle }}>Perfect Sw%</th>
             </tr>
           </thead>
           <tbody>
@@ -702,11 +690,11 @@ function CombinedTab({ hitters, bdq, outcomes }: { hitters: EnrichedHitter[]; bd
               const g = rvGrade(p.bdq.ooz_decision_rv);
               const tc = tierColor(p.tier);
               return (
-                <tr key={p.id} style={{ borderBottom: '1px solid #1a1a2e', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
-                  <td style={{ padding: '7px 10px', color: '#606080', textAlign: 'center' }}>{i + 1}</td>
-                  <td style={{ padding: '7px 12px', color: '#e0e0e8', fontWeight: 500, whiteSpace: 'nowrap' }}>{p.name}</td>
-                  <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'center' }}>{p.team}</td>
-                  <td style={{ padding: '7px 8px', color: '#a0a0b8', textAlign: 'center' }}>{p.hand}</td>
+                <tr key={p.id} style={{ borderBottom: '1px solid var(--bg-elevated)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
+                  <td style={{ padding: '7px 10px', color: 'var(--text-3)', textAlign: 'center' }}>{i + 1}</td>
+                  <td style={{ padding: '7px 12px', color: 'var(--text-1)', fontWeight: 500, whiteSpace: 'nowrap' }}>{p.name}</td>
+                  <td style={{ padding: '7px 10px', color: 'var(--text-2)', textAlign: 'center' }}>{p.team}</td>
+                  <td style={{ padding: '7px 8px', color: 'var(--text-2)', textAlign: 'center' }}>{p.hand}</td>
                   <td style={{ padding: '7px 8px', textAlign: 'center' }}>
                     <GradeBadge score={Math.round(p.swing_plus)} size="sm" />
                   </td>
@@ -715,33 +703,33 @@ function CombinedTab({ hitters, bdq, outcomes }: { hitters: EnrichedHitter[]; bd
                       {p.tier.replace(/_/g, ' ')}
                     </span>
                   </td>
-                  <td style={{ padding: '7px 10px', color: '#a0a0b8', textAlign: 'center' }}>{p.n_pa}</td>
+                  <td style={{ padding: '7px 10px', color: 'var(--text-2)', textAlign: 'center' }}>{p.n_pa}</td>
                   <td style={{ padding: '7px 10px', textAlign: 'right' }}>
-                    <span style={{ color: '#a0a0b8', fontFamily: 'monospace' }}>{pct(p.bdq.bad_chase_rate)}</span>
+                    <span style={{ color: 'var(--text-2)', fontFamily: 'monospace' }}>{pct(p.bdq.bad_chase_rate)}</span>
                   </td>
                   <td style={{ padding: '7px 8px', textAlign: 'center' }}>
                     <span style={{ background: g.color + '22', color: g.color, borderRadius: 4, padding: '2px 6px', fontSize: 11, fontWeight: 600 }}>{g.label}</span>
                   </td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: '#e0e0e8', fontFamily: 'monospace' }}>{p.metrics.xwoba.toFixed(3)}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: '#e0e0e8', fontFamily: 'monospace' }}>{pct(p.metrics.barrel_rate)}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: '#e0e0e8', fontFamily: 'monospace' }}>{p.metrics.avg_bat_speed.toFixed(1)}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: p.bipr_simple != null ? '#e0e0e8' : '#606080', fontFamily: 'monospace' }}>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--text-1)', fontFamily: 'monospace' }}>{p.metrics.xwoba.toFixed(3)}</td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--text-1)', fontFamily: 'monospace' }}>{pct(p.metrics.barrel_rate)}</td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--text-1)', fontFamily: 'monospace' }}>{p.metrics.avg_bat_speed.toFixed(1)}</td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: p.bipr_simple != null ? 'var(--text-1)' : 'var(--text-3)', fontFamily: 'monospace' }}>
                     {p.bipr_simple != null ? `${(p.bipr_simple * 100).toFixed(1)}%` : 'N/A'}
                   </td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: p.wobacon != null ? '#e0e0e8' : '#606080', fontFamily: 'monospace' }}>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: p.wobacon != null ? 'var(--text-1)' : 'var(--text-3)', fontFamily: 'monospace' }}>
                     {p.wobacon != null ? p.wobacon.toFixed(3) : 'N/A'}
                   </td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: '#a0a0b8', fontFamily: 'monospace' }}>{p.metrics.ev90.toFixed(1)}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: '#a0a0b8', fontFamily: 'monospace' }}>{pct(p.metrics.whiff_rate)}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: '#a0a0b8', fontFamily: 'monospace' }}>{pct(p.metrics.k_rate)}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: '#a0a0b8', fontFamily: 'monospace' }}>{pct(p.metrics.bb_rate)}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: p.timing_consistency != null ? '#a0a0b8' : '#606080', fontFamily: 'monospace' }}>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--text-2)', fontFamily: 'monospace' }}>{p.metrics.ev90.toFixed(1)}</td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--text-2)', fontFamily: 'monospace' }}>{pct(p.metrics.whiff_rate)}</td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--text-2)', fontFamily: 'monospace' }}>{pct(p.metrics.k_rate)}</td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--text-2)', fontFamily: 'monospace' }}>{pct(p.metrics.bb_rate)}</td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: p.timing_consistency != null ? 'var(--text-2)' : 'var(--text-3)', fontFamily: 'monospace' }}>
                     {p.timing_consistency != null ? p.timing_consistency.toFixed(1) : 'N/A'}
                   </td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: p.barrel_accuracy != null ? '#a0a0b8' : '#606080', fontFamily: 'monospace' }}>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: p.barrel_accuracy != null ? 'var(--text-2)' : 'var(--text-3)', fontFamily: 'monospace' }}>
                     {p.barrel_accuracy != null ? p.barrel_accuracy.toFixed(2) : 'N/A'}
                   </td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: p.perfect_swing_rate != null ? '#e0e0e8' : '#606080', fontFamily: 'monospace' }}>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: p.perfect_swing_rate != null ? 'var(--text-1)' : 'var(--text-3)', fontFamily: 'monospace' }}>
                     {p.perfect_swing_rate != null ? `${(p.perfect_swing_rate * 100).toFixed(1)}%` : 'N/A'}
                   </td>
                 </tr>
@@ -777,17 +765,17 @@ function ScatterTooltip({ active, payload }: { active?: boolean; payload?: Array
   const g = rvGrade(d.oozRV);
   const tc = tierColor(d.tier);
   return (
-    <div style={{ background: '#16162a', border: '1px solid #2a2a3e', borderRadius: 8, padding: '10px 14px', fontSize: 13, minWidth: 180 }}>
-      <div style={{ color: '#e0e0e8', fontWeight: 700 }}>{d.name}</div>
-      <div style={{ color: '#606080', fontSize: 12, marginBottom: 6 }}>{d.team} · {d.n_pa} PA</div>
+    <div style={{ background: '#16162a', border: '1px solid var(--border-plus)', borderRadius: 8, padding: '10px 14px', fontSize: 13, minWidth: 180 }}>
+      <div style={{ color: 'var(--text-1)', fontWeight: 700 }}>{d.name}</div>
+      <div style={{ color: 'var(--text-3)', fontSize: 12, marginBottom: 6 }}>{d.team} · {d.n_pa} PA</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Swing+:</span> <span style={{ color: tc, fontWeight: 700 }}>{d.swingPlus.toFixed(1)}</span></span>
-        <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Tier:</span> <span style={{ color: tc }}>{d.tier.replace(/_/g, ' ')}</span></span>
-        <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Decision RV:</span> <span style={{ color: g.color }}>{d.oozRV.toFixed(1)}</span> <span style={{ color: '#606080', fontSize: 11 }}>({g.label})</span></span>
-        <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Bad Chase%:</span> <span style={{ color: '#a0a0b8' }}>{pct(d.badChase)}</span> <span style={{ color: '#606080', fontSize: 11 }}>composition</span></span>
-        <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Dec Chase%:</span> <span style={{ color: '#4a9eff' }}>{pct(d.decChase)}</span></span>
-        <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>xwOBA:</span> <span style={{ color: xwobaColor(d.xwoba) }}>{d.xwoba.toFixed(3)}</span></span>
-        <span><span style={{ color: '#a0a0b8', fontSize: 12 }}>Barrel%:</span> <span style={{ color: '#e0e0e8' }}>{pct(d.barrelRate)}</span></span>
+        <span><span style={{ color: 'var(--text-2)', fontSize: 12 }}>Swing+:</span> <span style={{ color: tc, fontWeight: 700 }}>{d.swingPlus.toFixed(1)}</span></span>
+        <span><span style={{ color: 'var(--text-2)', fontSize: 12 }}>Tier:</span> <span style={{ color: tc }}>{d.tier.replace(/_/g, ' ')}</span></span>
+        <span><span style={{ color: 'var(--text-2)', fontSize: 12 }}>Decision RV:</span> <span style={{ color: g.color }}>{d.oozRV.toFixed(1)}</span> <span style={{ color: 'var(--text-3)', fontSize: 11 }}>({g.label})</span></span>
+        <span><span style={{ color: 'var(--text-2)', fontSize: 12 }}>Bad Chase%:</span> <span style={{ color: 'var(--text-2)' }}>{pct(d.badChase)}</span> <span style={{ color: 'var(--text-3)', fontSize: 11 }}>composition</span></span>
+        <span><span style={{ color: 'var(--text-2)', fontSize: 12 }}>Dec Chase%:</span> <span style={{ color: '#4a9eff' }}>{pct(d.decChase)}</span></span>
+        <span><span style={{ color: 'var(--text-2)', fontSize: 12 }}>xwOBA:</span> <span style={{ color: xwobaColor(d.xwoba) }}>{d.xwoba.toFixed(3)}</span></span>
+        <span><span style={{ color: 'var(--text-2)', fontSize: 12 }}>Barrel%:</span> <span style={{ color: 'var(--text-1)' }}>{pct(d.barrelRate)}</span></span>
       </div>
     </div>
   );
@@ -835,8 +823,8 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <h3 style={{ color: '#e0e0e8', margin: '0 0 6px 0', fontSize: 16 }}>Swing Quality vs. Plate Discipline</h3>
-        <p style={{ color: '#a0a0b8', fontSize: 13, margin: 0 }}>
+        <h3 style={{ color: 'var(--text-1)', margin: '0 0 6px 0', fontSize: 16 }}>Swing Quality vs. Plate Discipline</h3>
+        <p style={{ color: 'var(--text-2)', fontSize: 13, margin: 0 }}>
           Each dot is a batter with both Swing+ and BDQ data. Ideal batters are{' '}
           <strong style={{ color: '#d44040' }}>top-right</strong> (high Swing+ + high decision run value).
           n = {points.length} batters.
@@ -846,17 +834,17 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
       {/* Controls */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ color: '#a0a0b8', fontSize: 13 }}>Min PA:</span>
+          <span style={{ color: 'var(--text-2)', fontSize: 13 }}>Min PA:</span>
           <input type="number" value={minPA} onChange={e => setMinPA(Number(e.target.value))}
             min={0} max={600} step={25} style={{ ...filterInputStyle, width: 70 }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ color: '#a0a0b8', fontSize: 13 }}>Min Chases:</span>
+          <span style={{ color: 'var(--text-2)', fontSize: 13 }}>Min Chases:</span>
           <input type="number" value={minChases} onChange={e => setMinChases(Number(e.target.value))}
             min={10} max={200} step={10} style={{ ...filterInputStyle, width: 70 }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ color: '#a0a0b8', fontSize: 13 }}>Color by:</span>
+          <span style={{ color: 'var(--text-2)', fontSize: 13 }}>Color by:</span>
           <select value={colorBy} onChange={e => setColorBy(e.target.value as typeof colorBy)} style={filterInputStyle}>
             <option value="tier">Swing+ Tier</option>
             <option value="xwoba">xwOBA</option>
@@ -872,19 +860,19 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
 
       <ResponsiveContainer width="100%" height={500}>
         <ScatterChart margin={{ top: 10, right: 30, bottom: 50, left: 50 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
           <XAxis
             dataKey="x" type="number"
             domain={['auto', 'auto']}
             tickFormatter={v => v.toFixed(1)}
-            stroke="#2a2a3e" tick={{ fill: '#606080', fontSize: 11 }}
-            label={{ value: 'Decision RV / 100 OOZ pitches (higher = better)', position: 'insideBottom', offset: -30, fill: '#a0a0b8', fontSize: 12 }}
+            stroke="var(--border-plus)" tick={{ fill: 'var(--text-3)', fontSize: 11 }}
+            label={{ value: 'Decision RV / 100 OOZ pitches (higher = better)', position: 'insideBottom', offset: -30, fill: 'var(--text-2)', fontSize: 12 }}
           />
           <YAxis
             dataKey="y" type="number"
             domain={[60, 200]}
-            stroke="#2a2a3e" tick={{ fill: '#606080', fontSize: 11 }}
-            label={{ value: 'Swing+', angle: -90, position: 'insideLeft', offset: 15, fill: '#a0a0b8', fontSize: 12 }}
+            stroke="var(--border-plus)" tick={{ fill: 'var(--text-3)', fontSize: 11 }}
+            label={{ value: 'Swing+', angle: -90, position: 'insideLeft', offset: 15, fill: 'var(--text-2)', fontSize: 12 }}
           />
           <Tooltip content={<ScatterTooltip />} />
           <ReferenceLine x={avgOozRv} stroke="#4a9eff" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: 'Avg', position: 'top', fill: '#4a9eff', fontSize: 10 }} />
@@ -899,7 +887,7 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, paddingLeft: 60, marginTop: 4 }}>
         <div style={{ textAlign: 'center', color: '#3a5080', fontSize: 11 }}>NEEDS WORK ↓</div>
-        <div style={{ textAlign: 'center', color: '#a0a0b8', fontSize: 11 }}>DISCIPLINED / LOW OUTPUT ↓</div>
+        <div style={{ textAlign: 'center', color: 'var(--text-2)', fontSize: 11 }}>DISCIPLINED / LOW OUTPUT ↓</div>
       </div>
 
       {/* Legend */}
@@ -908,7 +896,7 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
           ? Object.entries(TIER_COLORS).map(([tier, color]) => (
               <div key={tier} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <div style={{ width: 10, height: 10, borderRadius: 10, background: color }} />
-                <span style={{ color: '#a0a0b8', fontSize: 12 }}>{tier.replace(/_/g, ' ')}</span>
+                <span style={{ color: 'var(--text-2)', fontSize: 12 }}>{tier.replace(/_/g, ' ')}</span>
               </div>
             ))
           : [
@@ -920,7 +908,7 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
             ].map(({ label, color }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <div style={{ width: 10, height: 10, borderRadius: 10, background: color }} />
-                <span style={{ color: '#a0a0b8', fontSize: 12 }}>{label}</span>
+                <span style={{ color: 'var(--text-2)', fontSize: 12 }}>{label}</span>
               </div>
             ))
         }
@@ -931,7 +919,7 @@ function ScatterTab({ hitters, bdq }: { hitters: EnrichedHitter[]; bdq: BatterBD
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function BatterBrowser() {
+export function BattersPanel() {
   const { season } = useData();
   const safeSeason = (typeof season === 'number' ? season : 2025) as 2021 | 2022 | 2023 | 2024 | 2025 | 2026;
   const { bdq, enriched, loading, error } = useBatterData(safeSeason);
@@ -939,13 +927,13 @@ export function BatterBrowser() {
   const [activeTab, setActiveTab] = useState<Tab>('swing');
 
   if (loading) return (
-    <div style={{ padding: '24px', maxWidth: 1400, margin: '0 auto' }}>
+    <div>
       <div style={{ marginBottom: 20 }}>
-        <div style={{ height: 28, width: 200, background: '#1e1e2e', borderRadius: 6, marginBottom: 10 }} />
-        <div style={{ height: 14, width: 340, background: '#1e1e2e', borderRadius: 4 }} />
+        <div style={{ height: 28, width: 200, background: 'var(--border)', borderRadius: 6, marginBottom: 10 }} />
+        <div style={{ height: 14, width: 340, background: 'var(--border)', borderRadius: 4 }} />
       </div>
       {[...Array(8)].map((_, i) => (
-        <div key={i} style={{ height: 44, background: '#14141f', borderRadius: 6, marginBottom: 6,
+        <div key={i} style={{ height: 44, background: 'var(--bg-surface)', borderRadius: 6, marginBottom: 6,
           animation: 'pulse 1.5s ease-in-out infinite', opacity: 0.6 + (i % 3) * 0.1 }} />
       ))}
     </div>
@@ -956,12 +944,12 @@ export function BatterBrowser() {
       <div style={{ color: '#ef4444', fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
         Failed to load batter data
       </div>
-      <div style={{ color: '#606080', fontSize: 13, marginBottom: 16, maxWidth: 400, margin: '0 auto 16px' }}>
+      <div style={{ color: 'var(--text-3)', fontSize: 13, marginBottom: 16, maxWidth: 400, margin: '0 auto 16px' }}>
         {error}
       </div>
       <button
         onClick={() => window.location.reload()}
-        style={{ background: '#4a9eff', color: '#0a0a0f', border: 'none', borderRadius: 6,
+        style={{ background: '#4a9eff', color: 'var(--bg-base)', border: 'none', borderRadius: 6,
           padding: '8px 18px', cursor: 'pointer', fontWeight: 600 }}
       >
         Retry
@@ -979,35 +967,13 @@ export function BatterBrowser() {
   ];
 
   return (
-    <div style={{ padding: '24px', maxWidth: 1400, margin: '0 auto' }}>
-
-      {/* Header */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e0e0e8', margin: 0 }}>Batter Analysis</h1>
-          <SourceBadge label={`${season} MLB Season`} />
-          <span style={{ fontSize: 13, color: '#606080' }}>
-            {bdq.metadata.n_batters} BDQ players · {enriched.length} Swing+ players · {enriched.length} in both
-          </span>
-        </div>
-
-        {/* Data source callout */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, marginTop: 14 }}>
-          {[
-            { label: 'Swing+', src: 'hitters.json', desc: `${enriched.length} batters · 32 metrics · 7 dimensions`, color: '#4a9eff' },
-            { label: 'BDQ (Batter Decision Quality)', src: 'batter_bdq.json', desc: `${bdq.metadata.n_batters} batters · Tango 167ms model · ${bdq.metadata.model}`, color: '#c85a5a' },
-          ].map(({ label, src, desc, color }) => (
-            <div key={label} style={{ background: `${color}08`, border: `1px solid ${color}25`, borderRadius: 6, padding: '10px 14px' }}>
-              <div style={{ color, fontSize: 12, fontWeight: 600 }}>{label}</div>
-              <div style={{ color: '#606080', fontSize: 11, marginTop: 2 }}>Source: {src}</div>
-              <div style={{ color: '#a0a0b8', fontSize: 12, marginTop: 3 }}>{desc}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div>
+      <p className="subtitle" style={{ marginTop: 0, marginBottom: 14 }}>
+        {enriched.length} Swing+ batters · {bdq.metadata.n_batters} BDQ batters · {bdq.metadata.model}
+      </p>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 2, marginBottom: 24, borderBottom: '2px solid #1e1e2e', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 2, marginBottom: 24, borderBottom: '2px solid var(--border)', flexWrap: 'wrap' }}>
         {tabs.map(({ id, label }) => (
           <button
             key={id}
@@ -1015,7 +981,7 @@ export function BatterBrowser() {
             style={{
               padding: '10px 18px', border: 'none', cursor: 'pointer',
               background: activeTab === id ? '#4a9eff' : 'transparent',
-              color: activeTab === id ? '#0a0a0f' : '#a0a0b8',
+              color: activeTab === id ? 'var(--bg-base)' : 'var(--text-2)',
               fontWeight: activeTab === id ? 700 : 400,
               borderRadius: '6px 6px 0 0',
               fontSize: 14,

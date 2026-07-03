@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Advanced Search — Baseball Savant-style slice/filter over all pitcher metrics.
  * Supports: season, team, hand, game type, pitch type, min pitches,
  *           metric range filters, and full-text search.
@@ -111,19 +111,19 @@ const SORTABLE_DIMS = Object.keys(DIMENSION_LABELS) as DimensionKey[];
 const SORTABLE_METRICS = (Object.keys(METRIC_LABELS) as MetricKey[]).slice(0, 20); // top metrics
 
 const SEL_STYLE = {
-  background: 'var(--bg-elevated)', border: '1px solid #2a2a3e',
+  background: 'var(--bg-elevated)', border: '1px solid var(--border-plus)',
   color: 'var(--text-1)', borderRadius: 6, padding: '7px 10px', fontSize: 13,
 };
 
 const INPUT_STYLE = {
-  background: 'var(--bg-elevated)', border: '1px solid #2a2a3e',
+  background: 'var(--bg-elevated)', border: '1px solid var(--border-plus)',
   color: 'var(--text-1)', borderRadius: 6, padding: '7px 10px', fontSize: 13,
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const stickyTh = {
-  background: 'var(--bg-surface)', borderBottom: '2px solid #1e1e2e',
+  background: 'var(--bg-surface)', borderBottom: '2px solid var(--border)',
   position: 'sticky' as const, top: 0, zIndex: 2,
   padding: '8px 10px', whiteSpace: 'nowrap' as const, userSelect: 'none' as const,
 };
@@ -137,7 +137,7 @@ function SortTh({ field, label, title, sortField, sortAsc, onSort }: {
   return (
     <th onClick={() => onSort(field)} title={title} style={{
       ...stickyTh, cursor: 'pointer',
-      color: active ? 'var(--accent)' : '#a0a0b8',
+      color: active ? 'var(--accent)' : 'var(--text-2)',
       fontWeight: active ? 700 : 500,
     }}>
       {label}{active ? (sortAsc ? ' ▲' : ' ▼') : ''}
@@ -297,7 +297,7 @@ export function AdvancedSearch() {
 
       {/* ── Trait Presets ── */}
       <div style={{ marginBottom: 16 }}>
-        <div style={{ color: '#a0a0b8', fontSize: 11, marginBottom: 8, fontWeight: 600, letterSpacing: 1 }}>
+        <div style={{ color: 'var(--text-2)', fontSize: 11, marginBottom: 8, fontWeight: 600, letterSpacing: 1 }}>
           PITCHER ARCHETYPES
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -358,19 +358,19 @@ export function AdvancedSearch() {
       {/* ── Filters ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
         <div>
-          <div style={{ color: '#a0a0b8', fontSize: 11, marginBottom: 4 }}>SEARCH</div>
+          <div style={{ color: 'var(--text-2)', fontSize: 11, marginBottom: 4 }}>SEARCH</div>
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Pitcher name…" style={{ ...INPUT_STYLE, width: '100%', boxSizing: 'border-box' }} />
         </div>
         <div>
-          <div style={{ color: '#a0a0b8', fontSize: 11, marginBottom: 4 }}>TEAM</div>
+          <div style={{ color: 'var(--text-2)', fontSize: 11, marginBottom: 4 }}>TEAM</div>
           <select value={teamFilter} onChange={e => setTeamFilter(e.target.value)}
             style={{ ...SEL_STYLE, width: '100%' }}>
             {teams.map(t => <option key={t}>{t}</option>)}
           </select>
         </div>
         <div>
-          <div style={{ color: '#a0a0b8', fontSize: 11, marginBottom: 4 }}>THROWS</div>
+          <div style={{ color: 'var(--text-2)', fontSize: 11, marginBottom: 4 }}>THROWS</div>
           <select value={handFilter} onChange={e => setHandFilter(e.target.value)}
             style={{ ...SEL_STYLE, width: '100%' }}>
             <option value="All">All</option>
@@ -379,7 +379,7 @@ export function AdvancedSearch() {
           </select>
         </div>
         <div>
-          <div style={{ color: '#a0a0b8', fontSize: 11, marginBottom: 4 }}>PITCH TYPE</div>
+          <div style={{ color: 'var(--text-2)', fontSize: 11, marginBottom: 4 }}>PITCH TYPE</div>
           <select value={pitchTypeFilter} onChange={e => setPitchTypeFilter(e.target.value)}
             style={{ ...SEL_STYLE, width: '100%' }}>
             {allPitchTypes.map(pt => (
@@ -390,13 +390,13 @@ export function AdvancedSearch() {
           </select>
         </div>
         <div>
-          <div style={{ color: '#a0a0b8', fontSize: 11, marginBottom: 4 }}>MIN PITCHES</div>
+          <div style={{ color: 'var(--text-2)', fontSize: 11, marginBottom: 4 }}>MIN PITCHES</div>
           <input type="number" value={minPitches} min={0} step={10}
             onChange={e => setMinPitches(Number(e.target.value))}
             style={{ ...INPUT_STYLE, width: '100%', boxSizing: 'border-box' }} />
         </div>
         <div>
-          <div style={{ color: '#a0a0b8', fontSize: 11, marginBottom: 4 }}>SORT BY</div>
+          <div style={{ color: 'var(--text-2)', fontSize: 11, marginBottom: 4 }}>SORT BY</div>
           <select value={sortField} onChange={e => setSortField(e.target.value as SortField)}
             style={{ ...SEL_STYLE, width: '100%' }}>
             <option value="pitch_plus">Pitch+</option>
@@ -411,20 +411,20 @@ export function AdvancedSearch() {
       </div>
 
       {/* ── Metric range filters ── */}
-      <details style={{ color: '#a0a0b8', fontSize: 13 }}>
+      <details style={{ color: 'var(--text-2)', fontSize: 13 }}>
         <summary style={{ cursor: 'pointer', color: 'var(--accent)', fontWeight: 600, marginBottom: 10 }}>
           + Metric Range Filters
         </summary>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8, paddingTop: 8 }}>
           {SORTABLE_METRICS.map(mk => (
             <div key={mk} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 120, fontSize: 12, color: '#a0a0b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ width: 120, fontSize: 12, color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {METRIC_LABELS[mk]}{PCT_METRICS.has(mk) ? ' (%)' : ''}
               </span>
               <input placeholder="min" type="number" step="any"
                 value={rangeFilters[mk]?.min ?? ''} onChange={e => setRange(mk, 'min', e.target.value)}
                 style={{ ...INPUT_STYLE, width: 60, padding: '4px 6px', fontSize: 12 }} />
-              <span style={{ color: '#606080' }}>–</span>
+              <span style={{ color: 'var(--text-3)' }}>–</span>
               <input placeholder="max" type="number" step="any"
                 value={rangeFilters[mk]?.max ?? ''} onChange={e => setRange(mk, 'max', e.target.value)}
                 style={{ ...INPUT_STYLE, width: 60, padding: '4px 6px', fontSize: 12 }} />
@@ -435,14 +435,14 @@ export function AdvancedSearch() {
 
       {/* ── Column toggles ── */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-        <span style={{ color: '#a0a0b8', fontSize: 12 }}>Show metric:</span>
+        <span style={{ color: 'var(--text-2)', fontSize: 12 }}>Show metric:</span>
         {SORTABLE_METRICS.slice(0, 12).map(mk => (
           <button key={mk} onClick={() => setShownMetric(prev => prev === mk ? null : mk)}
             style={{
               padding: '3px 10px', fontSize: 11, border: '1px solid',
-              borderColor: shownMetric === mk ? 'var(--accent)' : '#2a2a3e',
+              borderColor: shownMetric === mk ? 'var(--accent)' : 'var(--border-plus)',
               background: shownMetric === mk ? 'rgba(74,158,255,0.15)' : 'transparent',
-              color: shownMetric === mk ? 'var(--accent)' : '#606080',
+              color: shownMetric === mk ? 'var(--accent)' : 'var(--text-3)',
               borderRadius: 4, cursor: 'pointer',
             }}>
             {METRIC_LABELS[mk]}
@@ -452,7 +452,7 @@ export function AdvancedSearch() {
 
       {/* ── Results count + actions ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <span style={{ color: '#606080', fontSize: 13 }}>
+        <span style={{ color: 'var(--text-3)', fontSize: 13 }}>
           {filtered.length.toLocaleString()} results
         </span>
         {Object.values(rangeFilters).some(r => r?.min || r?.max) && (
@@ -474,8 +474,8 @@ export function AdvancedSearch() {
           }}
           style={{
             padding: '4px 10px', fontSize: 11, borderRadius: 5,
-            border: '1px solid #2a2a3e', background: 'transparent',
-            color: '#a0a0b8', cursor: 'pointer',
+            border: '1px solid var(--border-plus)', background: 'transparent',
+            color: 'var(--text-2)', cursor: 'pointer',
           }}
         >
           ↓ Export CSV
@@ -485,8 +485,8 @@ export function AdvancedSearch() {
           title="Copy shareable link with current filters"
           style={{
             padding: '4px 10px', fontSize: 11, borderRadius: 5,
-            border: '1px solid #2a2a3e', background: 'transparent',
-            color: '#a0a0b8', cursor: 'pointer',
+            border: '1px solid var(--border-plus)', background: 'transparent',
+            color: 'var(--text-2)', cursor: 'pointer',
           }}
         >
           ⎘ Copy link
@@ -500,19 +500,19 @@ export function AdvancedSearch() {
           }}
           style={{
             padding: '4px 10px', fontSize: 11, borderRadius: 5,
-            border: '1px solid #2a2a3e', background: 'transparent',
-            color: '#a0a0b8', cursor: 'pointer',
+            border: '1px solid var(--border-plus)', background: 'transparent',
+            color: 'var(--text-2)', cursor: 'pointer',
           }}
         >
           ☆ Save filters
         </button>
         {savedFilters.length > 0 && (
           <details style={{ display: 'inline' }}>
-            <summary style={{ fontSize: 11, color: '#a0a0b8', cursor: 'pointer', listStyle: 'none' }}>
+            <summary style={{ fontSize: 11, color: 'var(--text-2)', cursor: 'pointer', listStyle: 'none' }}>
               ★ Saved ({savedFilters.length})
             </summary>
             <div style={{
-              position: 'absolute', background: '#14141f', border: '1px solid #2a2a3e',
+              position: 'absolute', background: 'var(--bg-surface)', border: '1px solid var(--border-plus)',
               borderRadius: 8, padding: 8, zIndex: 50, minWidth: 220,
               boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
             }}>
@@ -520,13 +520,13 @@ export function AdvancedSearch() {
                 <div key={sf.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0' }}>
                   <button
                     onClick={() => { window.location.search = sf.url; }}
-                    style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', color: '#e0e0e8', fontSize: 12, cursor: 'pointer' }}
+                    style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-1)', fontSize: 12, cursor: 'pointer' }}
                   >
                     {sf.name}
                   </button>
                   <button
                     onClick={() => { deleteSavedFilter(sf.id); setSavedFilters(getSavedFilters('search')); }}
-                    style={{ background: 'none', border: 'none', color: '#606080', cursor: 'pointer', fontSize: 14, padding: '0 2px' }}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-3)', cursor: 'pointer', fontSize: 14, padding: '0 2px' }}
                   >×</button>
                 </div>
               ))}
@@ -541,10 +541,10 @@ export function AdvancedSearch() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr>
-                <th style={{ ...stickyTh, color: '#606080' }}>#</th>
-                <th style={{ ...stickyTh, textAlign: 'left', color: '#a0a0b8' }}>Pitcher</th>
-                <th style={{ ...stickyTh, color: '#a0a0b8' }}>Team</th>
-                <th style={{ ...stickyTh, color: '#a0a0b8' }}>H</th>
+                <th style={{ ...stickyTh, color: 'var(--text-3)' }}>#</th>
+                <th style={{ ...stickyTh, textAlign: 'left', color: 'var(--text-2)' }}>Pitcher</th>
+                <th style={{ ...stickyTh, color: 'var(--text-2)' }}>Team</th>
+                <th style={{ ...stickyTh, color: 'var(--text-2)' }}>H</th>
                 <SortTh field="pitch_plus" label="Pitch+" {...sortCtx} />
                 {SORTABLE_DIMS.map(d => (
                   <SortTh key={d} field={d} label={DIMENSION_LABELS[d].slice(0, 4)} title={DIMENSION_LABELS[d]} {...sortCtx} />
@@ -552,8 +552,8 @@ export function AdvancedSearch() {
                 {shownMetric && (
                   <SortTh field={shownMetric} label={METRIC_LABELS[shownMetric]} {...sortCtx} />
                 )}
-                <th style={{ ...stickyTh, color: '#a0a0b8' }}>Pitches</th>
-                <th style={{ ...stickyTh, color: '#a0a0b8' }}>G</th>
+                <th style={{ ...stickyTh, color: 'var(--text-2)' }}>Pitches</th>
+                <th style={{ ...stickyTh, color: 'var(--text-2)' }}>G</th>
               </tr>
             </thead>
             <tbody>
@@ -561,13 +561,13 @@ export function AdvancedSearch() {
                 <tr key={p.pitcher_id}
                   {...rowNavProps(navigate, `/player/${p.pitcher_id}`)}
                   className="table-row-hover"
-                  style={{ borderBottom: '1px solid #1e1e2e', cursor: 'pointer' }}>
-                  <td style={{ padding: '6px 10px', color: '#606080', textAlign: 'center' }}>{i + 1}</td>
+                  style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}>
+                  <td style={{ padding: '6px 10px', color: 'var(--text-3)', textAlign: 'center' }}>{i + 1}</td>
                   <td style={{ padding: '6px 10px', color: 'var(--text-1)', fontWeight: 500, whiteSpace: 'nowrap' }}>
                     {p.pitcher_name}
                   </td>
-                  <td style={{ padding: '6px 10px', color: '#a0a0b8', textAlign: 'center' }}>{p.pitcher_team}</td>
-                  <td style={{ padding: '6px 10px', color: '#a0a0b8', textAlign: 'center' }}>{p.pitcher_hand}</td>
+                  <td style={{ padding: '6px 10px', color: 'var(--text-2)', textAlign: 'center' }}>{p.pitcher_team}</td>
+                  <td style={{ padding: '6px 10px', color: 'var(--text-2)', textAlign: 'center' }}>{p.pitcher_hand}</td>
                   <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                     <GradeBadge score={p.pitch_plus} size="sm" />
                   </td>
@@ -593,10 +593,10 @@ export function AdvancedSearch() {
                       </td>
                     );
                   })()}
-                  <td style={{ padding: '6px 10px', color: '#a0a0b8', textAlign: 'right' }}>
+                  <td style={{ padding: '6px 10px', color: 'var(--text-2)', textAlign: 'right' }}>
                     {p.n_pitches.toLocaleString()}
                   </td>
-                  <td style={{ padding: '6px 10px', color: '#a0a0b8', textAlign: 'center' }}>
+                  <td style={{ padding: '6px 10px', color: 'var(--text-2)', textAlign: 'center' }}>
                     {p.n_games}
                   </td>
                 </tr>
@@ -607,7 +607,7 @@ export function AdvancedSearch() {
       </div>
 
       {/* ── Footer metadata ── */}
-      <div style={{ color: '#606080', fontSize: 12, paddingBottom: 24 }}>
+      <div style={{ color: 'var(--text-3)', fontSize: 12, paddingBottom: 24 }}>
         Model {data.pitchers.metadata.model_version} · Generated {data.pitchers.metadata.generated} ·{' '}
         Click any row to open pitcher profile
       </div>

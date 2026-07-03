@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+﻿import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useData, AVAILABLE_SEASONS, setGlobalSeason, getGlobalSeason, hasMatchupData } from '../data/useData';
@@ -77,16 +77,14 @@ function CommandPaletteOverlay({ onClose }: { onClose: () => void }) {
 
     // Navigation — all pages
     const navs = [
-      { label: 'Pitchers', sublabel: 'Browse all pitchers', path: '/' },
-      { label: 'Batters', sublabel: 'Browse all batters', path: '/batters' },
+      { label: 'Leaderboard — Pitchers', sublabel: 'Rank & browse all pitchers', path: '/' },
+      { label: 'Leaderboard — Batters', sublabel: 'Rank & browse all batters', path: '/?tab=batters' },
       { label: 'Teams', sublabel: 'Team rotations', path: '/teams' },
-      { label: 'Leaderboard', sublabel: 'Rank pitchers by any metric', path: '/leaderboard' },
       { label: 'Advanced Search', sublabel: 'Filter & slice metrics', path: '/search' },
       { label: 'Compare Pitchers', sublabel: 'Head-to-head comparison', path: '/compare' },
       ...(hasMatchupData(currentSeason) ? [{ label: 'Matchup Machine', sublabel: 'Pitcher vs batter projections', path: '/matchup' }] : []),
-      { label: 'Pitcher Plots', sublabel: 'Movement, location, heatmaps', path: '/plots' },
-      { label: 'Design Lab', sublabel: 'Pitch design recommendations', path: '/design' },
-      { label: 'Spring Training', sublabel: 'Spring development tracker', path: '/spring' },
+      { label: 'Lineup Board', sublabel: 'Arsenal-weighted lineup scouting', path: '/lineup' },
+      { label: 'Catcher Framing Leaderboard', sublabel: 'CSOE framing + challenge value', path: '/catchers' },
       { label: 'Glossary', sublabel: 'Metric definitions', path: '/glossary' },
       { label: 'FAQ', sublabel: 'How scores are calculated', path: '/faq' },
     ];
@@ -140,7 +138,7 @@ function CommandPaletteOverlay({ onClose }: { onClose: () => void }) {
           label: `Plot ${p.pitcher_name}`,
           sublabel: 'View movement, location & heatmaps',
           group: 'Actions',
-          onSelect: () => { navigate(`/plots?pitcher=${p.pitcher_id}`); onClose(); },
+          onSelect: () => { navigate(`/player/${p.pitcher_id}?tab=charts`); onClose(); },
         });
       }
     }
@@ -193,7 +191,7 @@ function CommandPaletteOverlay({ onClose }: { onClose: () => void }) {
       <div style={{
         position: 'fixed', top: '18%', left: '50%', transform: 'translateX(-50%)',
         width: 'min(540px, 90vw)', maxHeight: 420,
-        background: '#14141f', border: '1px solid #2a2a3e', borderRadius: 12,
+        background: 'var(--bg-surface)', border: '1px solid var(--border-plus)', borderRadius: 12,
         boxShadow: '0 20px 60px rgba(0,0,0,0.7)', overflow: 'hidden',
         display: 'flex', flexDirection: 'column', zIndex: 9999,
         animation: 'fadeSlideIn 0.15s ease-out',
@@ -205,8 +203,8 @@ function CommandPaletteOverlay({ onClose }: { onClose: () => void }) {
           onKeyDown={handleKeyDown}
           placeholder="Search pitchers, pages, actions..."
           style={{
-            padding: '14px 18px', border: 'none', borderBottom: '1px solid #1e1e2e',
-            background: 'transparent', color: '#e0e0e8', fontSize: 15, outline: 'none',
+            padding: '14px 18px', border: 'none', borderBottom: '1px solid var(--border)',
+            background: 'transparent', color: 'var(--text-1)', fontSize: 15, outline: 'none',
           }}
         />
         <div style={{ overflowY: 'auto', flex: 1 }}>
@@ -214,7 +212,7 @@ function CommandPaletteOverlay({ onClose }: { onClose: () => void }) {
             <div key={group}>
               <div style={{
                 padding: '8px 18px 4px', fontSize: 10, fontWeight: 600,
-                color: '#606080', textTransform: 'uppercase', letterSpacing: 0.8,
+                color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: 0.8,
               }}>
                 {group}
               </div>
@@ -230,14 +228,14 @@ function CommandPaletteOverlay({ onClose }: { onClose: () => void }) {
                       padding: '8px 18px',
                       display: 'flex', alignItems: 'center', gap: 10,
                       cursor: 'pointer',
-                      background: highlighted ? '#1a1a2e' : 'transparent',
-                      color: highlighted ? '#e0e0e8' : '#a0a0b8',
+                      background: highlighted ? 'var(--bg-elevated)' : 'transparent',
+                      color: highlighted ? 'var(--text-1)' : 'var(--text-2)',
                       fontSize: 13, transition: 'background 0.08s',
                     }}
                   >
                     <span style={{ flex: 1 }}>
                       {item.label}
-                      {item.sublabel && <span style={{ color: '#606080', fontSize: 11, marginLeft: 6 }}>({item.sublabel})</span>}
+                      {item.sublabel && <span style={{ color: 'var(--text-3)', fontSize: 11, marginLeft: 6 }}>({item.sublabel})</span>}
                     </span>
                     {item.badge != null && <GradeBadge score={item.badge} size="sm" />}
                   </div>
@@ -246,18 +244,18 @@ function CommandPaletteOverlay({ onClose }: { onClose: () => void }) {
             </div>
           ))}
           {flatItems.length === 0 && (
-            <div style={{ padding: '20px 18px', color: '#606080', fontSize: 13, textAlign: 'center' }}>
+            <div style={{ padding: '20px 18px', color: 'var(--text-3)', fontSize: 13, textAlign: 'center' }}>
               {query.length < 2 ? 'Type to search...' : 'No results found'}
             </div>
           )}
         </div>
         <div style={{
-          padding: '6px 18px', borderTop: '1px solid #1e1e2e',
-          display: 'flex', gap: 12, fontSize: 10, color: '#404060',
+          padding: '6px 18px', borderTop: '1px solid var(--border)',
+          display: 'flex', gap: 12, fontSize: 10, color: 'var(--text-4)',
         }}>
-          <span><kbd style={{ background: '#1a1a2e', padding: '0 3px', borderRadius: 2, border: '1px solid #2a2a3e' }}>↑↓</kbd> navigate</span>
-          <span><kbd style={{ background: '#1a1a2e', padding: '0 3px', borderRadius: 2, border: '1px solid #2a2a3e' }}>↵</kbd> select</span>
-          <span><kbd style={{ background: '#1a1a2e', padding: '0 3px', borderRadius: 2, border: '1px solid #2a2a3e' }}>esc</kbd> close</span>
+          <span><kbd style={{ background: 'var(--bg-elevated)', padding: '0 3px', borderRadius: 2, border: '1px solid var(--border-plus)' }}>↑↓</kbd> navigate</span>
+          <span><kbd style={{ background: 'var(--bg-elevated)', padding: '0 3px', borderRadius: 2, border: '1px solid var(--border-plus)' }}>↵</kbd> select</span>
+          <span><kbd style={{ background: 'var(--bg-elevated)', padding: '0 3px', borderRadius: 2, border: '1px solid var(--border-plus)' }}>esc</kbd> close</span>
         </div>
       </div>
     </>,

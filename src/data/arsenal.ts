@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Arsenal-weighted matchup logic (pure functions — unit tested).
  *
  * Data contract: public/data/arsenal_matchup_{year}.json written by
@@ -186,7 +186,7 @@ export function weightedZones(
 // Emerald arm = pitcher advantage, rose arm = hitter advantage, neutral mid.
 const EMERALD = ['#2b524b', '#1e7a61', '#14a276', '#10cf8e'];
 const ROSE    = ['#77384e', '#9e3a56', '#c94360', '#f8556f'];
-const NEUTRAL = '#263349';
+const NEUTRAL = 'var(--bg-elevated)';
 
 /**
  * delta = value − baseline, in rate points; span = |delta| that saturates the

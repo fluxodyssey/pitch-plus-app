@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useSequenceData } from '../data/useSequenceData';
 import type { TransitionStats } from '../data/useSequenceData';
 import { scoreColorContinuous, gradeColor, pitchColor } from '../data/constants';
@@ -34,7 +34,7 @@ export function SequenceMatrix({ pitcherId }: Props) {
   if (loading) {
     return (
       <div className="card">
-        <div style={{ color: '#606080', fontSize: 13 }}>Loading sequence data…</div>
+        <div style={{ color: 'var(--text-3)', fontSize: 13 }}>Loading sequence data…</div>
       </div>
     );
   }
@@ -64,7 +64,7 @@ export function SequenceMatrix({ pitcherId }: Props) {
             color: seqPlusColor, borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 600,
           }}>{pitcher.grade}</span>
         </div>
-        <span style={{ color: '#606080', fontSize: 14 }}>{collapsed ? '▼' : '▲'}</span>
+        <span style={{ color: 'var(--text-3)', fontSize: 14 }}>{collapsed ? '▼' : '▲'}</span>
       </div>
 
       {!collapsed && (
@@ -74,7 +74,7 @@ export function SequenceMatrix({ pitcherId }: Props) {
             <table style={{ borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr>
-                  <th style={{ padding: '4px 8px', color: '#606080', textAlign: 'right', fontSize: 10 }}>From ↓ To →</th>
+                  <th style={{ padding: '4px 8px', color: 'var(--text-3)', textAlign: 'right', fontSize: 10 }}>From ↓ To →</th>
                   {pitchTypes.map((pt) => (
                     <th key={pt} style={{ padding: '4px 8px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                       <span style={{ color: pitchColor(pt), fontWeight: 600 }}>{pt}</span>
@@ -93,7 +93,7 @@ export function SequenceMatrix({ pitcherId }: Props) {
                       const stats = pitcher.transition_matrix[key];
                       if (!stats) {
                         return (
-                          <td key={to} style={{ padding: '4px 8px', textAlign: 'center', color: '#2a2a3e' }}>—</td>
+                          <td key={to} style={{ padding: '4px 8px', textAlign: 'center', color: 'var(--border-plus)' }}>—</td>
                         );
                       }
                       const bg = scoreColorContinuous(stats.effectiveness, 0.8);
@@ -113,7 +113,7 @@ export function SequenceMatrix({ pitcherId }: Props) {
                           onMouseEnter={(e) => setTooltip({ key, stats, x: e.clientX, y: e.clientY })}
                           onMouseLeave={() => setTooltip(null)}
                         >
-                          <span style={{ color: '#e0e0e8', fontWeight: 600 }}>{Math.round(stats.effectiveness)}</span>
+                          <span style={{ color: 'var(--text-1)', fontWeight: 600 }}>{Math.round(stats.effectiveness)}</span>
                         </td>
                       );
                     })}
@@ -130,7 +130,7 @@ export function SequenceMatrix({ pitcherId }: Props) {
               left: tooltip.x + 12,
               top: tooltip.y + 12,
               background: '#16162a',
-              border: '1px solid #2a2a3e',
+              border: '1px solid var(--border-plus)',
               borderRadius: 6,
               padding: '8px 12px',
               fontSize: 12,
@@ -139,11 +139,11 @@ export function SequenceMatrix({ pitcherId }: Props) {
               minWidth: 160,
             }}>
               <div style={{ color: '#4a9eff', fontWeight: 600, marginBottom: 6 }}>{tooltip.key}</div>
-              <div style={{ color: '#a0a0b8' }}>n = {tooltip.stats.n}</div>
-              <div style={{ color: '#a0a0b8' }}>Whiff: {fmt2(tooltip.stats.whiff_rate)}</div>
-              <div style={{ color: '#a0a0b8' }}>CSW: {fmt2(tooltip.stats.csw_rate)}</div>
-              <div style={{ color: '#a0a0b8' }}>Chase: {fmt2(tooltip.stats.chase_rate)}</div>
-              <div style={{ color: '#a0a0b8' }}>wOBA: {tooltip.stats.woba.toFixed(3)}</div>
+              <div style={{ color: 'var(--text-2)' }}>n = {tooltip.stats.n}</div>
+              <div style={{ color: 'var(--text-2)' }}>Whiff: {fmt2(tooltip.stats.whiff_rate)}</div>
+              <div style={{ color: 'var(--text-2)' }}>CSW: {fmt2(tooltip.stats.csw_rate)}</div>
+              <div style={{ color: 'var(--text-2)' }}>Chase: {fmt2(tooltip.stats.chase_rate)}</div>
+              <div style={{ color: 'var(--text-2)' }}>wOBA: {tooltip.stats.woba.toFixed(3)}</div>
             </div>
           )}
 
@@ -152,10 +152,10 @@ export function SequenceMatrix({ pitcherId }: Props) {
             <div>
               <div style={{ color: '#69f0ae', fontWeight: 600, fontSize: 12, marginBottom: 6 }}>Best Sequences</div>
               {pitcher.best_transitions.slice(0, 3).map((t) => (
-                <div key={t} style={{ color: '#e0e0e8', fontSize: 12, marginBottom: 3 }}>
+                <div key={t} style={{ color: 'var(--text-1)', fontSize: 12, marginBottom: 3 }}>
                   <span style={{ fontFamily: 'monospace', color: '#69f0ae' }}>{t}</span>
                   {pitcher.transition_matrix[t] && (
-                    <span style={{ color: '#606080', marginLeft: 6 }}>
+                    <span style={{ color: 'var(--text-3)', marginLeft: 6 }}>
                       {Math.round(pitcher.transition_matrix[t].effectiveness)} eff · {fmt2(pitcher.transition_matrix[t].whiff_rate)} whiff
                     </span>
                   )}
@@ -165,10 +165,10 @@ export function SequenceMatrix({ pitcherId }: Props) {
             <div>
               <div style={{ color: '#c85a5a', fontWeight: 600, fontSize: 12, marginBottom: 6 }}>Worst Sequences</div>
               {pitcher.worst_transitions.slice(0, 3).map((t) => (
-                <div key={t} style={{ color: '#e0e0e8', fontSize: 12, marginBottom: 3 }}>
+                <div key={t} style={{ color: 'var(--text-1)', fontSize: 12, marginBottom: 3 }}>
                   <span style={{ fontFamily: 'monospace', color: '#c85a5a' }}>{t}</span>
                   {pitcher.transition_matrix[t] && (
-                    <span style={{ color: '#606080', marginLeft: 6 }}>
+                    <span style={{ color: 'var(--text-3)', marginLeft: 6 }}>
                       {Math.round(pitcher.transition_matrix[t].effectiveness)} eff · {fmt2(pitcher.transition_matrix[t].whiff_rate)} whiff
                     </span>
                   )}
@@ -179,11 +179,11 @@ export function SequenceMatrix({ pitcherId }: Props) {
 
           {/* Sub-scores */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ color: '#a0a0b8', fontWeight: 600, fontSize: 12, marginBottom: 8 }}>Sub-Scores</div>
+            <div style={{ color: 'var(--text-2)', fontWeight: 600, fontSize: 12, marginBottom: 8 }}>Sub-Scores</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {Object.entries(pitcher.sub_scores).map(([key, score]) => (
                 <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ color: '#606080', fontSize: 11, width: 160, flexShrink: 0 }}>{SUB_SCORE_LABELS[key] ?? key}</span>
+                  <span style={{ color: 'var(--text-3)', fontSize: 11, width: 160, flexShrink: 0 }}>{SUB_SCORE_LABELS[key] ?? key}</span>
                   <div style={{ flex: 1 }}>
                     <MetricBar grade={score} />
                   </div>
@@ -195,12 +195,12 @@ export function SequenceMatrix({ pitcherId }: Props) {
 
           {/* Nash Equilibria */}
           <div>
-            <div style={{ color: '#a0a0b8', fontWeight: 600, fontSize: 12, marginBottom: 8 }}>Optimal Pitch Mix (Nash Equilibrium)</div>
+            <div style={{ color: 'var(--text-2)', fontWeight: 600, fontSize: 12, marginBottom: 8 }}>Optimal Pitch Mix (Nash Equilibrium)</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               {(['L', 'R'] as const).filter((hand) => pitcher.nash_equilibria[hand]).map((hand) => {
                 const nash = pitcher.nash_equilibria[hand];
                 return (
-                  <div key={hand} style={{ background: '#1a1a2e', borderRadius: 6, padding: '10px 14px' }}>
+                  <div key={hand} style={{ background: 'var(--bg-elevated)', borderRadius: 6, padding: '10px 14px' }}>
                     <div style={{ color: '#4a9eff', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
                       vs {hand}HB · Expected Eff: {nash.expected_effectiveness.toFixed(1)}
                     </div>
@@ -209,10 +209,10 @@ export function SequenceMatrix({ pitcherId }: Props) {
                       .map(([pt, pct]) => (
                         <div key={pt} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                           <span style={{ color: pitchColor(pt), fontSize: 11, width: 28 }}>{pt}</span>
-                          <div style={{ flex: 1, height: 5, background: '#2a2a3e', borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{ flex: 1, height: 5, background: 'var(--border-plus)', borderRadius: 3, overflow: 'hidden' }}>
                             <div style={{ width: `${pct * 100}%`, height: '100%', background: pitchColor(pt), borderRadius: 3 }} />
                           </div>
-                          <span style={{ color: '#a0a0b8', fontSize: 11, width: 34, textAlign: 'right' }}>
+                          <span style={{ color: 'var(--text-2)', fontSize: 11, width: 34, textAlign: 'right' }}>
                             {(pct * 100).toFixed(0)}%
                           </span>
                         </div>

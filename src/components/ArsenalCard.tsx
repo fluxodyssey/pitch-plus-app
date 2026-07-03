@@ -1,4 +1,4 @@
-import { pitchColor, scoreColorContinuous } from '../data/constants';
+﻿import { pitchColor, scoreColorContinuous } from '../data/constants';
 import type { ScoringConfig } from '../types';
 
 interface PitchStats {
@@ -45,8 +45,8 @@ function StatBar({ label, value, lgValue, format, higherIsBetter = true }: StatB
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 18 }}>
-      <span style={{ width: 48, fontSize: 10, color: '#606080', flexShrink: 0 }}>{label}</span>
-      <div style={{ flex: 1, height: 4, background: '#1a1a2e', borderRadius: 2, position: 'relative' }}>
+      <span style={{ width: 48, fontSize: 10, color: 'var(--text-3)', flexShrink: 0 }}>{label}</span>
+      <div style={{ flex: 1, height: 4, background: 'var(--bg-elevated)', borderRadius: 2, position: 'relative' }}>
         <div style={{
           height: '100%',
           width: `${barWidth}%`,
@@ -55,7 +55,7 @@ function StatBar({ label, value, lgValue, format, higherIsBetter = true }: StatB
           transition: 'width 0.3s',
         }} />
       </div>
-      <span style={{ width: 50, fontSize: 11, color: '#a0a0b8', textAlign: 'right', fontFamily: 'monospace', flexShrink: 0 }}>
+      <span style={{ width: 50, fontSize: 11, color: 'var(--text-2)', textAlign: 'right', fontFamily: 'monospace', flexShrink: 0 }}>
         {format(value)}
       </span>
     </div>
@@ -79,8 +79,8 @@ export function ArsenalCards({ arsenal, config }: Props) {
           <div
             key={p.pt}
             style={{
-              background: '#14141f',
-              border: '1px solid #1e1e2e',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border)',
               borderRadius: 8,
               padding: '12px 14px',
               borderTop: `3px solid ${color}`,
@@ -95,14 +95,14 @@ export function ArsenalCards({ arsenal, config }: Props) {
                 background: color,
                 flexShrink: 0,
               }} />
-              <span style={{ color: '#e0e0e8', fontSize: 13, fontWeight: 600, flex: 1 }}>{p.name}</span>
-              <span style={{ color: '#606080', fontSize: 11 }}>{p.pt}</span>
+              <span style={{ color: 'var(--text-1)', fontSize: 13, fontWeight: 600, flex: 1 }}>{p.name}</span>
+              <span style={{ color: 'var(--text-3)', fontSize: 11 }}>{p.pt}</span>
             </div>
 
             {/* Usage bar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <span style={{ fontSize: 10, color: '#606080', width: 48 }}>Usage</span>
-              <div style={{ flex: 1, height: 6, background: '#1a1a2e', borderRadius: 3 }}>
+              <span style={{ fontSize: 10, color: 'var(--text-3)', width: 48 }}>Usage</span>
+              <div style={{ flex: 1, height: 6, background: 'var(--bg-elevated)', borderRadius: 3 }}>
                 <div style={{
                   height: '100%',
                   width: `${Math.min(p.usagePct * 100, 100)}%`,
@@ -111,7 +111,7 @@ export function ArsenalCards({ arsenal, config }: Props) {
                   opacity: 0.7,
                 }} />
               </div>
-              <span style={{ fontSize: 11, color: '#a0a0b8', fontFamily: 'monospace', width: 50, textAlign: 'right' }}>
+              <span style={{ fontSize: 11, color: 'var(--text-2)', fontFamily: 'monospace', width: 50, textAlign: 'right' }}>
                 {(p.usagePct * 100).toFixed(1)}%
               </span>
             </div>
@@ -127,7 +127,7 @@ export function ArsenalCards({ arsenal, config }: Props) {
             </div>
 
             {/* Count */}
-            <div style={{ marginTop: 6, color: '#404060', fontSize: 10, textAlign: 'right' }}>
+            <div style={{ marginTop: 6, color: 'var(--text-4)', fontSize: 10, textAlign: 'right' }}>
               {p.count} pitches
             </div>
           </div>

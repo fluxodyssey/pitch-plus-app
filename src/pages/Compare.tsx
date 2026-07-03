@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from 'react';
+﻿import { useMemo, useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useData, type Season } from '../data/useData';
 import { usePitchData } from '../data/usePitchData';
@@ -91,16 +91,16 @@ export function Compare() {
   return (
     <div className="page">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
-        <h2 style={{ margin: 0, fontSize: 20, color: '#e0e0e8' }}>
+        <h2 style={{ margin: 0, fontSize: 20, color: 'var(--text-1)' }}>
           Compare Pitchers
-          <span style={{ fontSize: 12, color: '#606080', fontWeight: 400, marginLeft: 10 }}>
+          <span style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 400, marginLeft: 10 }}>
             {selectedPitchers.length}/{MAX_PITCHERS} selected
           </span>
         </h2>
         {ids.length > 0 && (
           <button
             onClick={() => setIds([])}
-            style={{ padding: '5px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #2a2a3e', background: 'transparent', color: '#606080', cursor: 'pointer' }}
+            style={{ padding: '5px 12px', fontSize: 12, borderRadius: 6, border: '1px solid var(--border-plus)', background: 'transparent', color: 'var(--text-3)', cursor: 'pointer' }}
           >
             Clear all ×
           </button>
@@ -119,8 +119,8 @@ export function Compare() {
             }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: SERIES_COLORS[i], display: 'inline-block', flexShrink: 0 }} />
               <span style={{ fontWeight: 600 }}>{p.pitcher_name}</span>
-              <span style={{ color: '#606080', fontSize: 11 }}>({p.pitcher_team})</span>
-              <button onClick={() => removePitcher(p.pitcher_id)} style={{ background: 'none', border: 'none', color: '#606080', cursor: 'pointer', padding: '0 2px', fontSize: 14, lineHeight: 1 }}>×</button>
+              <span style={{ color: 'var(--text-3)', fontSize: 11 }}>({p.pitcher_team})</span>
+              <button onClick={() => removePitcher(p.pitcher_id)} style={{ background: 'none', border: 'none', color: 'var(--text-3)', cursor: 'pointer', padding: '0 2px', fontSize: 14, lineHeight: 1 }}>×</button>
             </div>
           ))}
 
@@ -138,7 +138,7 @@ export function Compare() {
                 clearOnSelect
                 renderItem={(p) => (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span>{p.pitcher_name} <span style={{ color: '#606080', fontSize: 11 }}>({p.pitcher_team})</span></span>
+                    <span>{p.pitcher_name} <span style={{ color: 'var(--text-3)', fontSize: 11 }}>({p.pitcher_team})</span></span>
                     <GradeBadge score={p.pitch_plus} size="sm" />
                   </div>
                 )}
@@ -149,7 +149,7 @@ export function Compare() {
       </div>
 
       {selectedPitchers.length === 0 && (
-        <div style={{ textAlign: 'center', color: '#606080', padding: 48, fontSize: 14 }}>
+        <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: 48, fontSize: 14 }}>
           Add up to {MAX_PITCHERS} pitchers above to compare
         </div>
       )}
@@ -200,7 +200,7 @@ export function Compare() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
                     <tr>
-                      <th style={{ padding: '6px 10px', textAlign: 'left', color: '#606080', fontWeight: 500 }}>Dimension</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', color: 'var(--text-3)', fontWeight: 500 }}>Dimension</th>
                       {selectedPitchers.map((p, i) => (
                         <th key={p.pitcher_id} style={{ padding: '6px 10px', textAlign: 'center', color: SERIES_COLORS[i], fontWeight: 600, whiteSpace: 'nowrap' }}>
                           {p.pitcher_name.split(' ').pop()}
@@ -210,8 +210,8 @@ export function Compare() {
                   </thead>
                   <tbody>
                     {DIMS.map(d => (
-                      <tr key={d} style={{ borderBottom: '1px solid #1e1e2e' }}>
-                        <td style={{ padding: '6px 10px', color: '#a0a0b8', fontSize: 12 }}>{DIMENSION_LABELS[d]}</td>
+                      <tr key={d} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '6px 10px', color: 'var(--text-2)', fontSize: 12 }}>{DIMENSION_LABELS[d]}</td>
                         {selectedPitchers.map((p) => {
                           const score = p.dimensions[d]?.score ?? 0;
                           return (
@@ -222,8 +222,8 @@ export function Compare() {
                         })}
                       </tr>
                     ))}
-                    <tr style={{ borderTop: '2px solid #2a2a3e' }}>
-                      <td style={{ padding: '8px 10px', color: '#e0e0e8', fontWeight: 600 }}>Pitch+</td>
+                    <tr style={{ borderTop: '2px solid var(--border-plus)' }}>
+                      <td style={{ padding: '8px 10px', color: 'var(--text-1)', fontWeight: 600 }}>Pitch+</td>
                       {selectedPitchers.map((p) => (
                         <td key={p.pitcher_id} style={{ padding: '8px 10px', textAlign: 'center' }}>
                           <GradeBadge score={p.pitch_plus} size="sm" />
@@ -246,7 +246,7 @@ export function Compare() {
                 {(pitchGrades[i]?.length ?? 0) > 0 ? (
                   <PitchTypeGradeTableCompact grades={pitchGrades[i] ?? []} />
                 ) : (
-                  <div style={{ color: '#606080', fontSize: 12, padding: 10 }}>Loading pitch data…</div>
+                  <div style={{ color: 'var(--text-3)', fontSize: 12, padding: 10 }}>Loading pitch data…</div>
                 )}
               </div>
             ))}
@@ -265,8 +265,8 @@ function PitcherCard({ pitcher, color }: { pitcher: Pitcher; color: string }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <GradeBadge score={pitcher.pitch_plus} size="lg" />
         <div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: '#e0e0e8' }}>{pitcher.pitcher_name}</div>
-          <div style={{ fontSize: 12, color: '#a0a0b8' }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-1)' }}>{pitcher.pitcher_name}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-2)' }}>
             {pitcher.pitcher_team} · {pitcher.pitcher_hand === 'L' ? 'LHP' : 'RHP'} · {pitcher.n_pitches.toLocaleString()} pitches
           </div>
           <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
@@ -297,21 +297,21 @@ function PitchTypeGradeTableCompact({ grades }: { grades: ReturnType<typeof comp
       <thead>
         <tr>
           {['Type', 'Velo', 'Grade', 'Usage'].map(h => (
-            <th key={h} style={{ padding: '4px 6px', color: '#606080', fontWeight: 500, textAlign: h === 'Type' ? 'left' : 'center', borderBottom: '1px solid #1e1e2e' }}>{h}</th>
+            <th key={h} style={{ padding: '4px 6px', color: 'var(--text-3)', fontWeight: 500, textAlign: h === 'Type' ? 'left' : 'center', borderBottom: '1px solid var(--border)' }}>{h}</th>
           ))}
         </tr>
       </thead>
       <tbody>
         {grades.map(g => (
           <tr key={g.pitchType} style={{ borderBottom: '1px solid #111118' }}>
-            <td style={{ padding: '4px 6px', color: '#e0e0e8' }}>{g.pitchName}</td>
-            <td style={{ padding: '4px 6px', color: '#a0a0b8', textAlign: 'center', fontFamily: 'monospace' }}>
+            <td style={{ padding: '4px 6px', color: 'var(--text-1)' }}>{g.pitchName}</td>
+            <td style={{ padding: '4px 6px', color: 'var(--text-2)', textAlign: 'center', fontFamily: 'monospace' }}>
               {g.avgVelo?.toFixed(1) ?? '—'}
             </td>
             <td style={{ padding: '4px 6px', textAlign: 'center' }}>
               <GradeBadge score={g.stuffGrade} size="sm" />
             </td>
-            <td style={{ padding: '4px 6px', color: '#a0a0b8', textAlign: 'center' }}>
+            <td style={{ padding: '4px 6px', color: 'var(--text-2)', textAlign: 'center' }}>
               {`${(g.usagePct * 100).toFixed(0)}%`}
             </td>
           </tr>

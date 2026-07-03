@@ -21,11 +21,29 @@ export interface CatchersDoc {
   catchers: CatcherRow[];
 }
 
+export interface ChallengeRow {
+  id: number;
+  name: string;
+  team: string;
+  n_challenges: number;
+  n_overturned: number;
+  success_pct: number;
+  runs_saved: number;
+}
+export interface ChallengesDoc {
+  year: number;
+  generated_from: string;
+  league: { catcher_challenges: number; overturned: number; success_pct: number; total_runs_saved: number };
+  catchers: ChallengeRow[];
+}
+
 type Cached<T> = T | 'missing';
 const arsenalCache = new Map<number, Cached<ArsenalDoc>>();
 const arsenalPending = new Map<number, Promise<Cached<ArsenalDoc>>>();
 const catcherCache = new Map<number, Cached<CatchersDoc>>();
 const catcherPending = new Map<number, Promise<Cached<CatchersDoc>>>();
+const challengeCache = new Map<number, Cached<ChallengesDoc>>();
+const challengePending = new Map<number, Promise<Cached<ChallengesDoc>>>();
 
 function fetchOnce<T>(
   year: number,
@@ -65,6 +83,20 @@ export function useCatchers(year: number): CatchersDoc | 'loading' | 'missing' {
     let live = true;
     setState(catcherCache.get(year) ?? 'loading');
     fetchOnce(year, catcherCache, catcherPending, `/data/catchers_${year}.json`)
+      .then(doc => { if (live) setState(doc); });
+    return () => { live = false; };
+  }, [year]);
+  return state;
+}
+
+/** ABS challenge run value (models/catcher_challenges.py) — 2026+ only. */
+export function useChallenges(year: number): ChallengesDoc | 'loading' | 'missing' {
+  const [state, setState] = useState<ChallengesDoc | 'loading' | 'missing'>(
+    () => challengeCache.get(year) ?? 'loading');
+  useEffect(() => {
+    let live = true;
+    setState(challengeCache.get(year) ?? 'loading');
+    fetchOnce(year, challengeCache, challengePending, `/data/challenges_${year}.json`)
       .then(doc => { if (live) setState(doc); });
     return () => { live = false; };
   }, [year]);

@@ -1,4 +1,4 @@
-import { scoreColorContinuous } from '../data/constants';
+﻿import { scoreColorContinuous } from '../data/constants';
 
 interface Props {
   label: string;
@@ -24,7 +24,7 @@ export function PercentileGauge({ label, percentile, rawValue }: Props) {
       {/* Label */}
       <span style={{
         fontSize: 12,
-        color: '#a0a0b8',
+        color: 'var(--text-2)',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
@@ -37,7 +37,7 @@ export function PercentileGauge({ label, percentile, rawValue }: Props) {
       {/* Bar track */}
       <div style={{
         height: 8,
-        background: '#1a1a2e',
+        background: 'var(--bg-elevated)',
         borderRadius: 4,
         position: 'relative',
         overflow: 'visible',
@@ -64,7 +64,7 @@ export function PercentileGauge({ label, percentile, rawValue }: Props) {
           height: 22,
           borderRadius: '50%',
           background: circleColor,
-          border: '2px solid #0a0a0f',
+          border: '2px solid var(--bg-base)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -98,7 +98,7 @@ export function PercentileGauge({ label, percentile, rawValue }: Props) {
       {/* Raw value */}
       <span style={{
         fontSize: 11,
-        color: '#606080',
+        color: 'var(--text-3)',
         textAlign: 'right',
         fontFamily: 'monospace',
         overflow: 'hidden',

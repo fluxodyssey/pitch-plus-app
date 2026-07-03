@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   ScatterChart,
   Scatter,
@@ -132,27 +132,27 @@ function MovementTooltip({ active, payload }: MvTooltipProps) {
   return (
     <div
       style={{
-        background: '#1a1a2e',
+        background: 'var(--bg-elevated)',
         border: `1px solid ${color}`,
         borderRadius: 6,
         padding: '8px 12px',
-        color: '#e0e0e8',
+        color: 'var(--text-1)',
         fontSize: 12,
         minWidth: 140,
       }}
     >
       <div style={{ color, fontWeight: 700, marginBottom: 4 }}>{p.ptm ?? p.pt}</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 10px' }}>
-        <span style={{ color: '#a0a0b8' }}>iVB</span>
+        <span style={{ color: 'var(--text-2)' }}>iVB</span>
         <span style={{ textAlign: 'right' }}>{p.ivb.toFixed(1)}"</span>
-        <span style={{ color: '#a0a0b8' }}>HBreak</span>
+        <span style={{ color: 'var(--text-2)' }}>HBreak</span>
         <span style={{ textAlign: 'right' }}>{p.hb.toFixed(1)}"</span>
-        <span style={{ color: '#a0a0b8' }}>Velo</span>
+        <span style={{ color: 'var(--text-2)' }}>Velo</span>
         <span style={{ textAlign: 'right' }}>{p.v.toFixed(1)} mph</span>
-        <span style={{ color: '#a0a0b8' }}>Spin</span>
+        <span style={{ color: 'var(--text-2)' }}>Spin</span>
         <span style={{ textAlign: 'right' }}>{p.sp.toLocaleString()}</span>
       </div>
-      <div style={{ marginTop: 3, color: result === 'Whiff' ? '#d44040' : '#606080', fontSize: 11 }}>{result}</div>
+      <div style={{ marginTop: 3, color: result === 'Whiff' ? '#d44040' : 'var(--text-3)', fontSize: 11 }}>{result}</div>
     </div>
   );
 }
@@ -185,9 +185,9 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
 
   const thStyle = {
     padding: '7px 8px',
-    color: '#a0a0b8',
-    borderBottom: '2px solid #1e1e2e',
-    background: '#0f0f1a',
+    color: 'var(--text-2)',
+    borderBottom: '2px solid var(--border)',
+    background: 'var(--bg-input)',
     fontWeight: 500 as const,
     fontSize: 11,
     whiteSpace: 'nowrap' as const,
@@ -203,7 +203,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
         style={{
           padding: '6px 8px',
           textAlign: 'right',
-          color: value != null ? '#e0e0e8' : '#404060',
+          color: value != null ? 'var(--text-1)' : 'var(--text-4)',
           background: bg,
           fontFamily: 'monospace',
           fontSize: 12,
@@ -225,7 +225,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
   if (pitches.length === 0) {
     return (
       <div className="game-summary">
-        <div style={{ color: '#606080', padding: 20, textAlign: 'center' }}>
+        <div style={{ color: 'var(--text-3)', padding: 20, textAlign: 'center' }}>
           No pitches match the current filters.
         </div>
       </div>
@@ -271,7 +271,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                   return cellBg(val, lgVal ?? null, higher);
                 }
                 return (
-                  <tr key={row.pt} style={{ borderBottom: '1px solid #1e1e2e' }}>
+                  <tr key={row.pt} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                         <span
@@ -283,21 +283,21 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                             flexShrink: 0,
                           }}
                         />
-                        <span style={{ color: '#e0e0e8', fontSize: 12 }}>{row.name}</span>
-                        <span style={{ color: '#606080', fontSize: 10 }}>({row.pt})</span>
+                        <span style={{ color: 'var(--text-1)', fontSize: 12 }}>{row.name}</span>
+                        <span style={{ color: 'var(--text-3)', fontSize: 10 }}>({row.pt})</span>
                       </span>
                     </td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', color: '#a0a0b8', fontSize: 12 }}>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-2)', fontSize: 12 }}>
                       {row.count}
                     </td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', color: '#a0a0b8', fontSize: 12 }}>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-2)', fontSize: 12 }}>
                       {(row.usagePct * 100).toFixed(1)}%
                     </td>
                     <td
                       style={{
                         padding: '6px 8px',
                         textAlign: 'right',
-                        color: '#e0e0e8',
+                        color: 'var(--text-1)',
                         fontSize: 12,
                         fontFamily: 'monospace',
                         background: diffBg(row.avgVelo, lg?.avg_velo, true),
@@ -309,7 +309,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                       style={{
                         padding: '6px 8px',
                         textAlign: 'right',
-                        color: '#e0e0e8',
+                        color: 'var(--text-1)',
                         fontSize: 12,
                         fontFamily: 'monospace',
                         background: diffBg(row.avgSpin, lg?.avg_spin, true),
@@ -317,17 +317,17 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                     >
                       {row.avgSpin != null ? Math.round(row.avgSpin).toLocaleString() : '—'}
                     </td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', color: '#e0e0e8', fontSize: 12, fontFamily: 'monospace' }}>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-1)', fontSize: 12, fontFamily: 'monospace' }}>
                       {row.avgIvb != null ? row.avgIvb.toFixed(1) : '—'}"
                     </td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', color: '#e0e0e8', fontSize: 12, fontFamily: 'monospace' }}>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-1)', fontSize: 12, fontFamily: 'monospace' }}>
                       {row.avgHb != null ? row.avgHb.toFixed(1) : '—'}"
                     </td>
                     <td
                       style={{
                         padding: '6px 8px',
                         textAlign: 'right',
-                        color: '#e0e0e8',
+                        color: 'var(--text-1)',
                         fontSize: 12,
                         fontFamily: 'monospace',
                         background: diffBg(row.avgExt, lg?.avg_ext, true),
@@ -339,7 +339,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                       style={{
                         padding: '6px 8px',
                         textAlign: 'right',
-                        color: '#e0e0e8',
+                        color: 'var(--text-1)',
                         fontSize: 12,
                         fontFamily: 'monospace',
                         background: diffBg(row.whiffRate, lg?.avg_whiff_rate, true),
@@ -351,7 +351,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                       style={{
                         padding: '6px 8px',
                         textAlign: 'right',
-                        color: '#e0e0e8',
+                        color: 'var(--text-1)',
                         fontSize: 12,
                         fontFamily: 'monospace',
                         background: diffBg(row.zoneRate, lg?.avg_zone_rate, true),
@@ -363,7 +363,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                       style={{
                         padding: '6px 8px',
                         textAlign: 'right',
-                        color: '#e0e0e8',
+                        color: 'var(--text-1)',
                         fontSize: 12,
                         fontFamily: 'monospace',
                         background: diffBg(row.chaseRate, lg?.avg_chase_rate, true),
@@ -375,12 +375,12 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                 );
               })}
               {/* All row */}
-              <tr style={{ borderTop: '2px solid #2a2a3e', background: '#0f0f1a' }}>
+              <tr style={{ borderTop: '2px solid var(--border-plus)', background: 'var(--bg-input)' }}>
                 <td style={{ padding: '6px 8px', color: '#c0c0d8', fontSize: 12, fontWeight: 600 }}>All</td>
-                <td style={{ padding: '6px 8px', textAlign: 'right', color: '#a0a0b8', fontSize: 12 }}>
+                <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-2)', fontSize: 12 }}>
                   {allSummary.count}
                 </td>
-                <td style={{ padding: '6px 8px', textAlign: 'right', color: '#a0a0b8', fontSize: 12 }}>
+                <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-2)', fontSize: 12 }}>
                   100.0%
                 </td>
                 {tdNum(allSummary.avgVelo, (v) => v.toFixed(1))}
@@ -395,7 +395,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
             </tbody>
           </table>
         </div>
-        <p style={{ color: '#404060', fontSize: 10, marginTop: 6 }}>
+        <p style={{ color: 'var(--text-4)', fontSize: 10, marginTop: 6 }}>
           Cell shading vs league average for that pitch type (red = better, blue = worse)
         </p>
       </div>
@@ -421,10 +421,10 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                     padding: '2px 8px',
                     fontSize: 10,
                     fontWeight: locationView === key ? 600 : 400,
-                    border: `1px solid ${locationView === key ? '#4a9eff' : '#2a2a3e'}`,
+                    border: `1px solid ${locationView === key ? '#4a9eff' : 'var(--border-plus)'}`,
                     borderRadius: 4,
                     background: locationView === key ? 'rgba(74,158,255,0.15)' : 'transparent',
-                    color: locationView === key ? '#4a9eff' : '#606080',
+                    color: locationView === key ? '#4a9eff' : 'var(--text-3)',
                     cursor: 'pointer',
                     transition: 'all 0.15s',
                   }}
@@ -458,7 +458,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
           </h4>
           <ResponsiveContainer width="100%" height={340}>
             <ScatterChart margin={{ top: 10, right: 20, bottom: 30, left: 20 }}>
-              <CartesianGrid stroke="#1e1e2e" strokeDasharray="2 2" />
+              <CartesianGrid stroke="var(--border)" strokeDasharray="2 2" />
               <XAxis
                 dataKey="hb"
                 type="number"
@@ -468,10 +468,10 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                   value: 'Horizontal Break (in)',
                   position: 'insideBottom',
                   offset: -10,
-                  fill: '#a0a0b8',
+                  fill: 'var(--text-2)',
                   fontSize: 12,
                 }}
-                tick={{ fill: '#a0a0b8', fontSize: 11 }}
+                tick={{ fill: 'var(--text-2)', fontSize: 11 }}
               />
               <YAxis
                 dataKey="ivb"
@@ -482,10 +482,10 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                   value: 'iVB (in)',
                   angle: -90,
                   position: 'insideLeft',
-                  fill: '#a0a0b8',
+                  fill: 'var(--text-2)',
                   fontSize: 12,
                 }}
-                tick={{ fill: '#a0a0b8', fontSize: 11 }}
+                tick={{ fill: 'var(--text-2)', fontSize: 11 }}
               />
               <ReferenceLine x={0} stroke="#3a3a5a" strokeDasharray="3 3" />
               <ReferenceLine y={0} stroke="#3a3a5a" strokeDasharray="3 3" />
@@ -514,7 +514,7 @@ export function GameSummary({ pitches, config, pitchTypeNames, title, highlighte
                     alignItems: 'center',
                     gap: 4,
                     fontSize: 11,
-                    color: isActive ? '#e0e0e8' : '#404060',
+                    color: isActive ? 'var(--text-1)' : 'var(--text-4)',
                     cursor: onPitchTypeClick ? 'pointer' : 'default',
                     padding: '2px 6px',
                     borderRadius: 4,

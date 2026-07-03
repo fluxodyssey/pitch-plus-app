@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+﻿import { useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -100,28 +100,28 @@ export function RollingChart({ pitches, metric = 'velo', height = 240 }: Props) 
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <span style={{ color: '#606080', fontSize: 11 }}>
+        <span style={{ color: 'var(--text-3)', fontSize: 11 }}>
           {data.length} games · 3-game rolling avg
         </span>
       </div>
       <ResponsiveContainer width="100%" height={height}>
         <LineChart data={data} margin={{ top: 5, right: 20, bottom: 20, left: 10 }}>
-          <CartesianGrid stroke="#1e1e2e" strokeDasharray="2 2" />
+          <CartesianGrid stroke="var(--border)" strokeDasharray="2 2" />
           <XAxis
             dataKey="date"
-            tick={{ fill: '#606080', fontSize: 10 }}
+            tick={{ fill: 'var(--text-3)', fontSize: 10 }}
             tickFormatter={(d: string) => d.slice(5)} // MM-DD
-            stroke="#2a2a3e"
+            stroke="var(--border-plus)"
           />
           <YAxis
-            tick={{ fill: '#606080', fontSize: 10 }}
-            stroke="#2a2a3e"
+            tick={{ fill: 'var(--text-3)', fontSize: 10 }}
+            stroke="var(--border-plus)"
             tickFormatter={(v: number) => metric === 'velo' ? v.toFixed(0) : `${(v * 100).toFixed(0)}%`}
             domain={['auto', 'auto']}
           />
           <Tooltip
-            contentStyle={{ background: '#1a1a2e', border: '1px solid #2a2a3e', borderRadius: 6, fontSize: 12 }}
-            labelStyle={{ color: '#a0a0b8' }}
+            contentStyle={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-plus)', borderRadius: 6, fontSize: 12 }}
+            labelStyle={{ color: 'var(--text-2)' }}
             formatter={(value) => [config.format(value as number), config.label]}
           />
           <ReferenceLine y={avg} stroke="#4a9eff" strokeDasharray="4 4" strokeOpacity={0.3} />

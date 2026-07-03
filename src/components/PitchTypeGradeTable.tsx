@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import type { PitchTypeGrade } from '../types';
 import { scoreColorContinuous, pitchColor, numericGrade, gradeColor, toScoutingGrade, SCOUTING_LABELS } from '../data/constants';
 
@@ -111,10 +111,10 @@ export function PitchTypeGradeTable({
                 fontSize: 11,
                 fontWeight: 600,
                 border: '1px solid',
-                borderColor: batterHand === h ? '#4a9eff' : '#2a2a3e',
+                borderColor: batterHand === h ? '#4a9eff' : 'var(--border-plus)',
                 borderRadius: 4,
                 background: batterHand === h ? 'rgba(74,158,255,0.12)' : 'transparent',
-                color: batterHand === h ? '#4a9eff' : '#606080',
+                color: batterHand === h ? '#4a9eff' : 'var(--text-3)',
                 cursor: 'pointer',
               }}
             >
@@ -141,12 +141,12 @@ export function PitchTypeGradeTable({
                   style={{
                     padding: `${cellPadY}px ${cellPadX}px`,
                     textAlign: col.align ?? 'right',
-                    color: '#606080',
+                    color: 'var(--text-3)',
                     fontSize: compact ? 10 : 11,
                     fontWeight: 600,
                     textTransform: 'uppercase',
                     letterSpacing: 0.5,
-                    borderBottom: '1px solid #1e1e2e',
+                    borderBottom: '1px solid var(--border)',
                     cursor: col.key !== 'type' ? 'pointer' : 'default',
                     whiteSpace: 'nowrap',
                     width: col.width,
@@ -161,7 +161,7 @@ export function PitchTypeGradeTable({
           </thead>
           <tbody>
             {sorted.map(g => (
-              <tr key={g.pitchType} style={{ borderBottom: '1px solid #14141f' }}>
+              <tr key={g.pitchType} style={{ borderBottom: '1px solid var(--bg-surface)' }}>
                 {COLUMNS.map(col => {
                   const raw = col.getValue(g);
                   const grade = col.getGrade?.(g);
@@ -180,7 +180,7 @@ export function PitchTypeGradeTable({
                       <td key={col.key} style={{
                         padding: `${cellPadY}px ${cellPadX}px`,
                         textAlign: 'left',
-                        color: '#e0e0e8',
+                        color: 'var(--text-1)',
                         fontWeight: 600,
                         whiteSpace: 'nowrap',
                       }}>
@@ -219,7 +219,7 @@ export function PitchTypeGradeTable({
                           {sg}
                         </span>
                         {!compact && (
-                          <div style={{ fontSize: 9, color: '#606080', marginTop: 1 }}>{label}</div>
+                          <div style={{ fontSize: 9, color: 'var(--text-3)', marginTop: 1 }}>{label}</div>
                         )}
                       </td>
                     );
@@ -257,7 +257,7 @@ export function PitchTypeGradeTable({
                     <td key={col.key} style={{
                       padding: `${cellPadY}px ${cellPadX}px`,
                       textAlign: col.align ?? 'right',
-                      color: '#a0a0b8',
+                      color: 'var(--text-2)',
                       background: bgColor,
                       fontFamily: typeof raw === 'number' ? 'monospace' : undefined,
                       whiteSpace: 'nowrap',
@@ -271,20 +271,20 @@ export function PitchTypeGradeTable({
 
             {/* All row */}
             {allRow && (
-              <tr style={{ borderTop: '2px solid #2a2a3e' }}>
+              <tr style={{ borderTop: '2px solid var(--border-plus)' }}>
                 <td style={{
                   padding: `${cellPadY}px ${cellPadX}px`,
                   fontWeight: 700,
-                  color: '#e0e0e8',
+                  color: 'var(--text-1)',
                   fontSize,
                 }}>All</td>
-                <td style={{ padding: `${cellPadY}px ${cellPadX}px`, textAlign: 'right', color: '#a0a0b8', fontFamily: 'monospace' }}>
+                <td style={{ padding: `${cellPadY}px ${cellPadX}px`, textAlign: 'right', color: 'var(--text-2)', fontFamily: 'monospace' }}>
                   {allRow.count}
                 </td>
-                <td style={{ padding: `${cellPadY}px ${cellPadX}px`, textAlign: 'right', color: '#606080' }}>100.0%</td>
+                <td style={{ padding: `${cellPadY}px ${cellPadX}px`, textAlign: 'right', color: 'var(--text-3)' }}>100.0%</td>
                 {/* Empty cells for physical metrics */}
                 {COLUMNS.slice(3, 9).map(col => (
-                  <td key={col.key} style={{ padding: `${cellPadY}px ${cellPadX}px`, color: '#606080', textAlign: 'center' }}>--</td>
+                  <td key={col.key} style={{ padding: `${cellPadY}px ${cellPadX}px`, color: 'var(--text-3)', textAlign: 'center' }}>--</td>
                 ))}
                 {/* Weighted stuff grade */}
                 <td style={{
@@ -315,7 +315,7 @@ export function PitchTypeGradeTable({
                 </td>
                 {/* Empty outcome cells */}
                 {COLUMNS.slice(11).map(col => (
-                  <td key={col.key} style={{ padding: `${cellPadY}px ${cellPadX}px`, color: '#606080', textAlign: 'center' }}>--</td>
+                  <td key={col.key} style={{ padding: `${cellPadY}px ${cellPadX}px`, color: 'var(--text-3)', textAlign: 'center' }}>--</td>
                 ))}
               </tr>
             )}

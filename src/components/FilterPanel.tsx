@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import type { PitchFilters } from '../types';
 import { DEFAULT_FILTERS, countActiveFilters } from '../data/filterPitches';
 import { pitchColor } from '../data/constants';
@@ -110,7 +110,7 @@ export function FilterPanel({
           {activeCount > 0 && (
             <span className="active-filters-badge">{activeCount}</span>
           )}
-          <span style={{ marginLeft: 'auto', color: '#606080', fontSize: 12 }}>
+          <span style={{ marginLeft: 'auto', color: 'var(--text-3)', fontSize: 12 }}>
             {collapsed ? '▼' : '▲'}
           </span>
         </button>
@@ -142,10 +142,10 @@ export function FilterPanel({
                   padding: '4px 10px',
                   fontSize: 11,
                   fontWeight: 500,
-                  border: '1px solid #2a2a3e',
+                  border: '1px solid var(--border-plus)',
                   borderRadius: 12,
                   background: 'transparent',
-                  color: '#a0a0b8',
+                  color: 'var(--text-2)',
                   cursor: 'pointer',
                   transition: 'all 0.15s',
                 }}
@@ -154,8 +154,8 @@ export function FilterPanel({
                   e.currentTarget.style.color = '#4a9eff';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#2a2a3e';
-                  e.currentTarget.style.color = '#a0a0b8';
+                  e.currentTarget.style.borderColor = 'var(--border-plus)';
+                  e.currentTarget.style.color = 'var(--text-2)';
                 }}
               >
                 {preset.label}
@@ -173,7 +173,7 @@ export function FilterPanel({
                 value={filters.dateFrom ?? ''}
                 onChange={(e) => set('dateFrom', e.target.value || null)}
               />
-              <span style={{ color: '#606080' }}>to</span>
+              <span style={{ color: 'var(--text-3)' }}>to</span>
               <input
                 type="date"
                 className="date-picker"
@@ -209,7 +209,7 @@ export function FilterPanel({
                           flexShrink: 0,
                         }}
                       />
-                      <span style={{ color: selected ? '#e0e0e8' : '#a0a0b8' }}>
+                      <span style={{ color: selected ? 'var(--text-1)' : 'var(--text-2)' }}>
                         {pitchTypeNames[pt] ?? pt}
                       </span>
                     </label>
@@ -382,7 +382,7 @@ export function FilterPanel({
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ color: '#606080', fontSize: 11, width: 28 }}>Min</span>
+                <span style={{ color: 'var(--text-3)', fontSize: 11, width: 28 }}>Min</span>
                 <input
                   type="range"
                   min={50}
@@ -395,12 +395,12 @@ export function FilterPanel({
                   }}
                   style={{ flex: 1 }}
                 />
-                <span style={{ color: '#a0a0b8', fontSize: 12, width: 28, textAlign: 'right' }}>
+                <span style={{ color: 'var(--text-2)', fontSize: 12, width: 28, textAlign: 'right' }}>
                   {veloMin}
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ color: '#606080', fontSize: 11, width: 28 }}>Max</span>
+                <span style={{ color: 'var(--text-3)', fontSize: 11, width: 28 }}>Max</span>
                 <input
                   type="range"
                   min={50}
@@ -413,7 +413,7 @@ export function FilterPanel({
                   }}
                   style={{ flex: 1 }}
                 />
-                <span style={{ color: '#a0a0b8', fontSize: 12, width: 28, textAlign: 'right' }}>
+                <span style={{ color: 'var(--text-2)', fontSize: 12, width: 28, textAlign: 'right' }}>
                   {veloMax}
                 </span>
               </div>

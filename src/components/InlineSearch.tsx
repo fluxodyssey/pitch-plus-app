@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 
 export interface InlineSearchProps<T> {
   items: T[];
@@ -69,7 +69,7 @@ export function InlineSearch<T>({
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       {label && (
-        <div style={{ fontSize: 10, color: '#606080', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+        <div style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
           {label}
         </div>
       )}
@@ -85,15 +85,15 @@ export function InlineSearch<T>({
           if (e.key === 'Escape') setOpen(false);
         }}
         style={{
-          width: '100%', background: '#1a1a2e', border: '1px solid #2a2a3e',
-          color: '#e0e0e8', borderRadius: 6, padding: '8px 12px', fontSize: 14,
+          width: '100%', background: 'var(--bg-elevated)', border: '1px solid var(--border-plus)',
+          color: 'var(--text-1)', borderRadius: 6, padding: '8px 12px', fontSize: 14,
           boxSizing: 'border-box', outline: 'none',
         }}
       />
       {open && results.length > 0 && (
         <div style={{
           position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
-          background: '#16162a', border: '1px solid #2a2a3e', borderRadius: 6,
+          background: '#16162a', border: '1px solid var(--border-plus)', borderRadius: 6,
           marginTop: 4, maxHeight: 280, overflowY: 'auto',
           boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
         }}>
@@ -103,16 +103,16 @@ export function InlineSearch<T>({
               onClick={() => handleSelect(item)}
               style={{
                 padding: '8px 14px', cursor: 'pointer',
-                background: i === idx ? '#1a1a2e' : 'transparent',
-                color: i === idx ? '#e0e0e8' : '#a0a0b8',
-                fontSize: 13, borderBottom: '1px solid #1e1e2e',
+                background: i === idx ? 'var(--bg-elevated)' : 'transparent',
+                color: i === idx ? 'var(--text-1)' : 'var(--text-2)',
+                fontSize: 13, borderBottom: '1px solid var(--border)',
                 fontFamily: 'var(--sans)',
               }}
             >
               {renderItem ? renderItem(item, i === idx) : (
                 <span>
                   {getLabel(item)}
-                  <span style={{ color: '#606080', fontSize: 11, marginLeft: 8 }}>
+                  <span style={{ color: 'var(--text-3)', fontSize: 11, marginLeft: 8 }}>
                     {String((item as Record<string, unknown>)['team'] ?? '')}
                   </span>
                 </span>

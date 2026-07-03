@@ -1,4 +1,4 @@
-interface Tab {
+﻿interface Tab {
   key: string;
   label: string;
   badge?: string | number;
@@ -15,7 +15,7 @@ export function TabBar({ tabs, activeTab, onChange }: TabBarProps) {
     <div role="tablist" style={{
       display: 'flex',
       gap: 0,
-      borderBottom: '2px solid #1e1e2e',
+      borderBottom: '2px solid var(--border)',
       overflowX: 'auto',
       scrollbarWidth: 'none',
       WebkitOverflowScrolling: 'touch',
@@ -32,7 +32,7 @@ export function TabBar({ tabs, activeTab, onChange }: TabBarProps) {
               padding: '10px 18px',
               fontSize: 13,
               fontWeight: 500,
-              color: active ? '#4a9eff' : '#606080',
+              color: active ? '#4a9eff' : 'var(--text-3)',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               marginBottom: -2,
@@ -52,7 +52,7 @@ export function TabBar({ tabs, activeTab, onChange }: TabBarProps) {
               <span style={{
                 fontSize: 10,
                 background: active ? 'rgba(74,158,255,0.12)' : 'rgba(255,255,255,0.04)',
-                color: active ? '#4a9eff' : '#606080',
+                color: active ? '#4a9eff' : 'var(--text-3)',
                 borderRadius: 8,
                 padding: '0 5px',
                 minWidth: 16,

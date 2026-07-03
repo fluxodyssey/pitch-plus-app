@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+﻿import { useRef, useEffect } from 'react';
 import { scoreColorContinuous } from '../data/constants';
 import type { RawPitch } from '../types';
 
@@ -138,7 +138,7 @@ export function PitchHeatmap({ pitches, colorBy = 'density', width = 340, height
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#606080',
+          color: '#6f6f78',
         }}>
           No pitch data
         </div>

@@ -13,7 +13,7 @@
 
 Python pipeline writes `public/data/pitchers_{year}.json` → React fetches via `usePitchers` hook → typed as `Pitcher[]` from `src/types.ts`.
 
-Other JSON files: `pitch_design_recs.json`, `matchup_outcomes_{year}.json`, `tto_{year}.json`, `similarity_{year}.json`, `batter_outcomes_{year}.json`, `contact_profiles_{year}.json`, `contact_shift_{year}.json`, `sparklines.json`, `trajectories.json`.
+Other JSON files: `matchup_outcomes_{year}.json`, `tto_{year}.json`, `similarity_{year}.json`, `batter_outcomes_{year}.json`, `contact_profiles_{year}.json`, `sparklines.json`, `trajectories.json`, `arsenal_matchup_{year}.json`, `catchers_{year}.json`, `challenges_{year}.json` (2026+), `daily_matchups.json` (today's slate — refresh with `python models/daily_matchups.py`).
 
 ## Type Discipline — Critical
 
@@ -35,7 +35,7 @@ Use the `sync-types` skill to detect drift automatically. The PostToolUse hook a
 | `src/hooks/usePitchers.ts`                | Data fetch + cache (singleton)                     |
 | `src/hooks/useTTOData.ts`                 | TTO data hook — singleton pattern reference        |
 | `src/hooks/useSparklines.ts`              | Sparklines + trajectories                          |
-| `src/components/PlayerDetail.tsx`         | Main pitcher detail page                           |
+| `src/pages/PlayerDetail.tsx`              | Player profile (overview/arsenal/grades/charts/…)  |
 | `src/components/MetricsTable.tsx`         | Sortable comparison table                          |
 | `src/components/MovementProfileChart.tsx` | Canvas-based per-pitch scatter w/ 1σ ellipses      |
 | `src/pages/`                              | Route-level page components                        |
@@ -43,18 +43,20 @@ Use the `sync-types` skill to detect drift automatically. The PostToolUse hook a
 
 ## Routes
 
-Lazy-loaded, code-split. See `App.tsx` for the full list. As of latest sync:
+Lazy-loaded, code-split. See `App.tsx` for the full list. As of the 2026-07 restructure:
 
-`/` (PlayerBrowser) · `/player/:id` · `/player/:id/start/:gameId` (StartReport) · `/batters` · `/teams` · `/team/:abbrev` · `/leaderboard` · `/search` (AdvancedSearch) · `/compare`, `/compare/:id1`, `/compare/:id1/:id2` · `/spring` · `/design` (PitchDesign) · `/faq` · `/plots` (PitcherPlots) · `/matchup`, `/matchup/:pitcherId/:batterId` · `/glossary`
+`/` (Leaderboard hub — Pitchers | Batters tabs + Player Search; `/leaderboard` and `/batters` redirect here) · `/player/:id` (profile with Overview/Arsenal/Grades/Charts/Trends/Research/Game Log tabs — the old /plots and /grades pages live inside it now) · `/player/:id/start/:gameId` (StartReport) · `/teams` · `/team/:abbrev` · `/search` (AdvancedSearch) · `/compare`, `/compare/:id1`, `/compare/:id1/:id2` · `/matchup`, `/matchup/:pitcherId/:batterId` (searchable matchups + Best Matchups Today slate) · `/lineup`, `/lineup/:pitcherId` (arsenal-weighted lineup board) · `/catchers` (Catcher Framing Leaderboard + ABS challenge value) · `/faq` · `/glossary`
+
+Removed 2026-07-02: `/spring`, `/design` (Design Lab), `/simulator`, `/plots`, `/grades` (the last two merged into the player profile).
 
 Use the `add-app-page` skill to add a new route.
 
 ## Styling Conventions
 
 - Inline styles throughout — no CSS modules, no Tailwind classes
-- **Always use CSS variables defined in `src/index.css`** — never hardcode hex
-- Palette (defined at `:root` in `index.css`): deep navy base — `--bg-base: #060e1c`, surface `--bg-surface: #0c1829`, accent steel blue `--accent: #2f80ed`
-- Text scale: `--text-1` (near-white), `--text-2` (blue-gray), `--text-3` (muted), `--text-4` (very muted)
+- **Always use CSS variables defined in `src/index.css`** — never hardcode hex. Exception: canvas components (`MovementProfileChart`, `PitchHeatmap`, `StuffDNA`, `VelocityDistribution`) can't resolve `var()` in `fillStyle` — they use neutral-gray literals matching the tokens.
+- Palette (defined at `:root` in `index.css`): neutral dark — `--bg-base: #0b0b0c` (near-black), surface `--bg-surface: #141416`, accent steel blue `--accent: #4b96e6`
+- Text scale: `--text-1` (soft off-white), `--text-2` (secondary gray), `--text-3` (muted), `--text-4` (very muted)
 - Semantic colors: `--positive` (emerald), `--negative` (rose), `--amber` (warning)
 - Fonts: `--sans` (DM Sans, body), `--mono` (DM Mono, numbers)
 - Radii: `--radius-sm` (6px), `--radius` (8px), `--radius-lg` (12px)

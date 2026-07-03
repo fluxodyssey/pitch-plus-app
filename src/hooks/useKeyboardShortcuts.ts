@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
  * Two-key Vim-style navigation (G then key):
  *   G P → Pitchers   G B → Batters   G T → Teams
  *   G L → Leaderboard  G S → Search  G M → Matchups
- *   G C → Compare   G X → Plots   G D → Design Lab
+ *   G C → Compare   G U → Lineups   G K → Catcher Framing
  *   G F → FAQ       G G → Glossary
  *
  * Single-key:
@@ -41,14 +41,14 @@ export function useKeyboardShortcuts(
         clearPending();
         switch (key) {
           case 'p': navigate('/');          break;
-          case 'b': navigate('/batters');   break;
+          case 'b': navigate('/?tab=batters'); break;
           case 't': navigate('/teams');     break;
-          case 'l': navigate('/leaderboard'); break;
+          case 'l': navigate('/');          break;
           case 's': navigate('/search');    break;
           case 'm': navigate('/matchup');   break;
           case 'c': navigate('/compare');   break;
-          case 'x': navigate('/plots');     break;
-          case 'd': navigate('/design');    break;
+          case 'u': navigate('/lineup');    break;
+          case 'k': navigate('/catchers');  break;
           case 'f': navigate('/faq');       break;
           case 'g': navigate('/glossary');  break;
         }
@@ -89,15 +89,14 @@ export function useKeyboardShortcuts(
 // ── Shortcuts reference data (used by the help overlay) ────────────────────
 
 export const KEYBOARD_SHORTCUTS = [
-  { key: 'G P', description: 'Go to Pitchers' },
-  { key: 'G B', description: 'Go to Batters' },
+  { key: 'G P', description: 'Go to Leaderboard (Pitchers)' },
+  { key: 'G B', description: 'Go to Leaderboard (Batters)' },
   { key: 'G T', description: 'Go to Teams' },
-  { key: 'G L', description: 'Go to Leaderboard' },
-  { key: 'G S', description: 'Go to Advanced Search' },
   { key: 'G M', description: 'Go to Matchup Machine' },
+  { key: 'G U', description: 'Go to Lineup Board' },
+  { key: 'G K', description: 'Go to Catcher Framing' },
   { key: 'G C', description: 'Go to Compare' },
-  { key: 'G X', description: 'Go to Plots' },
-  { key: 'G D', description: 'Go to Design Lab' },
+  { key: 'G S', description: 'Go to Advanced Search' },
   { key: 'G F', description: 'Go to FAQ' },
   { key: 'G G', description: 'Go to Glossary' },
   { key: '⌘K', description: 'Open command palette' },

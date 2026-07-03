@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+﻿import { describe, it, expect } from 'vitest';
 import { shrinkRate, shrinkVariance } from '../credible';
 import {
   metricCounts, weightedMetric, weightedZones, heatColor,
@@ -104,7 +104,7 @@ describe('weightedZones', () => {
 
 describe('heatColor', () => {
   it('is neutral near zero, emerald above, rose below, and saturates', () => {
-    expect(heatColor(0, 0.1)).toBe('#263349');
+    expect(heatColor(0, 0.1)).toBe('var(--bg-elevated)');
     expect(heatColor(0.03, 0.1)).toBe('#2b524b');
     expect(heatColor(-0.03, 0.1)).toBe('#77384e');
     expect(heatColor(0.06, 0.1)).toBe('#14a276');

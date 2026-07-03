@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Lineup Board — arsenal-weighted scouting card for a pitcher vs a team.
  *
  * Every number on this page answers one question: "against THIS pitcher's
@@ -332,7 +332,7 @@ function PanelTitle({ text, sub }: { text: string; sub?: string }) {
 }
 
 function Legend() {
-  const steps = ['#f8556f', '#c94360', '#9e3a56', '#77384e', '#263349', '#2b524b', '#1e7a61', '#14a276', '#10cf8e'];
+  const steps = ['#f8556f', '#c94360', '#9e3a56', '#77384e', 'var(--bg-elevated)', '#2b524b', '#1e7a61', '#14a276', '#10cf8e'];
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
       <span style={{ ...mono, fontSize: 11, color: 'var(--text-3)' }}>hitter advantage</span>

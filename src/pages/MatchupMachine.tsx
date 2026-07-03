@@ -1,4 +1,4 @@
-/**
+﻿/**
  * MatchupMachine.tsx — Pitcher vs Batter Matchup Projections
  *
  * Route: /matchup or /matchup/:pitcherId/:batterId
@@ -10,10 +10,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useData, hasMatchupData, MATCHUP_DEFAULT_SEASON } from '../data/useData';
-import { useSimilarityData, useBatterOutcomes } from '../data/useMatchupData';
+import { useSimilarityData, useBatterOutcomes, useDailySlate } from '../data/useMatchupData';
 import { projectMatchup } from '../data/matchupEngine';
 import { InlineSearch } from '../components/InlineSearch';
-import type { MatchupProjection } from '../types';
+import type {
+  BatterOutcomesData, DailyMatchupGame, DailyMatchupsDoc, MatchupProjection, SimilarityData,
+} from '../types';
 
 interface SearchItem { id: number; name: string; team: string; sub?: string }
 
@@ -23,7 +25,7 @@ function GradeBadgeLarge({ grade, label }: { grade: number; label: string }) {
   const color =
     grade >= 5  ? '#10b981' :
     grade >= 2  ? '#34d399' :
-    grade >= -1 ? '#a0a0b8' :
+    grade >= -1 ? 'var(--text-2)' :
     grade >= -4 ? '#f59e0b' :
     '#ef4444';
 
@@ -37,7 +39,7 @@ function GradeBadgeLarge({ grade, label }: { grade: number; label: string }) {
       minWidth: 100,
     }}>
       <div style={{ color, fontSize: 36, fontWeight: 800, lineHeight: 1 }}>{label}</div>
-      <div style={{ color: '#606080', fontSize: 12, marginTop: 4 }}>
+      <div style={{ color: 'var(--text-3)', fontSize: 12, marginTop: 4 }}>
         {grade > 0 ? `+${grade}` : grade} / 10
       </div>
     </div>
@@ -56,11 +58,11 @@ function deltaColor(v: number, higherBetter = true): string {
   const bad  = higherBetter ? v < -0.02 : v > 0.02;
   if (good) return '#10b981';
   if (bad)  return '#ef4444';
-  return '#a0a0b8';
+  return 'var(--text-2)';
 }
 
 function DeltaCell({ v, higherBetter = false }: { v: number | undefined; higherBetter?: boolean }) {
-  if (v == null) return <td style={{ padding: '7px 10px', color: '#606080', textAlign: 'center' }}>—</td>;
+  if (v == null) return <td style={{ padding: '7px 10px', color: 'var(--text-3)', textAlign: 'center' }}>—</td>;
   const sign = v > 0 ? '+' : '';
   const color = deltaColor(v, higherBetter);
   return (
@@ -102,16 +104,206 @@ function PlayerCard({
       <div style={{ color, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
         {label}
       </div>
-      <div style={{ color: '#e0e0e8', fontSize: 20, fontWeight: 700 }}>{name}</div>
-      <div style={{ color: '#606080', fontSize: 13, marginTop: 2 }}>
+      <div style={{ color: 'var(--text-1)', fontSize: 20, fontWeight: 700 }}>{name}</div>
+      <div style={{ color: 'var(--text-3)', fontSize: 13, marginTop: 2 }}>
         {team} · {hand}HB{role ? ` · ${role}` : ''}
       </div>
       {pitchPlus != null && (
         <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ color: '#4a9eff', fontSize: 22, fontWeight: 700 }}>{pitchPlus}</span>
-          <span style={{ color: '#606080', fontSize: 12 }}>Pitch+</span>
+          <span style={{ color: '#4b96e6', fontSize: 22, fontWeight: 700 }}>{pitchPlus}</span>
+          <span style={{ color: 'var(--text-3)', fontSize: 12 }}>Pitch+</span>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Best matchups today ───────────────────────────────────────────────────────
+
+interface SlateRow {
+  game: DailyMatchupGame;
+  pitcherId: number;
+  pitcherName: string;
+  pitcherTeam: string;
+  batterId: number;
+  batterName: string;
+  batterTeam: string;
+  proj: MatchupProjection;
+}
+
+const SLATE_TOP_N = 15;
+const SLATE_HITTERS_PER_TEAM = 9;   // ~starting lineup, by season PA
+const SLATE_MIN_PA = 100;
+
+function buildSlateRows(
+  slate: DailyMatchupsDoc,
+  similarityData: SimilarityData,
+  batterOutcomes: BatterOutcomesData,
+): SlateRow[] {
+  // team → hitters by season PA (proxy for the starting lineup pre-posting)
+  const byTeam = new Map<string, Array<{ id: number; name: string; nPa: number }>>();
+  for (const [id, b] of Object.entries(batterOutcomes)) {
+    const nPa = b.overall?.n_pa ?? 0;
+    if (!b.team || nPa < SLATE_MIN_PA) continue;
+    const arr = byTeam.get(b.team) ?? [];
+    arr.push({ id: Number(id), name: b.name, nPa });
+    byTeam.set(b.team, arr);
+  }
+  for (const arr of byTeam.values()) arr.sort((a, b) => b.nPa - a.nPa);
+
+  const rows: SlateRow[] = [];
+  for (const game of slate.games) {
+    for (const [pitSide, batSide] of [['away', 'home'], ['home', 'away']] as const) {
+      const prob = game[pitSide].probable;
+      if (!prob) continue;
+      const hitters = (byTeam.get(game[batSide].team) ?? []).slice(0, SLATE_HITTERS_PER_TEAM);
+      for (const h of hitters) {
+        const proj = projectMatchup(prob.id, h.id, similarityData, batterOutcomes);
+        if (!proj) continue;
+        rows.push({
+          game,
+          pitcherId: prob.id, pitcherName: prob.name, pitcherTeam: game[pitSide].team,
+          batterId: h.id, batterName: h.name, batterTeam: game[batSide].team,
+          proj,
+        });
+      }
+    }
+  }
+  // best matchups FOR THE HITTER: highest batter-advantage grade first
+  rows.sort((a, b) =>
+    b.proj.grade - a.proj.grade
+    || (b.proj.deltas.from_batter_avg.xwoba ?? 0) - (a.proj.deltas.from_batter_avg.xwoba ?? 0));
+  return rows.slice(0, SLATE_TOP_N);
+}
+
+function gameTimeLabel(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '' : d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+function BestMatchupsToday({
+  slate, similarityData, batterOutcomes,
+}: {
+  slate: DailyMatchupsDoc;
+  similarityData: SimilarityData;
+  batterOutcomes: BatterOutcomesData;
+}) {
+  const navigate = useNavigate();
+  const rows = useMemo(
+    () => buildSlateRows(slate, similarityData, batterOutcomes),
+    [slate, similarityData, batterOutcomes],
+  );
+
+  // local calendar date — toISOString() is UTC and flips "today" mid-evening
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const stale = slate.date !== today;
+  const nProbables = slate.games.reduce(
+    (s, g) => s + (g.away.probable ? 1 : 0) + (g.home.probable ? 1 : 0), 0);
+
+  if (slate.games.length === 0) {
+    return (
+      <div className="card" style={{ color: 'var(--text-3)', fontSize: 13 }}>
+        No games on the {slate.date} slate.
+      </div>
+    );
+  }
+
+  const th = {
+    padding: '7px 10px', color: 'var(--text-3)', fontWeight: 600, fontSize: 11,
+    textTransform: 'uppercase' as const, letterSpacing: 0.5, whiteSpace: 'nowrap' as const,
+  };
+
+  return (
+    <div className="card">
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+        <div style={{ color: 'var(--text-1)', fontWeight: 700, fontSize: 16 }}>
+          Best Matchups Today
+        </div>
+        <span style={{ color: 'var(--text-3)', fontSize: 12 }}>
+          {slate.date} · {slate.games.length} games · {nProbables} probables
+        </span>
+        {stale && (
+          <span style={{
+            background: 'var(--amber-dim)', border: '1px solid var(--amber)',
+            color: 'var(--amber)', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 600,
+          }}>
+            stale — rerun models/daily_matchups.py
+          </span>
+        )}
+      </div>
+      <p style={{ color: 'var(--text-3)', fontSize: 12, margin: '0 0 12px' }}>
+        Every probable starter crossed with the opposing lineup (top {SLATE_HITTERS_PER_TEAM} hitters
+        by PA), ranked by projected hitter advantage. Click a row for the full projection.
+      </p>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ borderBottom: '2px solid var(--border)' }}>
+              <th style={{ ...th, textAlign: 'left' }}>#</th>
+              <th style={{ ...th, textAlign: 'left' }}>Hitter</th>
+              <th style={{ ...th, textAlign: 'left' }}>vs Pitcher</th>
+              <th style={{ ...th, textAlign: 'left' }}>Game</th>
+              <th style={{ ...th, textAlign: 'center' }}>Grade</th>
+              <th style={{ ...th, textAlign: 'right' }}>Proj xwOBA</th>
+              <th style={{ ...th, textAlign: 'right' }}>Δ vs avg</th>
+              <th style={{ ...th, textAlign: 'center' }}>Conf</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => {
+              const dx = r.proj.deltas.from_batter_avg.xwoba ?? 0;
+              const gradeCol =
+                r.proj.grade >= 5 ? 'var(--positive)' :
+                r.proj.grade >= 2 ? '#34d399' :
+                r.proj.grade >= -1 ? 'var(--text-2)' : 'var(--amber)';
+              return (
+                <tr
+                  key={`${r.pitcherId}-${r.batterId}`}
+                  className="table-row-hover"
+                  onClick={() => navigate(`/matchup/${r.pitcherId}/${r.batterId}`)}
+                  style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
+                >
+                  <td style={{ padding: '8px 10px', color: 'var(--text-4)' }}>{i + 1}</td>
+                  <td style={{ padding: '8px 10px', color: 'var(--text-1)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    {r.batterName}
+                    <span style={{ color: 'var(--text-3)', fontWeight: 400, marginLeft: 6, fontSize: 12 }}>{r.batterTeam}</span>
+                  </td>
+                  <td style={{ padding: '8px 10px', color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
+                    {r.pitcherName}
+                    <span style={{ color: 'var(--text-3)', marginLeft: 6, fontSize: 12 }}>{r.pitcherTeam}</span>
+                  </td>
+                  <td style={{ padding: '8px 10px', color: 'var(--text-3)', whiteSpace: 'nowrap', fontSize: 12 }}>
+                    {r.game.away.team} @ {r.game.home.team}
+                    {gameTimeLabel(r.game.game_time) && (
+                      <span style={{ color: 'var(--text-4)', marginLeft: 6 }}>{gameTimeLabel(r.game.game_time)}</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                    <span style={{
+                      color: gradeCol, fontWeight: 700, fontSize: 13,
+                      background: 'var(--bg-elevated)', borderRadius: 4, padding: '2px 8px',
+                    }}>
+                      {r.proj.grade_label}
+                    </span>
+                  </td>
+                  <td style={{ padding: '8px 10px', textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--text-1)', fontWeight: 600 }}>
+                    {r.proj.outcomes.xwoba.toFixed(3)}
+                  </td>
+                  <td style={{ padding: '8px 10px', textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 600,
+                    color: dx > 0.005 ? 'var(--positive)' : dx < -0.005 ? 'var(--negative)' : 'var(--text-2)' }}>
+                    {dx > 0 ? '+' : ''}{dx.toFixed(3)}
+                  </td>
+                  <td style={{ padding: '8px 10px', textAlign: 'center', fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase' }}>
+                    {r.proj.confidence}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -212,18 +404,19 @@ function MatchupMachineInner() {
 
   const dataLoading = simLoading || boLoading;
   const dataError   = simError ?? boError;
+  const slate = useDailySlate();
 
   return (
     <div style={{ padding: '24px', maxWidth: 1000, margin: '0 auto' }}>
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#e0e0e8', margin: '0 0 6px 0' }}>
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--text-1)', margin: '0 0 6px 0' }}>
           Matchup Machine
         </h1>
-        <p style={{ color: '#606080', fontSize: 13, margin: 0 }}>
-          Project batter outcomes using pitcher similarity regression.
-          Select any MLB pitcher and batter to generate a matchup grade.
+        <p style={{ color: 'var(--text-3)', fontSize: 13, margin: 0 }}>
+          Search any pitcher-batter matchup, or scan today's slate for the best hitter spots.
+          Projections use pitcher-similarity regression over observed batter outcomes.
         </p>
       </div>
 
@@ -231,7 +424,7 @@ function MatchupMachineInner() {
       <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 16, alignItems: 'end' }}>
           <div>
-            <div style={{ color: '#606080', fontSize: 11, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+            <div style={{ color: 'var(--text-3)', fontSize: 11, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.8 }}>
               Batter
             </div>
             <InlineSearch<SearchItem>
@@ -242,7 +435,7 @@ function MatchupMachineInner() {
               onSelect={(item) => setSelectedBatterId(item.id)}
               placeholder="Search batter…"
               renderItem={(item) => (
-                <span>{item.name}<span style={{ color: '#606080', fontSize: 12, marginLeft: 8 }}>{item.sub ?? item.team}</span></span>
+                <span>{item.name}<span style={{ color: 'var(--text-3)', fontSize: 12, marginLeft: 8 }}>{item.sub ?? item.team}</span></span>
               )}
             />
           </div>
@@ -253,15 +446,15 @@ function MatchupMachineInner() {
               onClick={() => { const prevP = selectedPitcherId; const prevB = selectedBatterId; setSelectedPitcherId(prevB); setSelectedBatterId(prevP); }}
               title="Swap batter and pitcher"
               style={{
-                background: '#1e1e2e', border: '1px solid #2a2a3e',
-                color: '#a0a0b8', borderRadius: 8, padding: '9px 14px',
+                background: 'var(--border)', border: '1px solid var(--border-plus)',
+                color: 'var(--text-2)', borderRadius: 8, padding: '9px 14px',
                 cursor: 'pointer', fontSize: 18, lineHeight: 1,
               }}
             >⇄</button>
           </div>
 
           <div>
-            <div style={{ color: '#606080', fontSize: 11, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+            <div style={{ color: 'var(--text-3)', fontSize: 11, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.8 }}>
               Pitcher
             </div>
             <InlineSearch<SearchItem>
@@ -272,7 +465,7 @@ function MatchupMachineInner() {
               onSelect={(item) => setSelectedPitcherId(item.id)}
               placeholder="Search pitcher…"
               renderItem={(item) => (
-                <span>{item.name}<span style={{ color: '#606080', fontSize: 12, marginLeft: 8 }}>{item.sub ?? item.team}</span></span>
+                <span>{item.name}<span style={{ color: 'var(--text-3)', fontSize: 12, marginLeft: 8 }}>{item.sub ?? item.team}</span></span>
               )}
             />
           </div>
@@ -281,7 +474,7 @@ function MatchupMachineInner() {
 
       {/* Data loading state */}
       {dataLoading && (
-        <div style={{ textAlign: 'center', padding: '48px 0', color: '#606080', fontSize: 14 }}>
+        <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-3)', fontSize: 14 }}>
           Loading matchup data…
         </div>
       )}
@@ -291,24 +484,37 @@ function MatchupMachineInner() {
           <div style={{ color: '#ef4444', fontSize: 14, marginBottom: 8 }}>
             Matchup data not yet available for {season}.
           </div>
-          <div style={{ color: '#606080', fontSize: 13 }}>
-            Run <code style={{ color: '#4a9eff' }}>python models/pitcher_similarity.py {season}</code> and{' '}
-            <code style={{ color: '#4a9eff' }}>python models/batter_outcomes.py --year {season}</code> to generate it.
+          <div style={{ color: 'var(--text-3)', fontSize: 13 }}>
+            Run <code style={{ color: '#4b96e6' }}>python models/pitcher_similarity.py {season}</code> and{' '}
+            <code style={{ color: '#4b96e6' }}>python models/batter_outcomes.py --year {season}</code> to generate it.
           </div>
         </div>
       )}
 
-      {/* Empty state */}
-      {!dataLoading && !dataError && (!selectedPitcherId || !selectedBatterId) && (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#606080' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>⚾</div>
-          <div style={{ fontSize: 16, color: '#a0a0b8', marginBottom: 8 }}>
-            Select a batter and pitcher to generate a matchup projection
+      {/* Today's slate — shown until a specific matchup is selected */}
+      {!dataLoading && !dataError && similarityData && batterOutcomes
+        && (!selectedPitcherId || !selectedBatterId) && (
+        slate === 'loading' ? (
+          <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-3)', fontSize: 13 }}>
+            Loading today's slate…
           </div>
-          <div style={{ fontSize: 13 }}>
-            The engine uses pitcher similarity regression to project outcomes.
+        ) : slate === 'missing' ? (
+          <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-3)' }}>
+            <div style={{ fontSize: 15, color: 'var(--text-2)', marginBottom: 8 }}>
+              No daily slate file found
+            </div>
+            <div style={{ fontSize: 13 }}>
+              Run <code style={{ color: 'var(--accent)' }}>python models/daily_matchups.py</code> to
+              pull today's games and probable starters — or search any matchup above.
+            </div>
           </div>
-        </div>
+        ) : (
+          <BestMatchupsToday
+            slate={slate}
+            similarityData={similarityData}
+            batterOutcomes={batterOutcomes}
+          />
+        )
       )}
 
       {/* Projection results */}
@@ -321,7 +527,7 @@ function MatchupMachineInner() {
               name={selectedBatter.name}
               team={selectedBatter.team}
               hand={selectedBatter.hand}
-              color="#4a9eff"
+              color="#4b96e6"
             />
             <PlayerCard
               label="Pitcher"
@@ -339,7 +545,7 @@ function MatchupMachineInner() {
               <GradeBadgeLarge grade={projection.grade} label={projection.grade_label} />
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
-                  <span style={{ color: '#e0e0e8', fontSize: 18, fontWeight: 600 }}>
+                  <span style={{ color: 'var(--text-1)', fontSize: 18, fontWeight: 600 }}>
                     {projection.leans === 'batter'
                       ? `Favors ${selectedBatter.name}`
                       : projection.leans === 'pitcher'
@@ -348,14 +554,14 @@ function MatchupMachineInner() {
                   </span>
                   <ConfidenceBadge conf={projection.confidence} />
                 </div>
-                <div style={{ color: '#a0a0b8', fontSize: 14, lineHeight: 1.6 }}>
+                <div style={{ color: 'var(--text-2)', fontSize: 14, lineHeight: 1.6 }}>
                   Projected xwOBA{' '}
-                  <span style={{ color: '#e0e0e8', fontWeight: 700 }}>
+                  <span style={{ color: 'var(--text-1)', fontWeight: 700 }}>
                     {projection.outcomes.xwoba.toFixed(3)}
                   </span>
                   {' '}vs league average 0.320.
                   {' '}{selectedBatter.name} projects to reach base{' '}
-                  <span style={{ color: '#e0e0e8', fontWeight: 700 }}>
+                  <span style={{ color: 'var(--text-1)', fontWeight: 700 }}>
                     {pct(projection.outcomes.reach_pct)}
                   </span>
                   {' '}of at-bats.
@@ -365,11 +571,11 @@ function MatchupMachineInner() {
                 </div>
               </div>
               {projection.outcomes.wrc_plus_proj != null && (
-                <div style={{ textAlign: 'center', padding: '8px 16px', background: '#1e1e2e', borderRadius: 8 }}>
-                  <div style={{ color: '#606080', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                <div style={{ textAlign: 'center', padding: '8px 16px', background: 'var(--border)', borderRadius: 8 }}>
+                  <div style={{ color: 'var(--text-3)', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                     Proj. wRC+
                   </div>
-                  <div style={{ color: '#e0e0e8', fontSize: 28, fontWeight: 700 }}>
+                  <div style={{ color: 'var(--text-1)', fontSize: 28, fontWeight: 700 }}>
                     {projection.outcomes.wrc_plus_proj}
                   </div>
                 </div>
@@ -379,17 +585,17 @@ function MatchupMachineInner() {
 
           {/* Outcome table */}
           <div className="card" style={{ marginBottom: 16 }}>
-            <div style={{ color: '#4a9eff', fontWeight: 600, fontSize: 14, marginBottom: 14 }}>
+            <div style={{ color: '#4b96e6', fontWeight: 600, fontSize: 14, marginBottom: 14 }}>
               Projected Outcomes
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
-                  <tr style={{ borderBottom: '2px solid #1e1e2e' }}>
+                  <tr style={{ borderBottom: '2px solid var(--border)' }}>
                     {['', 'Reach Base', 'Hit', 'HR', '2B/3B', '1B', 'BB', 'K', 'xwOBA'].map((h, i) => (
                       <th key={h || `col-${i}`} style={{
                         padding: '7px 10px', textAlign: i === 0 ? 'left' : 'center',
-                        color: '#606080', fontWeight: 600, fontSize: 11,
+                        color: 'var(--text-3)', fontWeight: 600, fontSize: 11,
                         textTransform: 'uppercase', letterSpacing: 0.5,
                       }}>{h}</th>
                     ))}
@@ -397,8 +603,8 @@ function MatchupMachineInner() {
                 </thead>
                 <tbody>
                   {/* Projection row */}
-                  <tr style={{ borderBottom: '1px solid #1a1a2e' }}>
-                    <td style={{ padding: '7px 10px', color: '#e0e0e8', fontWeight: 600 }}>Projection</td>
+                  <tr style={{ borderBottom: '1px solid var(--bg-elevated)' }}>
+                    <td style={{ padding: '7px 10px', color: 'var(--text-1)', fontWeight: 600 }}>Projection</td>
                     {([
                       ['reach', projection.outcomes.reach_pct],
                       ['hit', projection.outcomes.hit_pct],
@@ -408,18 +614,18 @@ function MatchupMachineInner() {
                       ['bb', projection.outcomes.bb_pct],
                       ['k', projection.outcomes.k_pct],
                     ] as const).map(([label, v]) => (
-                      <td key={label} style={{ padding: '7px 10px', color: '#e0e0e8', textAlign: 'center', fontWeight: 600 }}>
+                      <td key={label} style={{ padding: '7px 10px', color: 'var(--text-1)', textAlign: 'center', fontWeight: 600 }}>
                         {pct(v)}
                       </td>
                     ))}
-                    <td style={{ padding: '7px 10px', color: '#e0e0e8', textAlign: 'center', fontWeight: 700 }}>
+                    <td style={{ padding: '7px 10px', color: 'var(--text-1)', textAlign: 'center', fontWeight: 700 }}>
                       {projection.outcomes.xwoba.toFixed(3)}
                     </td>
                   </tr>
 
                   {/* Batter delta row */}
-                  <tr style={{ borderBottom: '1px solid #1a1a2e' }}>
-                    <td style={{ padding: '7px 10px', color: '#4a9eff', fontSize: 12 }}>vs. batter avg</td>
+                  <tr style={{ borderBottom: '1px solid var(--bg-elevated)' }}>
+                    <td style={{ padding: '7px 10px', color: '#4b96e6', fontSize: 12 }}>vs. batter avg</td>
                     <DeltaCell v={projection.deltas.from_batter_avg.reach_pct} higherBetter />
                     <DeltaCell v={undefined} />
                     <DeltaCell v={projection.deltas.from_batter_avg.hr_pct} higherBetter />
@@ -436,7 +642,7 @@ function MatchupMachineInner() {
 
                   {/* Batter season row */}
                   <tr>
-                    <td style={{ padding: '7px 10px', color: '#606080', fontSize: 12 }}>Batter season avg</td>
+                    <td style={{ padding: '7px 10px', color: 'var(--text-3)', fontSize: 12 }}>Batter season avg</td>
                     {[
                       (selectedBatter.overall?.single_pct ?? 0) + (selectedBatter.overall?.double_pct ?? 0) +
                       (selectedBatter.overall?.triple_pct ?? 0) + (selectedBatter.overall?.hr_pct ?? 0) +
@@ -449,11 +655,11 @@ function MatchupMachineInner() {
                       selectedBatter.overall?.bb_pct,
                       selectedBatter.overall?.k_pct,
                     ].map((v, i) => (
-                      <td key={i} style={{ padding: '7px 10px', color: '#606080', textAlign: 'center', fontSize: 12 }}>
+                      <td key={i} style={{ padding: '7px 10px', color: 'var(--text-3)', textAlign: 'center', fontSize: 12 }}>
                         {pct(v)}
                       </td>
                     ))}
-                    <td style={{ padding: '7px 10px', color: '#606080', textAlign: 'center', fontSize: 12 }}>
+                    <td style={{ padding: '7px 10px', color: 'var(--text-3)', textAlign: 'center', fontSize: 12 }}>
                       {selectedBatter.overall?.xwoba?.toFixed(3) ?? '—'}
                     </td>
                   </tr>
@@ -465,7 +671,7 @@ function MatchupMachineInner() {
           {/* Advanced metrics */}
           {(projection.outcomes.hard_hit_rate != null || projection.outcomes.gb_rate != null) && (
             <div className="card" style={{ marginBottom: 16 }}>
-              <div style={{ color: '#4a9eff', fontWeight: 600, fontSize: 14, marginBottom: 12 }}>
+              <div style={{ color: '#4b96e6', fontWeight: 600, fontSize: 14, marginBottom: 12 }}>
                 Advanced Metrics
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10 }}>
@@ -475,9 +681,9 @@ function MatchupMachineInner() {
                   { label: 'FB%', v: projection.outcomes.fb_rate },
                   { label: 'Barrel%', v: projection.outcomes.barrel_rate },
                 ].filter(({ v }) => v != null).map(({ label, v }) => (
-                  <div key={label} style={{ textAlign: 'center', background: '#1a1a2e', borderRadius: 8, padding: '10px 8px' }}>
-                    <div style={{ color: '#606080', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.6 }}>{label}</div>
-                    <div style={{ color: '#e0e0e8', fontSize: 20, fontWeight: 700, marginTop: 4 }}>{pct(v)}</div>
+                  <div key={label} style={{ textAlign: 'center', background: 'var(--bg-elevated)', borderRadius: 8, padding: '10px 8px' }}>
+                    <div style={{ color: 'var(--text-3)', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.6 }}>{label}</div>
+                    <div style={{ color: 'var(--text-1)', fontSize: 20, fontWeight: 700, marginTop: 4 }}>{pct(v)}</div>
                   </div>
                 ))}
               </div>
@@ -485,10 +691,10 @@ function MatchupMachineInner() {
           )}
 
           {/* Methodology note */}
-          <div style={{ color: '#404060', fontSize: 12, lineHeight: 1.6, borderTop: '1px solid #1a1a2e', paddingTop: 12 }}>
-            <strong style={{ color: '#606080' }}>Methodology:</strong> Outcomes are weighted by pitcher similarity score,
+          <div style={{ color: 'var(--text-4)', fontSize: 12, lineHeight: 1.6, borderTop: '1px solid var(--bg-elevated)', paddingTop: 12 }}>
+            <strong style={{ color: 'var(--text-3)' }}>Methodology:</strong> Outcomes are weighted by pitcher similarity score,
             then regressed toward the batter's season average using a Marcel-style regression (k=20 PA).
-            Similarity data must be generated by <code style={{ color: '#4a9eff' }}>pitcher_similarity.py</code>.
+            Similarity data must be generated by <code style={{ color: '#4b96e6' }}>pitcher_similarity.py</code>.
             Confidence reflects the amount of observed data vs similar pitchers.
           </div>
         </div>
@@ -496,8 +702,8 @@ function MatchupMachineInner() {
 
       {/* No projection but both selected */}
       {!projection && selectedPitcherId && selectedBatterId && !dataLoading && !dataError && (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: '#606080' }}>
-          <div style={{ fontSize: 16, color: '#a0a0b8', marginBottom: 8 }}>
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-3)' }}>
+          <div style={{ fontSize: 16, color: 'var(--text-2)', marginBottom: 8 }}>
             Could not generate projection
           </div>
           <div style={{ fontSize: 13 }}>

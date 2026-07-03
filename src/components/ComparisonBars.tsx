@@ -1,4 +1,4 @@
-import { DIMENSION_LABELS, gradeColor } from '../data/constants';
+﻿import { DIMENSION_LABELS, gradeColor } from '../data/constants';
 import type { DimensionKey, Pitcher } from '../types';
 
 const DIMS: DimensionKey[] = ['stuff', 'command', 'deception', 'tunnel_and_sequence', 'outcomes', 'arsenal'];
@@ -23,22 +23,22 @@ export function ComparisonBars({ pitcherA, pitcherB }: Props) {
 
         return (
           <div key={dim}>
-            <div style={{ fontSize: 10, color: '#606080', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3, textAlign: 'center' }}>
+            <div style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3, textAlign: 'center' }}>
               {DIMENSION_LABELS[dim]}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 40px 1fr', gap: 4, alignItems: 'center' }}>
               {/* Left bar (pitcher A) — grows right-to-left */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 6 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: aColor, fontFamily: 'monospace', minWidth: 28, textAlign: 'right' }}>{a}</span>
-                <div style={{ flex: 1, height: 10, background: '#1a1a2e', borderRadius: 3, overflow: 'hidden', direction: 'rtl' }}>
+                <div style={{ flex: 1, height: 10, background: 'var(--bg-elevated)', borderRadius: 3, overflow: 'hidden', direction: 'rtl' }}>
                   <div style={{ width: `${aPct}%`, height: '100%', background: aColor, borderRadius: 3, opacity: 0.7, transition: 'width 0.4s' }} />
                 </div>
               </div>
               {/* Center divider */}
-              <div style={{ width: 1, height: 18, background: '#2a2a3e', margin: '0 auto' }} />
+              <div style={{ width: 1, height: 18, background: 'var(--border-plus)', margin: '0 auto' }} />
               {/* Right bar (pitcher B) — grows left-to-right */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ flex: 1, height: 10, background: '#1a1a2e', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{ flex: 1, height: 10, background: 'var(--bg-elevated)', borderRadius: 3, overflow: 'hidden' }}>
                   <div style={{ width: `${bPct}%`, height: '100%', background: bColor, borderRadius: 3, opacity: 0.7, transition: 'width 0.4s' }} />
                 </div>
                 <span style={{ fontSize: 12, fontWeight: 700, color: bColor, fontFamily: 'monospace', minWidth: 28 }}>{b}</span>

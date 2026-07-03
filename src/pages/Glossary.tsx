@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Glossary.tsx — Baseball analytics metric definitions and jargon glossary.
  *
  * Route: /glossary
@@ -129,7 +129,7 @@ export function Glossary() {
           onChange={e => setSearch(e.target.value)}
           placeholder="Search terms…"
           style={{
-            background: 'var(--bg-elevated)', border: '1px solid #2a2a3e',
+            background: 'var(--bg-elevated)', border: '1px solid var(--border-plus)',
             color: 'var(--text-1)', borderRadius: 6, padding: '7px 12px', fontSize: 13,
             width: 220, boxSizing: 'border-box',
           }}
@@ -168,7 +168,7 @@ export function Glossary() {
                   : entry.category === 'dimension' ? '#a78bfa'
                   : entry.category === 'metric' ? '#34d399'
                   : entry.category === 'swing' ? '#fbbf24'
-                  : '#a0a0b8',
+                  : 'var(--text-2)',
               }}>
                 {CATEGORIES.find(c => c.id === entry.category)?.label ?? entry.category}
               </span>

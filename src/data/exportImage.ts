@@ -1,10 +1,10 @@
-import { toPng } from 'html-to-image';
+﻿import { toPng } from 'html-to-image';
 
 export async function exportToPng(element: HTMLElement, filename: string): Promise<void> {
   const dataUrl = await toPng(element, {
     quality: 1,
     pixelRatio: 2,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: 'var(--bg-base)',
     filter: (node: HTMLElement) => !node.classList?.contains?.('no-export'),
   });
   const link = document.createElement('a');
@@ -17,7 +17,7 @@ export async function copyToClipboard(element: HTMLElement): Promise<void> {
   const dataUrl = await toPng(element, {
     quality: 1,
     pixelRatio: 2,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: 'var(--bg-base)',
     filter: (node: HTMLElement) => !node.classList?.contains?.('no-export'),
   });
   const response = await fetch(dataUrl);

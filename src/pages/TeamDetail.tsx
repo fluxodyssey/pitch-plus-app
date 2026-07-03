@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+﻿import { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { rowNavProps } from '../data/rowNavigation';
 import { useData } from '../data/useData';
@@ -136,7 +136,7 @@ export function TeamDetail() {
             <div style={{ color: mainColor, fontSize: 32, fontWeight: 800 }}>
               {Math.round(avgPitchPlus)}
             </div>
-            <div style={{ color: '#606080', fontSize: 11 }}>Avg Pitch+</div>
+            <div style={{ color: 'var(--text-3)', fontSize: 11 }}>Avg Pitch+</div>
           </div>
         </div>
       </div>
@@ -185,7 +185,7 @@ export function TeamDetail() {
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     padding: '8px 12px',
-                    background: '#0f0f1a',
+                    background: 'var(--bg-input)',
                     borderRadius: 6,
                     cursor: 'pointer',
                     borderLeft: `3px solid ${color}`,
@@ -193,10 +193,10 @@ export function TeamDetail() {
                   {...rowNavProps(navigate, `/player/${top.pitcher_id}`)}
                 >
                   <div>
-                    <div style={{ color: '#a0a0b8', fontSize: 11 }}>
+                    <div style={{ color: 'var(--text-2)', fontSize: 11 }}>
                       {DIMENSION_LABELS[d]}
                     </div>
-                    <div style={{ color: '#e0e0e8', fontWeight: 600 }}>
+                    <div style={{ color: 'var(--text-1)', fontWeight: 600 }}>
                       {top.pitcher_name}
                     </div>
                   </div>
@@ -211,7 +211,7 @@ export function TeamDetail() {
       {/* Rotation table */}
       {pitchers.length > 0 && (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <h3 className="card-title" style={{ padding: '16px 20px', margin: 0, borderBottom: '1px solid #1e1e2e' }}>
+          <h3 className="card-title" style={{ padding: '16px 20px', margin: 0, borderBottom: '1px solid var(--border)' }}>
             Rotation Pitchers
           </h3>
           <PlayerTable pitchers={pitchers} showRank={false} />
@@ -221,7 +221,7 @@ export function TeamDetail() {
       {/* Metric comparison vs league */}
       <div className="card">
         <h3 className="card-title">Metric Grades vs League Average</h3>
-        <p style={{ color: '#606080', fontSize: 12, marginBottom: 12 }}>
+        <p style={{ color: 'var(--text-3)', fontSize: 12, marginBottom: 12 }}>
           Team rotation average grade (weighted by pitches) vs league average (100)
         </p>
         <div
@@ -240,7 +240,7 @@ export function TeamDetail() {
               <div
                 key={mk}
                 style={{
-                  background: '#0f0f1a',
+                  background: 'var(--bg-input)',
                   borderRadius: 6,
                   padding: '8px 10px',
                 }}
@@ -253,7 +253,7 @@ export function TeamDetail() {
                     marginBottom: 4,
                   }}
                 >
-                  <span style={{ color: '#a0a0b8', fontSize: 12 }}>
+                  <span style={{ color: 'var(--text-2)', fontSize: 12 }}>
                     {METRIC_LABELS[mk]}
                   </span>
                   <span
@@ -280,7 +280,7 @@ export function TeamDetail() {
                 <div
                   style={{
                     height: 5,
-                    background: '#1e1e2e',
+                    background: 'var(--border)',
                     borderRadius: 3,
                     overflow: 'hidden',
                   }}

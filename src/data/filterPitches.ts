@@ -1,8 +1,11 @@
 import type { RawPitch, PitchFilters } from '../types';
 
-// Season date bounds — pre-filled in the filter panel but not counted as "active"
-export const SEASON_DATE_FROM = '2025-03-18';
-export const SEASON_DATE_TO = '2025-09-28';
+// Default date bounds — unbounded. Each season's pitch file only contains that
+// season, so a fixed calendar window is redundant AND wrong across seasons (a
+// hardcoded 2025 window silently filtered out every 2026 pitch). Empty string
+// = no bound; any user-set date counts as an active filter.
+export const SEASON_DATE_FROM = '';
+export const SEASON_DATE_TO = '';
 
 export const DEFAULT_FILTERS: PitchFilters = {
   dateFrom: SEASON_DATE_FROM,

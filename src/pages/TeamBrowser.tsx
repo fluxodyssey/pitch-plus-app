@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { rowNavProps } from '../data/rowNavigation';
 import { useData } from '../data/useData';
@@ -44,12 +44,12 @@ function MiniBar({ values }: MiniBarProps) {
         const color = gradeColor(score);
         return (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ color: '#606080', fontSize: 10, width: 26, flexShrink: 0 }}>{label}</span>
+            <span style={{ color: 'var(--text-3)', fontSize: 10, width: 26, flexShrink: 0 }}>{label}</span>
             <div
               style={{
                 flex: 1,
                 height: 6,
-                background: '#1e1e2e',
+                background: 'var(--border)',
                 borderRadius: 3,
                 overflow: 'hidden',
               }}
@@ -131,7 +131,7 @@ export function TeamBrowser() {
       </div>
 
       <div className="filters-bar">
-        <label style={{ color: '#a0a0b8' }}>Sort by:</label>
+        <label style={{ color: 'var(--text-2)' }}>Sort by:</label>
         <select
           className="filter-select"
           value={sortBy}
@@ -167,7 +167,7 @@ export function TeamBrowser() {
                 <div>
                   <div
                     style={{
-                      color: '#606080',
+                      color: 'var(--text-3)',
                       fontSize: 10,
                       fontWeight: 600,
                       letterSpacing: 1,
@@ -176,10 +176,10 @@ export function TeamBrowser() {
                   >
                     #{idx + 1}
                   </div>
-                  <div style={{ color: '#e0e0e8', fontWeight: 700, fontSize: 15 }}>
+                  <div style={{ color: 'var(--text-1)', fontWeight: 700, fontSize: 15 }}>
                     {t.abbrev}
                   </div>
-                  <div style={{ color: '#a0a0b8', fontSize: 11, marginTop: 1 }}>
+                  <div style={{ color: 'var(--text-2)', fontSize: 11, marginTop: 1 }}>
                     {t.team_name}
                   </div>
                 </div>
@@ -187,11 +187,11 @@ export function TeamBrowser() {
                   <div style={{ color: displayColor, fontSize: 22, fontWeight: 800 }}>
                     {Math.round(displayScore)}
                   </div>
-                  <div style={{ color: '#606080', fontSize: 10 }}>{displayLabel}</div>
+                  <div style={{ color: 'var(--text-3)', fontSize: 10 }}>{displayLabel}</div>
                 </div>
               </div>
 
-              <div style={{ color: '#606080', fontSize: 11, marginTop: 8 }}>
+              <div style={{ color: 'var(--text-3)', fontSize: 11, marginTop: 8 }}>
                 {t.n_pitchers} pitcher{t.n_pitchers !== 1 ? 's' : ''} matched
               </div>
 

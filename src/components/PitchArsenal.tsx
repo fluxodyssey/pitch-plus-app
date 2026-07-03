@@ -1,4 +1,4 @@
-import { pitchColor, scoreColorContinuous } from '../data/constants';
+﻿import { pitchColor, scoreColorContinuous } from '../data/constants';
 import { PitchHeatmap } from './PitchHeatmap';
 import { AttributeGauges } from './AttributeGauges';
 import type { RawPitch, PitchType, ScoringConfig, AttributeGrades } from '../types';
@@ -58,9 +58,9 @@ export function PitchArsenal({ pitches, pitchTypes, config, pitchTypeNames, onPi
   return (
     <div>
       {/* Summary line */}
-      <p style={{ fontSize: 13, color: '#a0a0b8', marginBottom: 16, display: 'flex', flexWrap: 'wrap', gap: '4px 10px' }}>
+      <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 16, display: 'flex', flexWrap: 'wrap', gap: '4px 10px' }}>
         {summaryLine.reduce<React.ReactNode[]>((acc, el, i) => {
-          if (i > 0) acc.push(<span key={`sep-${i}`} style={{ color: '#404060' }}>·</span>);
+          if (i > 0) acc.push(<span key={`sep-${i}`} style={{ color: 'var(--text-4)' }}>·</span>);
           acc.push(el);
           return acc;
         }, [])}
@@ -87,11 +87,11 @@ export function PitchArsenal({ pitches, pitchTypes, config, pitchTypeNames, onPi
               diffPct = (val - lgVal) / Math.abs(lgVal);
               good = higherGood ? diffPct > 0.02 : diffPct < -0.02;
             }
-            const diffColor = !lgVal ? '#606080' : Math.abs(diffPct) < 0.02 ? '#606080' : good ? '#c85a5a' : '#4a6494';
+            const diffColor = !lgVal ? 'var(--text-3)' : Math.abs(diffPct) < 0.02 ? 'var(--text-3)' : good ? '#c85a5a' : '#4a6494';
             const diffStr = lgVal ? ` (${diffPct > 0 ? '+' : ''}${(diffPct * 100).toFixed(0)}%)` : '';
             return (
               <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#606080', fontSize: 11 }}>{label}</span>
+                <span style={{ color: 'var(--text-3)', fontSize: 11 }}>{label}</span>
                 <span style={{ fontFamily: 'monospace', fontSize: 12, color: diffColor }}>
                   {fmt(val)}
                   {lgVal && <span style={{ fontSize: 10, opacity: 0.7 }}>{diffStr}</span>}
@@ -105,8 +105,8 @@ export function PitchArsenal({ pitches, pitchTypes, config, pitchTypeNames, onPi
               key={pt.pitch_type}
               onClick={() => onPitchTypeClick?.(pt.pitch_type)}
               style={{
-                background: '#14141f',
-                border: `1px solid ${isHighlighted ? '#2a2a3e' : '#1a1a2e'}`,
+                background: 'var(--bg-surface)',
+                border: `1px solid ${isHighlighted ? 'var(--border-plus)' : 'var(--bg-elevated)'}`,
                 borderTop: `3px solid ${color}`,
                 borderRadius: 8,
                 overflow: 'hidden',
@@ -119,7 +119,7 @@ export function PitchArsenal({ pitches, pitchTypes, config, pitchTypeNames, onPi
               <div style={{ padding: '10px 12px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <div style={{ color, fontSize: 14, fontWeight: 700 }}>{pt.pitch_name}</div>
-                  <div style={{ color: '#606080', fontSize: 11, marginTop: 1 }}>
+                  <div style={{ color: 'var(--text-3)', fontSize: 11, marginTop: 1 }}>
                     {pt.n.toLocaleString()} pitches · {(pt.usage_pct * 100).toFixed(1)}%
                   </div>
                 </div>
@@ -154,7 +154,7 @@ export function PitchArsenal({ pitches, pitchTypes, config, pitchTypeNames, onPi
 
               {/* Attribute Grades (if available) */}
               {attrs && (
-                <div style={{ padding: '4px 12px 8px', borderBottom: '1px solid #1a1a2e' }}>
+                <div style={{ padding: '4px 12px 8px', borderBottom: '1px solid var(--bg-elevated)' }}>
                   <AttributeGauges attrs={attrs} compact />
                 </div>
               )}

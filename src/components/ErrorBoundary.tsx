@@ -1,4 +1,4 @@
-import { Component } from 'react';
+﻿import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 
 interface Props {
@@ -29,7 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         justifyContent: 'center', gap: 16, minHeight: '60vh',
       }}>
-        <h2 style={{ color: 'var(--text-1, #e0e0e8)', margin: 0 }}>
+        <h2 style={{ color: 'var(--text-1, var(--text-1))', margin: 0 }}>
           Something went wrong
         </h2>
         <p style={{ color: 'var(--text-2, #8892a4)', maxWidth: 480, textAlign: 'center' }}>

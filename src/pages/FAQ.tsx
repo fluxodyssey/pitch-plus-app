@@ -1,4 +1,4 @@
-/**
+﻿/**
  * FAQ.tsx — Pitch+ Model Explanation & Methodology
  *
  * Route: /faq
@@ -20,7 +20,7 @@ function Accordion({ title, children, defaultOpen = false }: AccordionProps) {
 
   return (
     <div style={{
-      border: '1px solid #1e1e2e',
+      border: '1px solid var(--border)',
       borderRadius: 8,
       overflow: 'hidden',
       marginBottom: 10,
@@ -37,7 +37,7 @@ function Accordion({ title, children, defaultOpen = false }: AccordionProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          color: '#e0e0e8',
+          color: 'var(--text-1)',
           fontSize: 15,
           fontWeight: 600,
           fontFamily: 'var(--sans)',
@@ -66,8 +66,8 @@ function Highlight({ children }: { children: React.ReactNode }) {
 
 function GradeRow({ grade, range, desc }: { grade: string; range: string; desc: string }) {
   const colors: Record<string, string> = {
-    'A+': '#10b981', A: '#34d399', 'B+': '#6ee7b7', B: '#a0a0b8',
-    'C+': '#60a5fa', C: '#3b82f6', D: '#6b7280',
+    'A+': '#10b981', A: '#34d399', 'B+': '#6ee7b7', B: 'var(--text-2)',
+    'C+': '#60a5fa', C: '#3b82f6', D: 'var(--text-3)',
   };
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
@@ -78,7 +78,7 @@ function GradeRow({ grade, range, desc }: { grade: string; range: string; desc: 
         borderRadius: 5, padding: '2px 10px', fontWeight: 700, minWidth: 32,
         textAlign: 'center', fontSize: 13,
       }}>{grade}</span>
-      <span style={{ color: '#a0a0b8', fontSize: 13, minWidth: 60 }}>{range}</span>
+      <span style={{ color: 'var(--text-2)', fontSize: 13, minWidth: 60 }}>{range}</span>
       <span style={{ color: '#c0c0d0', fontSize: 13 }}>{desc}</span>
     </div>
   );
@@ -89,8 +89,8 @@ function DimRow({ name, metrics, color = '#4a9eff', weight }: {
 }) {
   return (
     <div style={{ marginBottom: 14, paddingLeft: 12, borderLeft: `3px solid ${color}` }}>
-      <div style={{ color, fontWeight: 600, fontSize: 14 }}>{name} <span style={{ color: '#606080', fontWeight: 400, fontSize: 12 }}>({weight} of Pitch+)</span></div>
-      <div style={{ color: '#a0a0b8', fontSize: 13, marginTop: 4 }}>{metrics}</div>
+      <div style={{ color, fontWeight: 600, fontSize: 14 }}>{name} <span style={{ color: 'var(--text-3)', fontWeight: 400, fontSize: 12 }}>({weight} of Pitch+)</span></div>
+      <div style={{ color: 'var(--text-2)', fontSize: 13, marginTop: 4 }}>{metrics}</div>
     </div>
   );
 }
@@ -103,10 +103,10 @@ export function FAQ() {
 
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e0e0e8', margin: '0 0 8px 0' }}>
+        <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-1)', margin: '0 0 8px 0' }}>
           Pitch<span style={{ color: '#4a9eff' }}>+</span> Methodology & FAQ
         </h1>
-        <p style={{ color: '#606080', fontSize: 14, margin: 0 }}>
+        <p style={{ color: 'var(--text-3)', fontSize: 14, margin: 0 }}>
           How the models work, what the scores mean, and how to interpret them.
         </p>
       </div>
@@ -123,7 +123,7 @@ export function FAQ() {
           <li><strong>Clipped at [20, 180]</strong> to prevent outlier distortion from very small samples.</li>
           <li>Pitch+ measures <em>how you pitch</em>, not just results. It rewards stuff, movement, command, and deception — not sequencing luck.</li>
         </ul>
-        <p style={{ marginTop: 12, color: '#a0a0b8' }}>
+        <p style={{ marginTop: 12, color: 'var(--text-2)' }}>
           The model is calibrated on all MLB pitchers from 2021–2025 (minimum 100 pitches per season). It is <strong>not</strong> a predictive ERA estimator — it measures observable quality of pitching.
         </p>
       </Accordion>
@@ -191,13 +191,13 @@ export function FAQ() {
           { name: 'Regime Whiff Delta', key: 'regime_whiff_delta', r: '+0.290', yoy: '0.560', note: 'Whiff% when ahead vs behind in count. Measures pitch quality under pressure.' },
           { name: 'In-Zone Swing RV', key: 'in_zone_swing_rv', r: '+0.799', yoy: '0.750', note: 'Swing RV restricted to zone pitches — quality-of-contact suppression.' },
         ].map(({ name, r, yoy, note }) => (
-          <div key={name} style={{ marginBottom: 14, paddingLeft: 12, borderLeft: '2px solid #2a2a3e' }}>
+          <div key={name} style={{ marginBottom: 14, paddingLeft: 12, borderLeft: '2px solid var(--border-plus)' }}>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
-              <span style={{ color: '#e0e0e8', fontWeight: 600, fontSize: 14 }}>{name}</span>
+              <span style={{ color: 'var(--text-1)', fontWeight: 600, fontSize: 14 }}>{name}</span>
               <span style={{ color: '#10b981', fontSize: 12 }}>ERA r={r}</span>
               <span style={{ color: '#60a5fa', fontSize: 12 }}>YoY={yoy}</span>
             </div>
-            <div style={{ color: '#a0a0b8', fontSize: 13, marginTop: 4 }}>{note}</div>
+            <div style={{ color: 'var(--text-2)', fontSize: 13, marginTop: 4 }}>{note}</div>
           </div>
         ))}
       </Accordion>
@@ -235,7 +235,7 @@ export function FAQ() {
           <li style={{ marginBottom: 8 }}>Regress toward the batter's overall season rates (Marcel-style: more observed PA = less regression).</li>
           <li style={{ marginBottom: 8 }}>Compute matchup grade: (projected xwOBA − LG avg) / σ, scaled to [−10, +10].</li>
         </ol>
-        <p style={{ marginTop: 12, color: '#a0a0b8' }}>
+        <p style={{ marginTop: 12, color: 'var(--text-2)' }}>
           <strong>Confidence:</strong> High if ≥30 weighted PA against similar pitchers; Medium if ≥10; Low otherwise.
           Low confidence projections fall back to the batter's vs-hand splits.
         </p>
@@ -249,7 +249,7 @@ export function FAQ() {
           <li><strong>Bat tracking:</strong> Statcast bat speed & swing length data (available 2024–2025 only)</li>
           <li><strong>Markov chain:</strong> Custom absorbing Markov chain over MLB pitch data, computing K/BB/BIP absorption probabilities from each count state</li>
         </ul>
-        <p style={{ marginTop: 12, color: '#a0a0b8', fontSize: 13 }}>
+        <p style={{ marginTop: 12, color: 'var(--text-2)', fontSize: 13 }}>
           All models are open-source and run locally. No third-party analytics APIs are used.
           Data is refreshed whenever the full pipeline is re-run against new Statcast data.
         </p>
@@ -275,8 +275,8 @@ export function FAQ() {
           },
         ].map(({ q, a }) => (
           <div key={q} style={{ marginBottom: 18 }}>
-            <div style={{ color: '#e0e0e8', fontWeight: 600, marginBottom: 5 }}>{q}</div>
-            <div style={{ color: '#a0a0b8', fontSize: 13, lineHeight: 1.6 }}>{a}</div>
+            <div style={{ color: 'var(--text-1)', fontWeight: 600, marginBottom: 5 }}>{q}</div>
+            <div style={{ color: 'var(--text-2)', fontSize: 13, lineHeight: 1.6 }}>{a}</div>
           </div>
         ))}
       </Accordion>

@@ -1,4 +1,4 @@
-import { useState, type ComponentProps } from 'react';
+﻿import { useState, type ComponentProps } from 'react';
 import {
   ScatterChart,
   Scatter,
@@ -73,37 +73,37 @@ function CustomTooltip({ active, payload, pitchTypeNames }: CustomTooltipProps) 
   return (
     <div
       style={{
-        background: '#1a1a2e',
+        background: 'var(--bg-elevated)',
         border: `1px solid ${color}`,
         borderRadius: 6,
         padding: '8px 12px',
-        color: '#e0e0e8',
+        color: 'var(--text-1)',
         fontSize: 12,
         minWidth: 160,
       }}
     >
       <div style={{ color, fontWeight: 700, marginBottom: 4 }}>
         {pitchTypeNames?.[p.pt] ?? p.ptm ?? p.pt}
-        <span style={{ color: '#606080', fontWeight: 400, marginLeft: 6 }}>({p.pt})</span>
+        <span style={{ color: 'var(--text-3)', fontWeight: 400, marginLeft: 6 }}>({p.pt})</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 12px' }}>
-        <span style={{ color: '#a0a0b8' }}>Velo</span>
+        <span style={{ color: 'var(--text-2)' }}>Velo</span>
         <span style={{ textAlign: 'right' }}>{p.v.toFixed(1)} mph</span>
-        <span style={{ color: '#a0a0b8' }}>Spin</span>
+        <span style={{ color: 'var(--text-2)' }}>Spin</span>
         <span style={{ textAlign: 'right' }}>{p.sp.toLocaleString()} rpm</span>
-        <span style={{ color: '#a0a0b8' }}>iVB</span>
+        <span style={{ color: 'var(--text-2)' }}>iVB</span>
         <span style={{ textAlign: 'right' }}>{p.ivb.toFixed(1)}"</span>
-        <span style={{ color: '#a0a0b8' }}>HBreak</span>
+        <span style={{ color: 'var(--text-2)' }}>HBreak</span>
         <span style={{ textAlign: 'right' }}>{p.hb.toFixed(1)}"</span>
-        <span style={{ color: '#a0a0b8' }}>Zone</span>
+        <span style={{ color: 'var(--text-2)' }}>Zone</span>
         <span style={{ textAlign: 'right' }}>{zoneName} ({p.z})</span>
-        <span style={{ color: '#a0a0b8' }}>Count</span>
+        <span style={{ color: 'var(--text-2)' }}>Count</span>
         <span style={{ textAlign: 'right' }}>{p.b}-{p.s}</span>
       </div>
-      <div style={{ marginTop: 4, borderTop: '1px solid #2a2a3e', paddingTop: 4 }}>
-        <div style={{ color: result === 'Whiff' ? '#d44040' : '#a0a0b8', fontWeight: 600 }}>{result}</div>
-        {p.bn && <div style={{ color: '#606080', fontSize: 11 }}>vs {p.bn} ({p.bh})</div>}
-        {p.desc && <div style={{ color: '#606080', fontSize: 11 }}>{p.desc}</div>}
+      <div style={{ marginTop: 4, borderTop: '1px solid var(--border-plus)', paddingTop: 4 }}>
+        <div style={{ color: result === 'Whiff' ? '#d44040' : 'var(--text-2)', fontWeight: 600 }}>{result}</div>
+        {p.bn && <div style={{ color: 'var(--text-3)', fontSize: 11 }}>vs {p.bn} ({p.bh})</div>}
+        {p.desc && <div style={{ color: 'var(--text-3)', fontSize: 11 }}>{p.desc}</div>}
       </div>
     </div>
   );
@@ -138,7 +138,7 @@ export function PitchLocationChart({
 
   if (pitches.length === 0) {
     return (
-      <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#606080' }}>
+      <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)' }}>
         No pitch location data available
       </div>
     );
@@ -188,15 +188,15 @@ export function PitchLocationChart({
             onClick={resetZoom}
             style={{
               padding: '3px 8px', fontSize: 11, borderRadius: 4,
-              border: '1px solid #2a2a3e', background: 'transparent',
-              color: '#a0a0b8', cursor: 'pointer',
+              border: '1px solid var(--border-plus)', background: 'transparent',
+              color: 'var(--text-2)', cursor: 'pointer',
             }}
           >
             ↺ Reset zoom
           </button>
         )}
         {!isZoomed && (
-          <span style={{ fontSize: 10, color: '#404060' }}>Drag to zoom</span>
+          <span style={{ fontSize: 10, color: 'var(--text-4)' }}>Drag to zoom</span>
         )}
       </div>
 
@@ -207,22 +207,22 @@ export function PitchLocationChart({
           onMouseMove={handleMouseMove as ChartMouseEvent}
           onMouseUp={handleMouseUp}
         >
-          <CartesianGrid stroke="#1e1e2e" strokeDasharray="2 2" />
+          <CartesianGrid stroke="var(--border)" strokeDasharray="2 2" />
           <XAxis
             dataKey="px"
             type="number"
             name="Plate X"
             domain={xDomain}
-            label={{ value: 'Plate X (ft)', position: 'insideBottom', offset: -10, fill: '#a0a0b8', fontSize: 12 }}
-            tick={{ fill: '#a0a0b8', fontSize: 11 }}
+            label={{ value: 'Plate X (ft)', position: 'insideBottom', offset: -10, fill: 'var(--text-2)', fontSize: 12 }}
+            tick={{ fill: 'var(--text-2)', fontSize: 11 }}
           />
           <YAxis
             dataKey="pz"
             type="number"
             name="Plate Z"
             domain={yDomain}
-            label={{ value: 'Plate Z (ft)', angle: -90, position: 'insideLeft', fill: '#a0a0b8', fontSize: 12 }}
-            tick={{ fill: '#a0a0b8', fontSize: 11 }}
+            label={{ value: 'Plate Z (ft)', angle: -90, position: 'insideLeft', fill: 'var(--text-2)', fontSize: 12 }}
+            tick={{ fill: 'var(--text-2)', fontSize: 11 }}
           />
           {/* Strike zone */}
           <ReferenceArea
@@ -230,7 +230,7 @@ export function PitchLocationChart({
             stroke="#4a9eff" strokeWidth={1.5} strokeDasharray="4 2"
             fill="rgba(74,158,255,0.04)"
           />
-          <ReferenceLine x={0} stroke="#2a2a3e" strokeDasharray="3 3" />
+          <ReferenceLine x={0} stroke="var(--border-plus)" strokeDasharray="3 3" />
           <Tooltip content={<CustomTooltip {...(pitchTypeNames && { pitchTypeNames })} />} />
 
           {/* Zoom selection overlay */}
@@ -269,7 +269,7 @@ export function PitchLocationChart({
               onClick={() => onPitchTypeClick?.(pt)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 4, fontSize: 11,
-                color: isActive ? '#e0e0e8' : '#404060',
+                color: isActive ? 'var(--text-1)' : 'var(--text-4)',
                 cursor: onPitchTypeClick ? 'pointer' : 'default',
                 padding: '2px 6px', borderRadius: 4,
                 background: isActive && highlightedPitchTypes?.length ? 'rgba(74,158,255,0.1)' : 'transparent',

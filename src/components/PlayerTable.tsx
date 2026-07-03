@@ -68,11 +68,11 @@ function SortHeader({ label, col, title, sortKey, sortAsc, onSort }: SortHeaderP
         cursor: 'pointer',
         userSelect: 'none',
         whiteSpace: 'nowrap',
-        color: active ? '#4a9eff' : '#a0a0b8',
+        color: active ? '#4a9eff' : 'var(--text-2)',
         fontWeight: active ? 700 : 500,
         padding: '8px 10px',
-        borderBottom: '2px solid #1e1e2e',
-        background: '#14141f',
+        borderBottom: '2px solid var(--border)',
+        background: 'var(--bg-surface)',
         position: 'sticky',
         top: 0,
         zIndex: 1,
@@ -193,11 +193,11 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
                   cursor: 'pointer',
                   userSelect: 'none',
                   whiteSpace: 'nowrap',
-                  color: sortKey === 'rank' ? '#4a9eff' : '#a0a0b8',
+                  color: sortKey === 'rank' ? '#4a9eff' : 'var(--text-2)',
                   fontWeight: sortKey === 'rank' ? 700 : 500,
                   padding: '8px 10px',
-                  borderBottom: '2px solid #1e1e2e',
-                  background: '#14141f',
+                  borderBottom: '2px solid var(--border)',
+                  background: 'var(--bg-surface)',
                   position: 'sticky',
                   top: 0,
                   left: 0,
@@ -213,11 +213,11 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
                 cursor: 'pointer',
                 userSelect: 'none',
                 whiteSpace: 'nowrap',
-                color: sortKey === 'pitcher_name' ? '#4a9eff' : '#a0a0b8',
+                color: sortKey === 'pitcher_name' ? '#4a9eff' : 'var(--text-2)',
                 fontWeight: sortKey === 'pitcher_name' ? 700 : 500,
                 padding: '8px 10px',
-                borderBottom: '2px solid #1e1e2e',
-                background: '#14141f',
+                borderBottom: '2px solid var(--border)',
+                background: 'var(--bg-surface)',
                 position: 'sticky',
                 top: 0,
                 left: showRank ? 40 : 0,
@@ -227,7 +227,7 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
               Name{sortKey === 'pitcher_name' && <span style={{ marginLeft: 4, fontSize: 10 }}>{sortAsc ? '▲' : '▼'}</span>}
             </th>
             <SortHeader {...sortHeaderCtx} label="Team" col="pitcher_team" />
-            <th style={{ padding: '8px 6px', color: '#a0a0b8', borderBottom: '2px solid #1e1e2e', background: '#14141f', position: 'sticky', top: 0, zIndex: 1 }}>Hand</th>
+            <th style={{ padding: '8px 6px', color: 'var(--text-2)', borderBottom: '2px solid var(--border)', background: 'var(--bg-surface)', position: 'sticky', top: 0, zIndex: 1 }}>Hand</th>
             <SortHeader {...sortHeaderCtx} label="Pitch+" col="pitch_plus" />
             {pitchTypeFilter ? (
               <>
@@ -264,23 +264,23 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
                 {...rowNavProps(navigate, `/player/${p.pitcher_id}`)}
                 style={{
                   cursor: 'pointer',
-                  borderBottom: '1px solid #1e1e2e',
-                  background: idx === highlightedRow ? '#1a1a2e' : undefined,
+                  borderBottom: '1px solid var(--border)',
+                  background: idx === highlightedRow ? 'var(--bg-elevated)' : undefined,
                 }}
                 className="table-row-hover"
               >
                 {showRank && (
-                  <td style={{ padding: '6px 10px', color: '#606080', textAlign: 'center', position: 'sticky', left: 0, background: '#0a0a0f', zIndex: 1 }}>
+                  <td style={{ padding: '6px 10px', color: 'var(--text-3)', textAlign: 'center', position: 'sticky', left: 0, background: 'var(--bg-base)', zIndex: 1 }}>
                     {globalIdx + 1}
                   </td>
                 )}
-                <td style={{ padding: '6px 10px', color: '#e0e0e8', fontWeight: 500, whiteSpace: 'nowrap', position: 'sticky', left: showRank ? 40 : 0, background: '#0a0a0f', zIndex: 1 }}>
+                <td style={{ padding: '6px 10px', color: 'var(--text-1)', fontWeight: 500, whiteSpace: 'nowrap', position: 'sticky', left: showRank ? 40 : 0, background: 'var(--bg-base)', zIndex: 1 }}>
                   {p.pitcher_name}
                 </td>
-                <td style={{ padding: '6px 10px', color: '#a0a0b8', textAlign: 'center' }}>
+                <td style={{ padding: '6px 10px', color: 'var(--text-2)', textAlign: 'center' }}>
                   {p.pitcher_team}
                 </td>
-                <td style={{ padding: '6px 10px', color: '#a0a0b8', textAlign: 'center' }}>
+                <td style={{ padding: '6px 10px', color: 'var(--text-2)', textAlign: 'center' }}>
                   {p.pitcher_hand}
                 </td>
                 <td style={{ padding: '6px 8px', textAlign: 'center' }}>
@@ -288,13 +288,13 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
                 </td>
                 {pitchTypeFilter ? (
                   <>
-                    <td style={{ padding: '6px 10px', color: '#a0a0b8', textAlign: 'center' }}>
+                    <td style={{ padding: '6px 10px', color: 'var(--text-2)', textAlign: 'center' }}>
                       {ptRow ? `${(ptRow.usage_pct * 100).toFixed(1)}%` : '—'}
                     </td>
-                    <td style={{ padding: '6px 10px', color: '#e0e0e8', textAlign: 'center' }}>
+                    <td style={{ padding: '6px 10px', color: 'var(--text-1)', textAlign: 'center' }}>
                       {ptRow ? ptRow.velo.toFixed(1) : '—'}
                     </td>
-                    <td style={{ padding: '6px 10px', color: '#a0a0b8', textAlign: 'center' }}>
+                    <td style={{ padding: '6px 10px', color: 'var(--text-2)', textAlign: 'center' }}>
                       {ptRow ? Math.round(ptRow.spin).toLocaleString() : '—'}
                     </td>
                     <td style={{ padding: '6px 10px', color: pitchColor(pitchTypeFilter), textAlign: 'center' }}>
@@ -303,7 +303,7 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
                     <td style={{ padding: '6px 10px', color: pitchColor(pitchTypeFilter), textAlign: 'center' }}>
                       {ptRow ? ptRow.hb.toFixed(1) : '—'}
                     </td>
-                    <td style={{ padding: '6px 10px', color: '#e0e0e8', textAlign: 'center', fontWeight: ptRow && ptRow.whiff_rate > 0.30 ? 700 : 400 }}>
+                    <td style={{ padding: '6px 10px', color: 'var(--text-1)', textAlign: 'center', fontWeight: ptRow && ptRow.whiff_rate > 0.30 ? 700 : 400 }}>
                       {ptRow ? `${(ptRow.whiff_rate * 100).toFixed(1)}%` : '—'}
                     </td>
                   </>
@@ -334,7 +334,7 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
                         <span style={{
                           position: 'relative',
                           zIndex: 1,
-                          color: '#e0e0e8',
+                          color: 'var(--text-1)',
                           fontWeight: score >= 115 ? 700 : 400,
                         }}>
                           {score}
@@ -343,13 +343,13 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
                     );
                   })
                 )}
-                <td style={{ padding: '6px 10px', color: '#a0a0b8', textAlign: 'right' }}>
+                <td style={{ padding: '6px 10px', color: 'var(--text-2)', textAlign: 'right' }}>
                   {pitchTypeFilter ? (ptRow?.n.toLocaleString() ?? '—') : p.n_pitches.toLocaleString()}
                 </td>
-                <td style={{ padding: '6px 10px', color: '#a0a0b8', textAlign: 'right' }}>
+                <td style={{ padding: '6px 10px', color: 'var(--text-2)', textAlign: 'right' }}>
                   {p.ip != null ? p.ip.toFixed(1) : '—'}
                 </td>
-                <td style={{ padding: '6px 10px', color: '#a0a0b8', textAlign: 'center' }}>
+                <td style={{ padding: '6px 10px', color: 'var(--text-2)', textAlign: 'center' }}>
                   {p.n_games}
                 </td>
               </tr>
@@ -372,16 +372,16 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
             style={{
               padding: '4px 10px',
               fontSize: 12,
-              border: '1px solid #2a2a3e',
+              border: '1px solid var(--border-plus)',
               borderRadius: 4,
               background: 'transparent',
-              color: page === 0 ? '#404060' : '#a0a0b8',
+              color: page === 0 ? 'var(--text-4)' : 'var(--text-2)',
               cursor: page === 0 ? 'default' : 'pointer',
             }}
           >
             Prev
           </button>
-          <span style={{ color: '#606080', fontSize: 12 }}>
+          <span style={{ color: 'var(--text-3)', fontSize: 12 }}>
             {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, sorted.length)} of {sorted.length}
           </span>
           <button
@@ -390,10 +390,10 @@ export function PlayerTable({ pitchers, showRank = true, pitchTypeFilter, pitchT
             style={{
               padding: '4px 10px',
               fontSize: 12,
-              border: '1px solid #2a2a3e',
+              border: '1px solid var(--border-plus)',
               borderRadius: 4,
               background: 'transparent',
-              color: (page + 1) * PAGE_SIZE >= sorted.length ? '#404060' : '#a0a0b8',
+              color: (page + 1) * PAGE_SIZE >= sorted.length ? 'var(--text-4)' : 'var(--text-2)',
               cursor: (page + 1) * PAGE_SIZE >= sorted.length ? 'default' : 'pointer',
             }}
           >

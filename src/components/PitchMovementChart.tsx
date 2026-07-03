@@ -1,4 +1,4 @@
-import {
+﻿import {
   ScatterChart,
   Scatter,
   XAxis,
@@ -55,11 +55,11 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   return (
     <div
       style={{
-        background: '#1a1a2e',
+        background: 'var(--bg-elevated)',
         border: `1px solid ${color}`,
         borderRadius: 6,
         padding: '8px 12px',
-        color: '#e0e0e8',
+        color: 'var(--text-1)',
         fontSize: 13,
       }}
     >
@@ -79,7 +79,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 export function PitchMovementChart({ pitches, height = 320 }: Props) {
   if (!pitches.length) {
     return (
-      <div style={{ color: '#606080', textAlign: 'center', padding: 40 }}>
+      <div style={{ color: 'var(--text-3)', textAlign: 'center', padding: 40 }}>
         No pitch data available
       </div>
     );
@@ -89,28 +89,28 @@ export function PitchMovementChart({ pitches, height = 320 }: Props) {
     <div>
       <ResponsiveContainer width="100%" height={height}>
         <ScatterChart margin={{ top: 10, right: 20, bottom: 30, left: 20 }}>
-          <CartesianGrid stroke="#1e1e2e" />
+          <CartesianGrid stroke="var(--border)" />
           <XAxis
             dataKey="hb"
             type="number"
             name="HBreak"
-            label={{ value: 'Horizontal Break (in)', position: 'insideBottom', offset: -10, fill: '#a0a0b8', fontSize: 12 }}
-            tick={{ fill: '#a0a0b8', fontSize: 11 }}
+            label={{ value: 'Horizontal Break (in)', position: 'insideBottom', offset: -10, fill: 'var(--text-2)', fontSize: 12 }}
+            tick={{ fill: 'var(--text-2)', fontSize: 11 }}
             domain={['auto', 'auto']}
           />
           <YAxis
             dataKey="ivb"
             type="number"
             name="iVB"
-            label={{ value: 'iVB (in)', angle: -90, position: 'insideLeft', fill: '#a0a0b8', fontSize: 12 }}
-            tick={{ fill: '#a0a0b8', fontSize: 11 }}
+            label={{ value: 'iVB (in)', angle: -90, position: 'insideLeft', fill: 'var(--text-2)', fontSize: 12 }}
+            tick={{ fill: 'var(--text-2)', fontSize: 11 }}
             domain={['auto', 'auto']}
           />
           <ReferenceLine x={0} stroke="#3a3a5a" strokeDasharray="3 3" />
           <ReferenceLine y={0} stroke="#3a3a5a" strokeDasharray="3 3" />
           <Tooltip content={<CustomTooltip />} />
           <Legend
-            formatter={(value) => <span style={{ color: '#a0a0b8', fontSize: 12 }}>{value}</span>}
+            formatter={(value) => <span style={{ color: 'var(--text-2)', fontSize: 12 }}>{value}</span>}
           />
           {pitches.map((p) => (
             <Scatter
@@ -123,7 +123,7 @@ export function PitchMovementChart({ pitches, height = 320 }: Props) {
           ))}
         </ScatterChart>
       </ResponsiveContainer>
-      <p style={{ textAlign: 'center', color: '#606080', fontSize: 12, marginTop: 4 }}>
+      <p style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 12, marginTop: 4 }}>
         Bubble size = usage%. From pitcher's perspective.
       </p>
     </div>

@@ -659,6 +659,27 @@ export interface MatchupProjection {
   components?: HrComponents;
 }
 
+// ─── Daily Matchup Slate (models/daily_matchups.py) ─────────────────────────
+
+export interface DailyMatchupSide {
+  team: string;
+  probable: { id: number; name: string } | null;
+}
+
+export interface DailyMatchupGame {
+  game_pk: number;
+  game_time: string | null;   // UTC ISO — client localizes
+  status: string | null;
+  away: DailyMatchupSide;
+  home: DailyMatchupSide;
+}
+
+export interface DailyMatchupsDoc {
+  date: string;               // YYYY-MM-DD the slate was pulled for
+  generated_at: string;
+  games: DailyMatchupGame[];
+}
+
 // ─── Per-Pitch-Type Grades ──────────────────────────────────────────────────
 
 export interface PitchTypeGrade {

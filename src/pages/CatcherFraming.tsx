@@ -1,14 +1,18 @@
-/**
- * Catcher Framing — Called Strikes Over Expected (CSOE per 100 taken pitches).
+﻿/**
+ * Catcher Framing Leaderboard — CSOE framing + ABS challenge run value.
  *
- * The Python side (models/catcher_framing.py) fits a called-strike probability
- * model (VAA/HAA, plate location, count — no catcher identity) with out-of-fold
- * predictions, then credits each catcher with actual − expected. This page is
- * the leaderboard; expanding a row reveals WHERE the catcher wins or loses
- * strikes: a shadow-zone residual map (blurred cell grid ≈ smoothed surface).
+ * Framing: models/catcher_framing.py fits a called-strike probability model
+ * (VAA/HAA, plate location, count — no catcher identity) with out-of-fold
+ * predictions, then credits each catcher with actual − expected per 100 taken
+ * pitches. Expanding a row reveals WHERE the catcher wins or loses strikes:
+ * a shadow-zone residual map (blurred cell grid ≈ smoothed surface).
+ *
+ * Challenges: models/catcher_challenges.py prices every catcher-initiated ABS
+ * challenge (2026+) at the count-dependent ball→strike run swing; successful
+ * overturns accumulate as runs saved.
  */
 import { useState } from 'react';
-import { useCatchers, type CatcherRow } from '../hooks/useArsenal';
+import { useCatchers, useChallenges, type CatcherRow, type ChallengeRow } from '../hooks/useArsenal';
 import { heatColor } from '../data/arsenal';
 
 const YEARS = [2026, 2025, 2024, 2023, 2022, 2021];
@@ -18,6 +22,7 @@ export function CatcherFraming() {
   const [year, setYear] = useState(2026);
   const [open, setOpen] = useState<number | null>(null);
   const doc = useCatchers(year);
+  const challenges = useChallenges(year);
 
   if (doc === 'loading') return <Center msg="Loading framing data…" />;
   if (doc === 'missing') return <Center msg={`No catcher data for ${year} — run models/catcher_framing.py ${year}`} />;
@@ -30,8 +35,8 @@ export function CatcherFraming() {
         CALLED STRIKES OVER EXPECTED · PER 100 TAKEN PITCHES
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, flexWrap: 'wrap', marginBottom: 4 }}>
-        <h1 style={{ ...mono, fontSize: 34, fontWeight: 700, letterSpacing: 3, margin: 0 }}>
-          FRAMING BOARD
+        <h1 style={{ ...mono, fontSize: 30, fontWeight: 700, letterSpacing: 3, margin: 0 }}>
+          CATCHER FRAMING LEADERBOARD
         </h1>
         <select value={year} onChange={e => { setYear(Number(e.target.value)); setOpen(null); }} style={selStyle}>
           {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
@@ -54,6 +59,82 @@ export function CatcherFraming() {
           />
         ))}
       </div>
+
+      <ChallengeBoard challenges={challenges} year={year} />
+    </div>
+  );
+}
+
+// ── ABS challenge run value ───────────────────────────────────────────────────
+
+function ChallengeBoard({ challenges, year }: {
+  challenges: ReturnType<typeof useChallenges>; year: number;
+}) {
+  if (challenges === 'loading') return null;
+  if (challenges === 'missing') {
+    return year >= 2026 ? (
+      <div style={{ marginTop: 40, ...mono, fontSize: 12, color: 'var(--text-4)' }}>
+        No challenge data for {year} — run models/catcher_challenges.py --year {year}
+      </div>
+    ) : null;   // pre-ABS seasons have no challenge system
+  }
+
+  const lg = challenges.league;
+  const maxRuns = Math.max(0.5, ...challenges.catchers.map(c => Math.abs(c.runs_saved)));
+
+  return (
+    <div style={{ marginTop: 48 }}>
+      <div style={{ ...mono, fontSize: 12, letterSpacing: 2, color: 'var(--accent)', marginBottom: 6 }}>
+        ABS CHALLENGE SYSTEM · RUN VALUE ON CATCHER CHALLENGES
+      </div>
+      <h2 style={{ ...mono, fontSize: 22, fontWeight: 700, letterSpacing: 3, margin: '0 0 4px' }}>
+        CHALLENGE VALUE
+      </h2>
+      <div style={{ fontSize: 12.5, color: 'var(--text-3)', marginBottom: 18, maxWidth: 640 }}>
+        Every catcher-initiated challenge priced at the count-dependent ball→strike run swing
+        (a 3-2 overturn flips a walk into a strikeout ≈ 0.6 runs; an 0-0 overturn ≈ 0.08).
+        League: <span style={{ ...mono, color: 'var(--text-2)' }}>{lg.catcher_challenges.toLocaleString()}</span> challenges,{' '}
+        <span style={{ ...mono, color: 'var(--text-2)' }}>{lg.success_pct.toFixed(1)}%</span> overturned,{' '}
+        <span style={{ ...mono, color: 'var(--positive)' }}>+{lg.total_runs_saved.toFixed(1)}</span> runs saved.
+        Through {challenges.generated_from}.
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {challenges.catchers.map((c, i) => (
+          <ChallengeRowView key={c.id} c={c} rank={i + 1} maxRuns={maxRuns} leagueSuccess={lg.success_pct} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ChallengeRowView({ c, rank, maxRuns, leagueSuccess }: {
+  c: ChallengeRow; rank: number; maxRuns: number; leagueSuccess: number;
+}) {
+  const barW = Math.abs(c.runs_saved) / maxRuns * 200;
+  const aboveLg = c.success_pct >= leagueSuccess;
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12, padding: '8px 14px',
+      background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8,
+    }}>
+      <span style={{ ...mono, fontSize: 12, color: 'var(--text-4)', width: 26, textAlign: 'right' }}>{rank}</span>
+      <span style={{ fontSize: 14, fontWeight: 600, width: 190, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {c.name}
+        <span style={{ ...mono, fontSize: 11, color: 'var(--text-4)', marginLeft: 7 }}>{c.team}</span>
+      </span>
+      <span style={{ ...mono, fontSize: 15, fontWeight: 700, width: 66, textAlign: 'right', color: 'var(--positive)' }}>
+        +{c.runs_saved.toFixed(2)}
+      </span>
+      <div style={{ flex: '0 0 210px', height: 8 }}>
+        <div style={{ width: barW, height: 8, background: '#14a276', borderRadius: 4 }} />
+      </div>
+      <span style={{ ...mono, fontSize: 11.5, width: 110, textAlign: 'right', color: aboveLg ? 'var(--text-2)' : 'var(--text-4)' }}>
+        {c.success_pct.toFixed(1)}% won
+      </span>
+      <span style={{ ...mono, fontSize: 11.5, color: 'var(--text-4)', width: 110, textAlign: 'right' }}>
+        {c.n_overturned}/{c.n_challenges} chal
+      </span>
     </div>
   );
 }
@@ -70,7 +151,7 @@ function CatcherRowView({ c, rank, maxAbs, open, onToggle, delay }: {
         style={{
           display: 'flex', alignItems: 'center', gap: 12, padding: '9px 14px',
           background: open ? 'var(--bg-elevated)' : 'var(--bg-surface)',
-          border: '1px solid #1e2e44', borderRadius: 8, cursor: 'pointer',
+          border: '1px solid var(--border-plus)', borderRadius: 8, cursor: 'pointer',
         }}
       >
         <span style={{ ...mono, fontSize: 12, color: 'var(--text-4)', width: 26, textAlign: 'right' }}>{rank}</span>
@@ -159,6 +240,6 @@ function Center({ msg }: { msg: string }) {
 }
 
 const selStyle: React.CSSProperties = {
-  background: 'var(--bg-input)', color: 'var(--text-1)', border: '1px solid #1e2e44',
+  background: 'var(--bg-input)', color: 'var(--text-1)', border: '1px solid var(--border-plus)',
   borderRadius: 8, padding: '8px 10px', fontSize: 13, fontFamily: 'var(--sans)',
 };

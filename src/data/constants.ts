@@ -1,4 +1,4 @@
-import type { DimensionKey, MetricKey, ScoredMetricKey } from '../types';
+﻿import type { DimensionKey, MetricKey, ScoredMetricKey } from '../types';
 
 // ─── Metric Labels ─────────────────────────────────────────────────────────
 
@@ -260,7 +260,8 @@ export const PITCH_TYPE_COLORS: Record<string, string> = {
 };
 
 export function pitchColor(type: string): string {
-  return PITCH_TYPE_COLORS[type] ?? '#e0e0e8';
+  // literal (not a CSS var): consumed by canvas fillStyle in chart components
+  return PITCH_TYPE_COLORS[type] ?? '#e4e4e7';
 }
 
 // ─── 20-80 Scouting Grade Scale ──────────────────────────────────────────

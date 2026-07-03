@@ -1,4 +1,4 @@
-import {
+﻿import {
   RadarChart,
   Radar,
   PolarGrid,
@@ -80,23 +80,23 @@ export function DimensionRadarChart({
     <div>
       <ResponsiveContainer width="100%" height={height}>
         <RadarChart data={data} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
-          <PolarGrid stroke="#2a2a3e" />
+          <PolarGrid stroke="var(--border-plus)" />
           <PolarAngleAxis
             dataKey="subject"
-            tick={{ fill: '#a0a0b8', fontSize: 12 }}
+            tick={{ fill: 'var(--text-2)', fontSize: 12 }}
           />
           <PolarRadiusAxis
             angle={30}
             domain={[RADAR_MIN, RADAR_MAX]}
-            tick={{ fill: '#606080', fontSize: 10 }}
+            tick={{ fill: 'var(--text-3)', fontSize: 10 }}
             tickCount={5}
           />
           <Tooltip
             contentStyle={{
-              background: '#1a1a2e',
+              background: 'var(--bg-elevated)',
               border: '1px solid #2a2a4a',
               borderRadius: 6,
-              color: '#e0e0e8',
+              color: 'var(--text-1)',
             }}
             formatter={(value, name, item) => {
               if (name === 'ciLow' || name === 'ciHigh') return null;

@@ -1,4 +1,4 @@
-import { pitchColor, scoreColorContinuous } from '../data/constants';
+﻿import { pitchColor, scoreColorContinuous } from '../data/constants';
 import type { TTOPitcherData, TTOMetrics } from '../data/useTTOData';
 
 interface Props {
@@ -20,7 +20,7 @@ function TrendBar({ tto1, tto3, metric }: { tto1: number | null; tto3: number | 
   // For whiff_rate: decline (negative delta) is bad → red
   // For xwoba: increase (positive delta) is bad → red
   const isBad = metric === 'whiff_rate' ? delta < 0 : delta > 0;
-  const color = Math.abs(delta) < 0.01 ? '#404060' : isBad ? '#c85a5a' : '#4a9eff';
+  const color = Math.abs(delta) < 0.01 ? 'var(--text-4)' : isBad ? '#c85a5a' : '#4a9eff';
   return (
     <span style={{ color, fontSize: 10, fontFamily: 'monospace', fontWeight: 600 }}>
       {delta >= 0 ? '+' : ''}{(delta * 100).toFixed(1)}%
@@ -47,7 +47,7 @@ function PassBars({ ptData, metric }: { ptData: Record<string, TTOMetrics>; metr
             <div style={{ flex: 1, height: 8, background: '#12121e', borderRadius: 2, overflow: 'hidden' }}>
               <div style={{ width: `${pct}%`, height: '100%', background: TTO_COLORS[i], borderRadius: 2 }} />
             </div>
-            <div style={{ width: 36, fontSize: 10, fontFamily: 'monospace', color: '#a0a0b8', textAlign: 'right' }}>
+            <div style={{ width: 36, fontSize: 10, fontFamily: 'monospace', color: 'var(--text-2)', textAlign: 'right' }}>
               {fmt(v, typeof v === 'number' && metric !== 'xwoba')}
             </div>
           </div>
@@ -74,7 +74,7 @@ export function TTOChart({ data, pitchTypeNames }: Props) {
       {data.tto_resilience != null && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <div>
-            <div style={{ fontSize: 11, color: '#606080', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>
               TTO Resilience
             </div>
             <span style={{
@@ -95,10 +95,10 @@ export function TTOChart({ data, pitchTypeNames }: Props) {
                     <div style={{ fontSize: 10, color: TTO_COLORS[i], textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 3 }}>
                       {TTO_LABELS[`tto${k}`]}
                     </div>
-                    <div style={{ fontSize: 12, fontFamily: 'monospace', color: '#e0e0e8' }}>
+                    <div style={{ fontSize: 12, fontFamily: 'monospace', color: 'var(--text-1)' }}>
                       {fmt(m.whiff_rate, true)} whiff
                     </div>
-                    <div style={{ fontSize: 11, color: '#606080' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
                       {m.n} pitches
                     </div>
                   </div>
@@ -119,7 +119,7 @@ export function TTOChart({ data, pitchTypeNames }: Props) {
       {/* Per-pitch-type breakdown */}
       {ptKeys.length > 0 && (
         <div>
-          <div style={{ fontSize: 11, color: '#606080', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
             By Pitch Type — Whiff%
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
@@ -138,7 +138,7 @@ export function TTOChart({ data, pitchTypeNames }: Props) {
                       borderRadius: 4, padding: '1px 6px',
                       fontSize: 10, fontFamily: 'monospace', color,
                     }}>{pt}</span>
-                    <span style={{ fontSize: 10, color: '#404060' }}>
+                    <span style={{ fontSize: 10, color: 'var(--text-4)' }}>
                       {pitchTypeNames?.[pt] ?? ''}
                     </span>
                     <TrendBar
@@ -158,7 +158,7 @@ export function TTOChart({ data, pitchTypeNames }: Props) {
       {/* Zone breakdown */}
       {Object.keys(data.by_zone).length > 0 && (
         <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 11, color: '#606080', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
             By Zone — xwOBA Against
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
@@ -166,8 +166,8 @@ export function TTOChart({ data, pitchTypeNames }: Props) {
               const zd = data.by_zone[zone];
               if (!zd) return null;
               return (
-                <div key={zone} style={{ background: '#0e0e1c', border: '1px solid #1e1e2e', borderRadius: 8, padding: '10px 12px' }}>
-                  <div style={{ fontSize: 10, color: '#606080', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
+                <div key={zone} style={{ background: '#0e0e1c', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px' }}>
+                  <div style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
                     {zone}
                   </div>
                   <PassBars ptData={zd} metric="xwoba" />

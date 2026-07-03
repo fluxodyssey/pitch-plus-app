@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useData } from '../data/useData';
 import { usePitchData } from '../data/usePitchData';
@@ -21,6 +21,9 @@ import { PitchArsenal } from '../components/PitchArsenal';
 import { ArsenalSimulator } from '../components/ArsenalSimulator';
 import { SequenceMatrix } from '../components/SequenceMatrix';
 import { VelocityDistribution } from '../components/VelocityDistribution';
+import { PitchLocationChart } from '../components/PitchLocationChart';
+import { PitchHeatmap } from '../components/PitchHeatmap';
+import { PitchGradesPanel } from '../components/PitchGradesPanel';
 import { SeasonHistory } from '../components/SeasonHistory';
 import { SimilarPitchers } from '../components/SimilarPitchers';
 import { CountStateHeatmap } from '../components/CountStateHeatmap';
@@ -97,16 +100,16 @@ function DimensionPanel({
       >
         <span className="dim-panel-name">{DIMENSION_LABELS[dimKey]}</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ color: '#606080', fontSize: 12 }}>weight {Math.round(weight * 100)}%</span>
+          <span style={{ color: 'var(--text-3)', fontSize: 12 }}>weight {Math.round(weight * 100)}%</span>
           {hasFilters && filteredScore != null && (
             <span className="comparison-indicator">
               <span style={{ color: gradeColor(filteredScore) }}>{filteredScore}</span>
-              <span style={{ color: '#404060' }}> | </span>
-              <span style={{ color: '#606080', fontSize: 10 }}>Full: {dim.score}</span>
+              <span style={{ color: 'var(--text-4)' }}> | </span>
+              <span style={{ color: 'var(--text-3)', fontSize: 10 }}>Full: {dim.score}</span>
             </span>
           )}
           {(!hasFilters || filteredScore == null) && <GradeBadge score={dim.score} size="sm" />}
-          <span style={{ color: '#606080', fontSize: 14 }}>{open ? '▲' : '▼'}</span>
+          <span style={{ color: 'var(--text-3)', fontSize: 14 }}>{open ? '▲' : '▼'}</span>
         </span>
       </button>
 
@@ -126,7 +129,7 @@ function DimensionPanel({
                   {isFullSeasonOnly && hasFilters && (
                     <span
                       title="Full season value — not affected by filters"
-                      style={{ color: '#606080', fontSize: 10, marginLeft: 4 }}
+                      style={{ color: 'var(--text-3)', fontSize: 10, marginLeft: 4 }}
                     >
                       [FS]
                     </span>
@@ -135,9 +138,9 @@ function DimensionPanel({
                 <span className="metric-raw">
                   {hasFilters && !isFullSeasonOnly && filteredVal != null ? (
                     <span className="comparison-indicator" style={{ fontSize: 11 }}>
-                      <span style={{ color: '#e0e0e8' }}>{formatRaw(metricKey, filteredVal)}</span>
-                      <span style={{ color: '#404060' }}> | </span>
-                      <span style={{ color: '#606080', fontSize: 10 }}>{formatRaw(metricKey, mg.raw)}</span>
+                      <span style={{ color: 'var(--text-1)' }}>{formatRaw(metricKey, filteredVal)}</span>
+                      <span style={{ color: 'var(--text-4)' }}> | </span>
+                      <span style={{ color: 'var(--text-3)', fontSize: 10 }}>{formatRaw(metricKey, mg.raw)}</span>
                     </span>
                   ) : (
                     formatRaw(metricKey, mg.raw)
@@ -418,7 +421,7 @@ function PlayerDetailInner({
             {/* Player info */}
             <div style={{ flex: 1, minWidth: 220 }}>
               <h1 style={{ margin: '0 0 4px', fontSize: 28, letterSpacing: -0.5 }}>{pitcher.pitcher_name}</h1>
-              <p style={{ margin: 0, color: '#a0a0b8', fontSize: 13 }}>
+              <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>
                 P &nbsp;|&nbsp; {pitcher.pitcher_team} &nbsp;|&nbsp; {pitcher.pitcher_hand === 'L' ? 'LHP' : pitcher.pitcher_hand === 'R' ? 'RHP' : 'Switch'}
               </p>
               <div style={{ display: 'flex', gap: 20, marginTop: 14, flexWrap: 'wrap' }}>
@@ -431,8 +434,8 @@ function PlayerDetailInner({
                   { label: 'Velo', value: pitcher.metric_grades.avg_perceived_velo ? `${pitcher.metric_grades.avg_perceived_velo.raw.toFixed(1)}` : '—' },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'monospace', color: '#e0e0e8' }}>{value}</div>
-                    <div style={{ fontSize: 10, color: '#606080', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 1 }}>{label}</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-1)' }}>{value}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 1 }}>{label}</div>
                   </div>
                 ))}
               </div>
@@ -443,7 +446,7 @@ function PlayerDetailInner({
               <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                 <div style={{ textAlign: 'center' }}>
                   <GradeBadge score={displayPitchPlus} size="lg" />
-                  <div style={{ color: '#606080', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 3 }}>
+                  <div style={{ color: 'var(--text-3)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 3 }}>
                     {hasFilters ? 'Pitch+ (filtered)' : 'Pitch+'}
                   </div>
                 </div>
@@ -467,7 +470,7 @@ function PlayerDetailInner({
                           }}>
                             {Math.round(expectedPitchPlus)}
                           </div>
-                          <div style={{ color: '#606080', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 3 }}>
+                          <div style={{ color: 'var(--text-3)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 3 }}>
                             xPitch+
                           </div>
                           <div style={{ fontSize: 11, fontWeight: 700, color: deltaColor, marginTop: 1 }}>
@@ -480,7 +483,7 @@ function PlayerDetailInner({
                 )}
               </div>
               {hasFilters && filteredScores?.pitchPlus != null && (
-                <div style={{ color: '#404060', fontSize: 11, textAlign: 'center' }}>Full Pitch+: {pitcher.pitch_plus}</div>
+                <div style={{ color: 'var(--text-4)', fontSize: 11, textAlign: 'center' }}>Full Pitch+: {pitcher.pitch_plus}</div>
               )}
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 300 }}>
                 {DIMENSION_KEYS.map((d) => {
@@ -496,7 +499,7 @@ function PlayerDetailInner({
                       textAlign: 'center',
                     }}>
                       <div style={{ color, fontWeight: 700, fontFamily: 'monospace' }}>{score}</div>
-                      <div style={{ color: '#606080', fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.3 }}>{DIMENSION_LABELS[d].slice(0, 4)}</div>
+                      <div style={{ color: 'var(--text-3)', fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.3 }}>{DIMENSION_LABELS[d].slice(0, 4)}</div>
                     </div>
                   );
                 })}
@@ -514,10 +517,10 @@ function PlayerDetailInner({
             alignItems: 'center',
             gap: 10,
             padding: '10px 16px',
-            background: '#14141f',
-            border: '1px solid #1e1e2e',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border)',
             borderRadius: 8,
-            color: '#a0a0b8',
+            color: 'var(--text-2)',
             fontSize: 13,
           }}
         >
@@ -558,7 +561,7 @@ function PlayerDetailInner({
               </span>
             )}
           </button>
-          <span style={{ color: '#606080', fontSize: 12 }}>
+          <span style={{ color: 'var(--text-3)', fontSize: 12 }}>
             Showing{' '}
             <strong style={{ color: '#4a9eff' }}>
               {filteredPitches.length.toLocaleString()}
@@ -674,9 +677,10 @@ function PlayerDetailInner({
         tabs={[
           { key: 'overview',  label: 'Overview' },
           { key: 'arsenal',   label: 'Arsenal', ...(pitchTypeGrades.length > 0 && { badge: pitchTypeGrades.length }) },
-          { key: 'research',  label: 'Research Lab' },
+          { key: 'grades',    label: 'Grades' },
           { key: 'charts', label: 'Charts' },
           { key: 'trends', label: 'Trends' },
+          { key: 'research',  label: 'Research Lab' },
           { key: 'gamelog', label: 'Game Log' },
         ]}
         activeTab={activeTab}
@@ -695,7 +699,7 @@ function PlayerDetailInner({
           <div className="two-col" style={{ alignItems: 'flex-start' }}>
             {/* StuffDNA visualization */}
             <div>
-              <p style={{ fontSize: 12, color: '#606080', margin: '0 0 10px' }}>
+              <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '0 0 10px' }}>
                 Movement space with attribute grades. Node size = usage · Border thickness = attribute quality · Background clouds = league average for each pitch type
               </p>
               <StuffDNA
@@ -717,7 +721,7 @@ function PlayerDetailInner({
 
             {/* Grade Attribution Explanations */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <p style={{ fontSize: 12, color: '#606080', margin: '0 0 4px' }}>
+              <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '0 0 4px' }}>
                 What's driving each dimension grade
               </p>
               {gradeAttribution.map(({ dimensionKey, score, drivers, summary }) => {
@@ -725,8 +729,8 @@ function PlayerDetailInner({
                 const dimColor = gradeColor(score);
                 return (
                   <div key={dimensionKey} style={{
-                    background: '#0f0f1a',
-                    border: `1px solid #1e1e2e`,
+                    background: 'var(--bg-input)',
+                    border: `1px solid var(--border)`,
                     borderLeft: `3px solid ${dimColor}`,
                     borderRadius: 6,
                     padding: '10px 12px',
@@ -759,12 +763,12 @@ function PlayerDetailInner({
                           }}>
                             {d.percentile}
                           </span>
-                          <span style={{ color: '#a0a0b8' }}>{d.label}</span>
+                          <span style={{ color: 'var(--text-2)' }}>{d.label}</span>
                         </div>
                       ))}
                     </div>
                     {summary && (
-                      <p style={{ fontSize: 10, color: '#404060', margin: '6px 0 0', fontStyle: 'italic' }}>
+                      <p style={{ fontSize: 10, color: 'var(--text-4)', margin: '6px 0 0', fontStyle: 'italic' }}>
                         {summary}
                       </p>
                     )}
@@ -782,7 +786,7 @@ function PlayerDetailInner({
           <h3 className="card-title">
             Dimension Profile
             {hasFilters && (
-              <span style={{ color: '#606080', fontSize: 11, fontWeight: 400, marginLeft: 8 }}>
+              <span style={{ color: 'var(--text-3)', fontSize: 11, fontWeight: 400, marginLeft: 8 }}>
                 (filtered)
               </span>
             )}
@@ -823,7 +827,7 @@ function PlayerDetailInner({
         <div className="card">
           <h3 className="card-title" style={{ marginBottom: 14 }}>
             Pitch Type Grades
-            {hasFilters && <span style={{ color: '#606080', fontSize: 11, fontWeight: 400, marginLeft: 8 }}>(filtered)</span>}
+            {hasFilters && <span style={{ color: 'var(--text-3)', fontSize: 11, fontWeight: 400, marginLeft: 8 }}>(filtered)</span>}
           </h3>
           <PitchTypeGradeTable grades={pitchTypeGrades} />
         </div>
@@ -833,7 +837,7 @@ function PlayerDetailInner({
       <div className="card">
         <h3 className="card-title" style={{ marginBottom: 14 }}>
           Pitch Arsenal
-          {hasFilters && <span style={{ color: '#606080', fontSize: 11, fontWeight: 400, marginLeft: 8 }}>(filtered)</span>}
+          {hasFilters && <span style={{ color: 'var(--text-3)', fontSize: 11, fontWeight: 400, marginLeft: 8 }}>(filtered)</span>}
         </h3>
         <PitchArsenal
           pitches={pitcherRawPitches.length > 0 ? filteredPitches : []}
@@ -858,7 +862,7 @@ function PlayerDetailInner({
       {pitchData.length > 0 && (
         <div className="card">
           <h3 className="card-title" style={{ marginBottom: 6 }}>What-If Arsenal Simulator</h3>
-          <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 14, marginTop: 0 }}>
+          <p style={{ color: 'var(--text-3)', fontSize: 12, marginBottom: 14, marginTop: 0 }}>
             Simulate pitch mix changes and see projected Arsenal metric impact
           </p>
           <ArsenalSimulator pitchTypes={pitchData} pitchNames={pitchTypeNames} />
@@ -866,6 +870,9 @@ function PlayerDetailInner({
       )}
 
       </>}
+
+      {/* ══════════════════════ GRADES TAB ══════════════════════ */}
+      {activeTab === 'grades' && <PitchGradesPanel pitcherId={String(pitcher.pitcher_id)} />}
 
       {/* ══════════════════════ CHARTS TAB ══════════════════════ */}
       {activeTab === 'charts' && <>
@@ -895,6 +902,20 @@ function PlayerDetailInner({
             width={560}
             height={380}
           />
+        </div>
+      )}
+
+      {/* Location + zone heatmap (from the retired Plots page) */}
+      {filteredPitches.length > 0 && (
+        <div className="two-col" style={{ alignItems: 'flex-start' }}>
+          <div className="card">
+            <h3 className="card-title" style={{ marginBottom: 14 }}>Pitch Location (Catcher's View)</h3>
+            <PitchLocationChart pitches={filteredPitches} height={320} pitchTypeNames={pitchTypeNames} />
+          </div>
+          <div className="card">
+            <h3 className="card-title" style={{ marginBottom: 14 }}>Zone Heatmap</h3>
+            <PitchHeatmap pitches={filteredPitches} />
+          </div>
         </div>
       )}
 
@@ -952,10 +973,10 @@ function PlayerDetailInner({
                     padding: '2px 8px',
                     fontSize: 10,
                     fontWeight: rollingMetric === key ? 600 : 400,
-                    border: `1px solid ${rollingMetric === key ? '#4a9eff' : '#2a2a3e'}`,
+                    border: `1px solid ${rollingMetric === key ? '#4a9eff' : 'var(--border-plus)'}`,
                     borderRadius: 4,
                     background: rollingMetric === key ? 'rgba(74,158,255,0.15)' : 'transparent',
-                    color: rollingMetric === key ? '#4a9eff' : '#606080',
+                    color: rollingMetric === key ? '#4a9eff' : 'var(--text-3)',
                     cursor: 'pointer',
                     transition: 'all 0.15s',
                   }}
@@ -979,7 +1000,7 @@ function PlayerDetailInner({
       {pitcher.markov_count_data && (
         <div className="card">
           <h3 className="card-title" style={{ marginBottom: 6 }}>Count-State Profile</h3>
-          <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 14, marginTop: 0 }}>
+          <p style={{ color: 'var(--text-3)', fontSize: 12, marginBottom: 14, marginTop: 0 }}>
             Absorption probabilities from each count via Markov chain analysis
           </p>
           <CountStateHeatmap
@@ -992,7 +1013,7 @@ function PlayerDetailInner({
       {/* Similar Pitchers */}
       <div className="card">
         <h3 className="card-title" style={{ marginBottom: 6 }}>Similar Pitchers</h3>
-        <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 14, marginTop: 0 }}>
+        <p style={{ color: 'var(--text-3)', fontSize: 12, marginBottom: 14, marginTop: 0 }}>
           Pitchers with the most similar dimension profile in the current season
         </p>
         <SimilarPitchers pitcher={pitcher} n={6} />

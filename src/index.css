@@ -1,39 +1,40 @@
-/* ─── Design System ─────────────────────────────────────────────────────────── */
+﻿/* ─── Design System ─────────────────────────────────────────────────────────── */
 /*
- * Pitch+ Design Language — inspired by Baseball Savant's data-forward aesthetic
- * Deep navy base · neutral surfaces · single bold accent · monospace data
+ * Pitch+ Design Language — neutral dark mode
+ * Near-black base · dark-gray surfaces · soft off-white text (low glare)
+ * Accents carry meaning (grades, deltas); the chrome stays achromatic.
  *
  * Palette:
- *   bg-base:     #060e1c  deep navy (not purple-black)
- *   bg-surface:  #0c1829  card surface
- *   bg-elevated: #101f35  hover / elevated
- *   bg-input:    #08121e  input fields
- *   border:      #16273d  primary border
- *   border+:     #1e3554  stronger border
- *   text-1:      #e2eaf6  near-white, cool
- *   text-2:      #8fa8c8  secondary, readable blue-gray
- *   text-3:      #4a6580  muted
- *   text-4:      #2e4560  very muted
- *   accent:      #2f80ed  steel blue — primary action
+ *   bg-base:     #0b0b0c  near-black
+ *   bg-surface:  #141416  card surface
+ *   bg-elevated: #1c1c1f  hover / elevated
+ *   bg-input:    #101012  input fields
+ *   border:      #242428  primary border
+ *   border+:     #313136  stronger border
+ *   text-1:      #e4e4e7  soft off-white (not pure white)
+ *   text-2:      #9d9da6  secondary
+ *   text-3:      #6f6f78  muted
+ *   text-4:      #4d4d55  very muted
+ *   accent:      #4b96e6  steel blue — primary action
  *   positive:    #10b981  emerald
  *   negative:    #f43f5e  rose
  *   amber:       #f59e0b  warning / highlight
  */
 
 :root {
-  --bg-base:     #060e1c;
-  --bg-surface:  #0c1829;
-  --bg-elevated: #101f35;
-  --bg-input:    #08121e;
-  --border:      #16273d;
-  --border-plus: #1e3554;
-  --text-1:      #e2eaf6;
-  --text-2:      #8fa8c8;
-  --text-3:      #4a6580;
-  --text-4:      #2e4560;
-  --accent:      #2f80ed;
-  --accent-dim:  rgba(47,128,237,0.12);
-  --accent-line: rgba(47,128,237,0.3);
+  --bg-base:     #0b0b0c;
+  --bg-surface:  #141416;
+  --bg-elevated: #1c1c1f;
+  --bg-input:    #101012;
+  --border:      #242428;
+  --border-plus: #313136;
+  --text-1:      #e4e4e7;
+  --text-2:      #9d9da6;
+  --text-3:      #6f6f78;
+  --text-4:      #4d4d55;
+  --accent:      #4b96e6;
+  --accent-dim:  rgba(75,150,230,0.12);
+  --accent-line: rgba(75,150,230,0.3);
   --positive:    #10b981;
   --pos-dim:     rgba(16,185,129,0.1);
   --negative:    #f43f5e;
@@ -123,7 +124,7 @@ a:hover { opacity: 0.8; }
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(6, 14, 28, 0.92);
+  background: rgba(11, 11, 12, 0.92);
   border-bottom: 1px solid var(--border-plus);
   backdrop-filter: blur(12px) saturate(1.4);
   -webkit-backdrop-filter: blur(12px) saturate(1.4);
@@ -446,7 +447,7 @@ a:hover { opacity: 0.8; }
 }
 
 .dim-panel-body {
-  background: rgba(6,14,28,0.6);
+  background: rgba(11,11,12,0.6);
   padding: 12px 16px;
   display: flex;
   flex-direction: column;
@@ -1065,7 +1066,7 @@ input[type="range"] {
     top: 100%;
     left: 0;
     right: 0;
-    background: rgba(6, 14, 28, 0.97);
+    background: rgba(11, 11, 12, 0.97);
     border-bottom: 1px solid var(--border-plus);
     padding: 8px 16px 12px;
     flex-direction: column;

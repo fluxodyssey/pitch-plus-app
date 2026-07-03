@@ -13,6 +13,7 @@ import type {
   SimilarityData,
   BatterOutcomesData,
   GameGradesData,
+  DailyMatchupsDoc,
 } from '../types';
 import { fetchJson } from './fetchJson';
 
@@ -108,4 +109,26 @@ const gameGradesFetcher = makeSeasonFetcher<GameGradesData>(
 
 export function useGameGrades(season: Season) {
   return useSeasonFetch(gameGradesFetcher, season);
+}
+
+// ── Daily matchup slate (not season-keyed — one file, today's games) ─────────
+
+let slateCache: DailyMatchupsDoc | 'missing' | null = null;
+let slateInflight: Promise<void> | null = null;
+
+export function useDailySlate(): DailyMatchupsDoc | 'missing' | 'loading' {
+  const [, force] = useState(0);
+
+  useEffect(() => {
+    if (slateCache !== null) return;
+    slateInflight ??= fetchJson<DailyMatchupsDoc>('/data/daily_matchups.json')
+      .then((d) => { slateCache = d; })
+      .catch(() => { slateCache = 'missing'; })
+      .finally(() => { slateInflight = null; });
+    let cancelled = false;
+    slateInflight.then(() => { if (!cancelled) force((n) => n + 1); });
+    return () => { cancelled = true; };
+  }, []);
+
+  return slateCache ?? 'loading';
 }

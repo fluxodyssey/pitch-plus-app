@@ -1,4 +1,4 @@
-import { scoreColorContinuous } from '../data/constants';
+﻿import { scoreColorContinuous } from '../data/constants';
 import type { AttributeGrades } from '../types';
 
 interface Props {
@@ -34,7 +34,7 @@ export function AttributeGauges({ attrs, compact = false }: Props) {
             <span style={{
               width: labelWidth,
               fontSize,
-              color: '#606080',
+              color: 'var(--text-3)',
               flexShrink: 0,
               textAlign: 'right',
             }}>
@@ -43,7 +43,7 @@ export function AttributeGauges({ attrs, compact = false }: Props) {
             <div style={{
               flex: 1,
               height: compact ? 4 : 6,
-              background: '#1a1a2e',
+              background: 'var(--bg-elevated)',
               borderRadius: 3,
               overflow: 'hidden',
             }}>

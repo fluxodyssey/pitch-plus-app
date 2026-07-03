@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+﻿import { useState, type ReactNode } from 'react';
 
 const DESCRIPTIONS: Record<string, string> = {
   // ── Stuff ────────────────────────────────────────────────────────────────
@@ -59,7 +59,7 @@ export function MetricTooltip({ metricKey, children }: { metricKey: string; chil
     <span
       onMouseEnter={() => setShow(true)}
       onMouseLeave={() => setShow(false)}
-      style={{ position: 'relative', cursor: 'help', borderBottom: '1px dotted #404060' }}
+      style={{ position: 'relative', cursor: 'help', borderBottom: '1px dotted var(--text-4)' }}
     >
       {children}
       {show && (
@@ -70,7 +70,7 @@ export function MetricTooltip({ metricKey, children }: { metricKey: string; chil
           transform: 'translateX(-50%)',
           marginBottom: 6,
           padding: '8px 12px',
-          background: '#1a1a2e',
+          background: 'var(--bg-elevated)',
           border: '1px solid #2a2a4a',
           borderRadius: 6,
           color: '#c0c0d8',

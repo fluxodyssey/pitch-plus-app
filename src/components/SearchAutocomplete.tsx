@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GradeBadge } from './GradeBadge';
 import type { Pitcher } from '../types';
@@ -69,15 +69,15 @@ export function SearchAutocomplete({ pitchers, compact = false, placeholder = 'S
           width: '100%',
           padding: compact ? '5px 10px' : '8px 12px',
           fontSize: compact ? 12 : 13,
-          background: '#0f0f1a',
-          border: '1px solid #2a2a3e',
+          background: 'var(--bg-input)',
+          border: '1px solid var(--border-plus)',
           borderRadius: 6,
-          color: '#e0e0e8',
+          color: 'var(--text-1)',
           outline: 'none',
           transition: 'border-color 0.15s',
         }}
         onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#4a9eff'; }}
-        onMouseLeave={(e) => { if (document.activeElement !== e.currentTarget) e.currentTarget.style.borderColor = '#2a2a3e'; }}
+        onMouseLeave={(e) => { if (document.activeElement !== e.currentTarget) e.currentTarget.style.borderColor = 'var(--border-plus)'; }}
       />
       {open && results.length > 0 && (
         <div
@@ -87,8 +87,8 @@ export function SearchAutocomplete({ pitchers, compact = false, placeholder = 'S
             left: 0,
             right: 0,
             marginTop: 4,
-            background: '#14141f',
-            border: '1px solid #2a2a3e',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-plus)',
             borderRadius: 8,
             overflow: 'hidden',
             zIndex: 200,
@@ -106,12 +106,12 @@ export function SearchAutocomplete({ pitchers, compact = false, placeholder = 'S
                 alignItems: 'center',
                 gap: 10,
                 cursor: 'pointer',
-                background: i === selectedIdx ? '#1a1a2e' : 'transparent',
+                background: i === selectedIdx ? 'var(--bg-elevated)' : 'transparent',
                 transition: 'background 0.1s',
               }}
             >
-              <span style={{ flex: 1, color: '#e0e0e8', fontSize: 13 }}>{p.pitcher_name}</span>
-              <span style={{ color: '#606080', fontSize: 11 }}>{p.pitcher_team}</span>
+              <span style={{ flex: 1, color: 'var(--text-1)', fontSize: 13 }}>{p.pitcher_name}</span>
+              <span style={{ color: 'var(--text-3)', fontSize: 11 }}>{p.pitcher_team}</span>
               <GradeBadge score={p.pitch_plus} size="sm" />
             </div>
           ))}

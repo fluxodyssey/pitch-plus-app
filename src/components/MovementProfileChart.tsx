@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo } from 'react';
+﻿import { useRef, useEffect, useMemo } from 'react';
 import { pitchColor, scoreColorContinuous } from '../data/constants';
 import type { RawPitch, PitchTypeGrade } from '../types';
 
@@ -207,7 +207,7 @@ export function MovementProfileChart({
   }, [pitches, pitchesByType, width, height, compact]);
 
   if (pitches.length === 0) {
-    return <div style={{ color: '#606080', textAlign: 'center', padding: 40 }}>No pitch data</div>;
+    return <div style={{ color: '#6f6f78', textAlign: 'center', padding: 40 }}>No pitch data</div>;
   }
 
   const fs = compact ? 11 : 12;
@@ -225,7 +225,7 @@ export function MovementProfileChart({
                   <th key={h} style={{
                     padding: pad, color: '#505070', fontWeight: 500, fontSize: hfs,
                     textAlign: h === 'PITCH' ? 'left' : 'right',
-                    borderBottom: '1px solid #1a1a2e',
+                    borderBottom: '1px solid #1c1c1f',
                     textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap',
                   }}>{h}</th>
                 ))}
@@ -249,18 +249,18 @@ export function MovementProfileChart({
                         </span>
                       </span>
                     </td>
-                    <td style={{ padding: pad, textAlign: 'right', fontFamily: 'monospace', color: '#e0e0e8' }}>{g.count}</td>
+                    <td style={{ padding: pad, textAlign: 'right', fontFamily: 'monospace', color: '#e4e4e7' }}>{g.count}</td>
                     <td style={{ padding: pad, textAlign: 'right', fontFamily: 'monospace', color: '#8890a0' }}>{(g.usagePct * 100).toFixed(0)}%</td>
-                    <td style={{ padding: pad, textAlign: 'right', fontFamily: 'monospace', color: '#e0e0e8' }}>
+                    <td style={{ padding: pad, textAlign: 'right', fontFamily: 'monospace', color: '#e4e4e7' }}>
                       {g.avgVelo != null ? g.avgVelo.toFixed(1) : '—'}
                     </td>
                     <td style={{ padding: pad, textAlign: 'right', fontFamily: 'monospace', color: '#8890a0' }}>
                       {g.avgSpin != null ? Math.round(g.avgSpin) : '—'}
                     </td>
-                    <td style={{ padding: pad, textAlign: 'right', fontFamily: 'monospace', color: '#e0e0e8' }}>
+                    <td style={{ padding: pad, textAlign: 'right', fontFamily: 'monospace', color: '#e4e4e7' }}>
                       {g.avgIvb != null ? (g.avgIvb >= 0 ? '+' : '') + g.avgIvb.toFixed(1) : '—'}
                     </td>
-                    <td style={{ padding: pad, textAlign: 'right', fontFamily: 'monospace', color: '#e0e0e8' }}>
+                    <td style={{ padding: pad, textAlign: 'right', fontFamily: 'monospace', color: '#e4e4e7' }}>
                       {g.avgHb != null ? (g.avgHb >= 0 ? '+' : '') + g.avgHb.toFixed(1) : '—'}
                     </td>
                     <td style={{ padding: pad, textAlign: 'right' }}>

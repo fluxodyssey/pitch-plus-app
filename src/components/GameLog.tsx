@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { gradeColor } from '../data/constants';
 import type { RawPitch, GameInfo, GameAppearance, PitcherGameGrades } from '../types';
@@ -121,9 +121,9 @@ export function GameLog({ pitches, games, pitcherTeam, pitcherId, selectedGameId
 
   const thStyle = (_col: SortCol) => ({
     padding: '8px 10px',
-    color: '#a0a0b8',
-    borderBottom: '2px solid #1e1e2e',
-    background: '#14141f',
+    color: 'var(--text-2)',
+    borderBottom: '2px solid var(--border)',
+    background: 'var(--bg-surface)',
     fontWeight: 500 as const,
     cursor: 'pointer' as const,
     userSelect: 'none' as const,
@@ -134,7 +134,7 @@ export function GameLog({ pitches, games, pitcherTeam, pitcherId, selectedGameId
   if (appearances.length === 0) {
     return (
       <div className="game-log">
-        <div style={{ color: '#606080', padding: 16, fontSize: 13 }}>No game appearances found.</div>
+        <div style={{ color: 'var(--text-3)', padding: 16, fontSize: 13 }}>No game appearances found.</div>
       </div>
     );
   }
@@ -142,7 +142,7 @@ export function GameLog({ pitches, games, pitcherTeam, pitcherId, selectedGameId
   return (
     <div className="game-log">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <span style={{ color: '#a0a0b8', fontSize: 12 }}>
+        <span style={{ color: 'var(--text-2)', fontSize: 12 }}>
           {appearances.length} game{appearances.length !== 1 ? 's' : ''}
         </span>
         {selectedGameId != null && (
@@ -207,32 +207,32 @@ export function GameLog({ pitches, games, pitcherTeam, pitcherId, selectedGameId
                   key={app.gameId}
                   className="table-row-hover"
                   style={{
-                    borderBottom: '1px solid #1e1e2e',
+                    borderBottom: '1px solid var(--border)',
                     cursor: 'pointer',
                     background: rowBg,
                   }}
                   onClick={() => onSelectGame(isSelected ? null : app.gameId)}
                 >
-                  <td style={{ padding: '7px 10px', color: '#e0e0e8' }}>{app.date}</td>
-                  <td style={{ padding: '7px 10px', color: '#a0a0b8' }}>
+                  <td style={{ padding: '7px 10px', color: 'var(--text-1)' }}>{app.date}</td>
+                  <td style={{ padding: '7px 10px', color: 'var(--text-2)' }}>
                     {app.isHome ? 'vs' : '@'} {app.opponent}
                   </td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: '#e0e0e8' }}>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--text-1)' }}>
                     {app.pitchCount}
                   </td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: '#a0a0b8' }}>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--text-2)' }}>
                     {app.innings}
                   </td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: '#e0e0e8', fontWeight: 600 }}>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--text-1)', fontWeight: 600 }}>
                     {app.strikeouts}
                   </td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: '#a0a0b8' }}>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--text-2)' }}>
                     {app.walks}
                   </td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: '#a0a0b8' }}>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--text-2)' }}>
                     {app.hits}
                   </td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: app.homeRuns > 0 ? '#c85a5a' : '#a0a0b8' }}>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: app.homeRuns > 0 ? '#c85a5a' : 'var(--text-2)' }}>
                     {app.homeRuns}
                   </td>
                   {pitcherGameGrades && (
@@ -249,13 +249,13 @@ export function GameLog({ pitches, games, pitcherTeam, pitcherId, selectedGameId
                             {pp.toFixed(0)}
                           </span>
                           {ppDelta != null && (
-                            <span style={{ fontSize: 10, color: ppDelta > 0 ? '#10b981' : ppDelta < 0 ? '#ef4444' : '#606080', marginTop: 1 }}>
+                            <span style={{ fontSize: 10, color: ppDelta > 0 ? '#10b981' : ppDelta < 0 ? '#ef4444' : 'var(--text-3)', marginTop: 1 }}>
                               {ppDelta > 0 ? `+${ppDelta.toFixed(0)}` : ppDelta.toFixed(0)}
                             </span>
                           )}
                         </span>
                       ) : (
-                        <span style={{ color: '#404060', fontSize: 11 }}>—</span>
+                        <span style={{ color: 'var(--text-4)', fontSize: 11 }}>—</span>
                       )}
                     </td>
                   )}

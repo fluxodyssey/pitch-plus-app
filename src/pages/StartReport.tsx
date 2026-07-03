@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Start Report — TJStats-style breakdown of a single pitcher's game start.
  *
  * Route: /player/:id/start/:gameId
@@ -56,9 +56,9 @@ function Pill({ color, label }: { color: string; label: string }) {
 function StatBox({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <div style={{ textAlign: 'center' }}>
-      <div style={{ color: '#606080', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8 }}>{label}</div>
-      <div style={{ color: '#e0e0e8', fontSize: 22, fontWeight: 700, marginTop: 2 }}>{value}</div>
-      {sub && <div style={{ color: '#606080', fontSize: 11 }}>{sub}</div>}
+      <div style={{ color: 'var(--text-3)', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8 }}>{label}</div>
+      <div style={{ color: 'var(--text-1)', fontSize: 22, fontWeight: 700, marginTop: 2 }}>{value}</div>
+      {sub && <div style={{ color: 'var(--text-3)', fontSize: 11 }}>{sub}</div>}
     </div>
   );
 }
@@ -91,28 +91,28 @@ function GameGradeBar({ gameGrade, seasonGrades }: {
   const color = gradeColor(pp);
 
   return (
-    <div style={{ marginTop: 16, padding: '14px 16px', background: '#14141f', borderRadius: 8, border: '1px solid #1e1e2e' }}>
+    <div style={{ marginTop: 16, padding: '14px 16px', background: 'var(--bg-surface)', borderRadius: 8, border: '1px solid var(--border)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 12 }}>
         {/* Pitch+ badge */}
         <div style={{
           background: color + '20', border: `2px solid ${color}`,
           borderRadius: 10, padding: '8px 18px', textAlign: 'center',
         }}>
-          <div style={{ color: '#606080', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.8 }}>Pitch+</div>
+          <div style={{ color: 'var(--text-3)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.8 }}>Pitch+</div>
           <div style={{ color, fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{pp.toFixed(0)}</div>
         </div>
         <div>
           {/* Delta */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
             <span style={{
-              color: delta > 0 ? '#10b981' : delta < 0 ? '#ef4444' : '#a0a0b8',
+              color: delta > 0 ? '#10b981' : delta < 0 ? '#ef4444' : 'var(--text-2)',
               fontWeight: 700, fontSize: 15,
             }}>
               {delta > 0 ? `+${delta.toFixed(0)}` : delta.toFixed(0)} vs season avg
             </span>
-            <span style={{ color: '#606080', fontSize: 13 }}>({seasonGrades.pitch_plus.toFixed(0)} season)</span>
+            <span style={{ color: 'var(--text-3)', fontSize: 13 }}>({seasonGrades.pitch_plus.toFixed(0)} season)</span>
           </div>
-          <div style={{ color: '#606080', fontSize: 12 }}>
+          <div style={{ color: 'var(--text-3)', fontSize: 12 }}>
             {gameGrade.n_pitches} pitches · {gameGrade.opp && `vs ${gameGrade.opp}`}
           </div>
         </div>
@@ -127,7 +127,7 @@ function GameGradeBar({ gameGrade, seasonGrades }: {
           const c = gradeColor(score);
           return (
             <div key={dk} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 9, color: '#606080', marginBottom: 3, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              <div style={{ fontSize: 9, color: 'var(--text-3)', marginBottom: 3, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 {DIM_LABELS_SHORT[dk]}
               </div>
               <div style={{
@@ -139,7 +139,7 @@ function GameGradeBar({ gameGrade, seasonGrades }: {
               </div>
               <div style={{
                 fontSize: 10, marginTop: 2,
-                color: d > 0 ? '#10b981' : d < 0 ? '#ef4444' : '#606080',
+                color: d > 0 ? '#10b981' : d < 0 ? '#ef4444' : 'var(--text-3)',
               }}>
                 {d > 0 ? `+${d.toFixed(0)}` : d.toFixed(0)}
               </div>
@@ -301,7 +301,7 @@ export function StartReport() {
     return (
       <div className="page">
         <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-          <div style={{ color: '#a0a0b8', marginBottom: 12 }}>No pitch data found for this start.</div>
+          <div style={{ color: 'var(--text-2)', marginBottom: 12 }}>No pitch data found for this start.</div>
           <Link to={`/player/${id}`} style={{ color: '#4a9eff' }}>← Back to pitcher profile</Link>
         </div>
       </div>
@@ -317,11 +317,11 @@ export function StartReport() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <Link to={`/player/${id}`} style={{ color: '#4a9eff', fontSize: 13 }} className="no-export">← Profile</Link>
-              <span style={{ color: '#2a2a3e' }} className="no-export">|</span>
-              <span style={{ color: '#606080', fontSize: 13 }}>{gameDate}</span>
-              {opponent && <span style={{ color: '#606080', fontSize: 13 }}>· {opponent}</span>}
+              <span style={{ color: 'var(--border-plus)' }} className="no-export">|</span>
+              <span style={{ color: 'var(--text-3)', fontSize: 13 }}>{gameDate}</span>
+              {opponent && <span style={{ color: 'var(--text-3)', fontSize: 13 }}>· {opponent}</span>}
             </div>
-            <h1 style={{ margin: '8px 0 4px', color: '#e0e0e8', fontSize: 22 }}>{pitcherName}</h1>
+            <h1 style={{ margin: '8px 0 4px', color: 'var(--text-1)', fontSize: 22 }}>{pitcherName}</h1>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {pitchTypes.map(pt => <Pill key={pt.pt} color={pitchColor(pt.pt)} label={pName(pt.pt)} />)}
             </div>
@@ -354,7 +354,7 @@ export function StartReport() {
             disabled={exporting}
             style={{
               padding: '5px 12px', fontSize: 11, fontWeight: 600,
-              border: '1px solid #2a2a3e', borderRadius: 5,
+              border: '1px solid var(--border-plus)', borderRadius: 5,
               background: 'rgba(74,158,255,0.08)', color: '#4a9eff',
               cursor: exporting ? 'wait' : 'pointer',
             }}
@@ -366,8 +366,8 @@ export function StartReport() {
             disabled={exporting}
             style={{
               padding: '5px 12px', fontSize: 11, fontWeight: 600,
-              border: '1px solid #2a2a3e', borderRadius: 5,
-              background: 'transparent', color: '#a0a0b8',
+              border: '1px solid var(--border-plus)', borderRadius: 5,
+              background: 'transparent', color: 'var(--text-2)',
               cursor: exporting ? 'wait' : 'pointer',
             }}
           >
@@ -388,20 +388,20 @@ export function StartReport() {
             return (
               <div key={pt.pt} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 60px 90px 70px 90px 70px', gap: 8, alignItems: 'center' }}>
                 <Pill color={pitchColor(pt.pt)} label={pName(pt.pt)} />
-                <div style={{ height: 8, background: '#1e1e2e', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ height: 8, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
                   <div style={{ width: `${pt.pct}%`, height: '100%', background: pitchColor(pt.pt), borderRadius: 4 }} />
                 </div>
-                <span style={{ color: '#e0e0e8', fontSize: 13, textAlign: 'right' }}>{pt.pct}%</span>
-                <span style={{ color: '#a0a0b8', fontSize: 12, textAlign: 'right' }}>
+                <span style={{ color: 'var(--text-1)', fontSize: 13, textAlign: 'right' }}>{pt.pct}%</span>
+                <span style={{ color: 'var(--text-2)', fontSize: 12, textAlign: 'right' }}>
                   {pt.avgVelo.toFixed(1)} mph
                   {veloDelta != null && <span style={{ fontSize: 10, color: veloDelta > 0 ? '#69f0ae' : '#c85a5a', marginLeft: 3 }}>{veloDelta > 0 ? '+' : ''}{veloDelta.toFixed(1)}</span>}
                 </span>
-                <span style={{ color: '#a0a0b8', fontSize: 12, textAlign: 'right' }}>{Math.round(pt.avgSpin)} rpm</span>
-                <span style={{ color: '#a0a0b8', fontSize: 12, textAlign: 'right' }}>
+                <span style={{ color: 'var(--text-2)', fontSize: 12, textAlign: 'right' }}>{Math.round(pt.avgSpin)} rpm</span>
+                <span style={{ color: 'var(--text-2)', fontSize: 12, textAlign: 'right' }}>
                   Whiff {(pt.whiffRate*100).toFixed(0)}%
                   {whiffDelta != null && <span style={{ fontSize: 10, color: whiffDelta > 0 ? '#69f0ae' : '#c85a5a', marginLeft: 3 }}>{whiffDelta > 0 ? '+' : ''}{(whiffDelta*100).toFixed(1)}</span>}
                 </span>
-                <span style={{ color: '#606080', fontSize: 11, textAlign: 'right' }}>{pt.n} pitches</span>
+                <span style={{ color: 'var(--text-3)', fontSize: 11, textAlign: 'right' }}>{pt.n} pitches</span>
               </div>
             );
           })}
@@ -413,13 +413,13 @@ export function StartReport() {
         <Section title="Velocity by Inning">
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={veloByInning} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" />
-              <XAxis dataKey="inning" tick={{ fill: '#606080', fontSize: 11 }} stroke="#2a2a3e"
-                label={{ value: 'Inning', position: 'insideBottom', offset: -2, fill: '#606080', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#606080', fontSize: 11 }} stroke="#2a2a3e" domain={['auto', 'auto']}
-                label={{ value: 'mph', angle: -90, position: 'insideLeft', fill: '#606080', fontSize: 11 }} />
-              <Tooltip contentStyle={{ background: '#16162a', border: '1px solid #2a2a3e', borderRadius: 6 }}
-                labelStyle={{ color: '#a0a0b8' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="inning" tick={{ fill: 'var(--text-3)', fontSize: 11 }} stroke="var(--border-plus)"
+                label={{ value: 'Inning', position: 'insideBottom', offset: -2, fill: 'var(--text-3)', fontSize: 11 }} />
+              <YAxis tick={{ fill: 'var(--text-3)', fontSize: 11 }} stroke="var(--border-plus)" domain={['auto', 'auto']}
+                label={{ value: 'mph', angle: -90, position: 'insideLeft', fill: 'var(--text-3)', fontSize: 11 }} />
+              <Tooltip contentStyle={{ background: '#16162a', border: '1px solid var(--border-plus)', borderRadius: 6 }}
+                labelStyle={{ color: 'var(--text-2)' }} />
               <Line type="monotone" dataKey="avg" stroke="#4a9eff" strokeWidth={2} dot={{ fill: '#4a9eff', r: 4 }} name="Avg Velo" />
               <Line type="monotone" dataKey="max" stroke="#c85a5a" strokeWidth={1.5} strokeDasharray="4 2"
                 dot={false} name="Max Velo" />
@@ -455,11 +455,11 @@ export function StartReport() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
           {countData.map(c => (
             <div key={c.count} style={{
-              background: '#1a1a2e', borderRadius: 6, padding: '6px 8px', textAlign: 'center',
-              border: `1px solid ${c.count === '0-0' ? '#4a9eff44' : '#2a2a3e'}`,
+              background: 'var(--bg-elevated)', borderRadius: 6, padding: '6px 8px', textAlign: 'center',
+              border: `1px solid ${c.count === '0-0' ? '#4a9eff44' : 'var(--border-plus)'}`,
             }}>
               <div style={{ color: '#4a9eff', fontSize: 11, fontWeight: 600 }}>{c.count}</div>
-              <div style={{ color: '#e0e0e8', fontSize: 16, fontWeight: 700 }}>{c.n}</div>
+              <div style={{ color: 'var(--text-1)', fontSize: 16, fontWeight: 700 }}>{c.n}</div>
             </div>
           ))}
         </div>
@@ -477,11 +477,11 @@ export function StartReport() {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
-              <tr style={{ borderBottom: '2px solid #1e1e2e' }}>
+              <tr style={{ borderBottom: '2px solid var(--border)' }}>
                 {['#', 'Inn', 'Count', 'Batter', 'H', 'Type', 'Velo', 'Spin', 'IVB', 'HB', 'VAA', 'Zone', 'Result'].map(h => (
-                  <th key={h} style={{ padding: '6px 8px', color: '#606080', fontWeight: 500,
+                  <th key={h} style={{ padding: '6px 8px', color: 'var(--text-3)', fontWeight: 500,
                     textAlign: h === 'Batter' ? 'left' : 'center',
-                    borderBottom: '1px solid #1e1e2e' }}>
+                    borderBottom: '1px solid var(--border)' }}>
                     {h}
                   </th>
                 ))}
@@ -490,24 +490,24 @@ export function StartReport() {
             <tbody>
               {pitches.slice(logPage * LOG_PAGE_SIZE, (logPage + 1) * LOG_PAGE_SIZE).map((p, i) => {
                 const pitchNum = logPage * LOG_PAGE_SIZE + i + 1;
-                const resultColor = p.wh ? '#d44040' : p.sw && !p.ip ? '#4a6494' : p.ip ? '#4a9eff' : '#a0a0b8';
+                const resultColor = p.wh ? '#d44040' : p.sw && !p.ip ? '#4a6494' : p.ip ? '#4a9eff' : 'var(--text-2)';
                 const resultLabel = p.et ? p.et.replace(/_/g, ' ') : p.desc;
                 return (
                   <tr key={p.pid} style={{ borderBottom: '1px solid #111118', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
-                    <td style={{ padding: '5px 8px', color: '#606080', textAlign: 'center' }}>{pitchNum}</td>
-                    <td style={{ padding: '5px 8px', color: '#a0a0b8', textAlign: 'center' }}>{p.inn}</td>
-                    <td style={{ padding: '5px 8px', color: '#a0a0b8', textAlign: 'center', fontFamily: 'monospace' }}>{p.b}-{p.s}</td>
-                    <td style={{ padding: '5px 8px', color: '#e0e0e8', whiteSpace: 'nowrap' }}>{p.bn}</td>
-                    <td style={{ padding: '5px 8px', color: '#606080', textAlign: 'center' }}>{p.bh}</td>
+                    <td style={{ padding: '5px 8px', color: 'var(--text-3)', textAlign: 'center' }}>{pitchNum}</td>
+                    <td style={{ padding: '5px 8px', color: 'var(--text-2)', textAlign: 'center' }}>{p.inn}</td>
+                    <td style={{ padding: '5px 8px', color: 'var(--text-2)', textAlign: 'center', fontFamily: 'monospace' }}>{p.b}-{p.s}</td>
+                    <td style={{ padding: '5px 8px', color: 'var(--text-1)', whiteSpace: 'nowrap' }}>{p.bn}</td>
+                    <td style={{ padding: '5px 8px', color: 'var(--text-3)', textAlign: 'center' }}>{p.bh}</td>
                     <td style={{ padding: '5px 8px', textAlign: 'center' }}>
                       <Pill color={pitchColor(p.pt)} label={p.pt} />
                     </td>
-                    <td style={{ padding: '5px 8px', color: '#e0e0e8', textAlign: 'right', fontFamily: 'monospace' }}>{p.v?.toFixed(1)}</td>
-                    <td style={{ padding: '5px 8px', color: '#a0a0b8', textAlign: 'right', fontFamily: 'monospace' }}>{p.sp > 0 ? Math.round(p.sp).toLocaleString() : '—'}</td>
+                    <td style={{ padding: '5px 8px', color: 'var(--text-1)', textAlign: 'right', fontFamily: 'monospace' }}>{p.v?.toFixed(1)}</td>
+                    <td style={{ padding: '5px 8px', color: 'var(--text-2)', textAlign: 'right', fontFamily: 'monospace' }}>{p.sp > 0 ? Math.round(p.sp).toLocaleString() : '—'}</td>
                     <td style={{ padding: '5px 8px', color: pitchColor(p.pt), textAlign: 'right', fontFamily: 'monospace' }}>{fmt(p.ivb)}</td>
                     <td style={{ padding: '5px 8px', color: pitchColor(p.pt), textAlign: 'right', fontFamily: 'monospace' }}>{fmt(p.hb)}</td>
-                    <td style={{ padding: '5px 8px', color: '#606080', textAlign: 'right', fontFamily: 'monospace' }}>{p.vaa != null ? p.vaa.toFixed(1) : '—'}</td>
-                    <td style={{ padding: '5px 8px', color: p.z >= 1 && p.z <= 9 ? '#c85a5a' : '#606080', textAlign: 'center' }}>{p.z}</td>
+                    <td style={{ padding: '5px 8px', color: 'var(--text-3)', textAlign: 'right', fontFamily: 'monospace' }}>{p.vaa != null ? p.vaa.toFixed(1) : '—'}</td>
+                    <td style={{ padding: '5px 8px', color: p.z >= 1 && p.z <= 9 ? '#c85a5a' : 'var(--text-3)', textAlign: 'center' }}>{p.z}</td>
                     <td style={{ padding: '5px 8px', color: resultColor, textAlign: 'center', fontSize: 11, whiteSpace: 'nowrap' }}>
                       {resultLabel?.slice(0, 20)}
                     </td>
@@ -524,11 +524,11 @@ export function StartReport() {
               onClick={() => setLogPage(p => p - 1)}
               style={{
                 padding: '5px 12px', fontSize: 11, borderRadius: 6,
-                border: '1px solid #2a2a3e', background: '#1a1a2e', color: logPage === 0 ? '#404060' : '#e0e0e8',
+                border: '1px solid var(--border-plus)', background: 'var(--bg-elevated)', color: logPage === 0 ? 'var(--text-4)' : 'var(--text-1)',
                 cursor: logPage === 0 ? 'default' : 'pointer',
               }}
             >Prev</button>
-            <span style={{ color: '#a0a0b8', fontSize: 11 }}>
+            <span style={{ color: 'var(--text-2)', fontSize: 11 }}>
               {logPage * LOG_PAGE_SIZE + 1}–{Math.min((logPage + 1) * LOG_PAGE_SIZE, pitches.length)} of {pitches.length}
             </span>
             <button
@@ -536,8 +536,8 @@ export function StartReport() {
               onClick={() => setLogPage(p => p + 1)}
               style={{
                 padding: '5px 12px', fontSize: 11, borderRadius: 6,
-                border: '1px solid #2a2a3e', background: '#1a1a2e',
-                color: (logPage + 1) * LOG_PAGE_SIZE >= pitches.length ? '#404060' : '#e0e0e8',
+                border: '1px solid var(--border-plus)', background: 'var(--bg-elevated)',
+                color: (logPage + 1) * LOG_PAGE_SIZE >= pitches.length ? 'var(--text-4)' : 'var(--text-1)',
                 cursor: (logPage + 1) * LOG_PAGE_SIZE >= pitches.length ? 'default' : 'pointer',
               }}
             >Next</button>
@@ -561,18 +561,18 @@ function LocationScatter({
   height?: number;
 }) {
   if (ps.length === 0) {
-    return <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#606080', fontSize: 12 }}>No pitches</div>;
+    return <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)', fontSize: 12 }}>No pitches</div>;
   }
   return (
     <ResponsiveContainer width="100%" height={height}>
       <ScatterChart margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" />
-        <XAxis type="number" dataKey="px" domain={[-2.5, 2.5]} tick={{ fill: '#606080', fontSize: 10 }}
-          stroke="#2a2a3e" />
-        <YAxis type="number" dataKey="pz" domain={[0, 5]} tick={{ fill: '#606080', fontSize: 10 }}
-          stroke="#2a2a3e" />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+        <XAxis type="number" dataKey="px" domain={[-2.5, 2.5]} tick={{ fill: 'var(--text-3)', fontSize: 10 }}
+          stroke="var(--border-plus)" />
+        <YAxis type="number" dataKey="pz" domain={[0, 5]} tick={{ fill: 'var(--text-3)', fontSize: 10 }}
+          stroke="var(--border-plus)" />
         <Tooltip cursor={false}
-          contentStyle={{ background: '#16162a', border: '1px solid #2a2a3e', borderRadius: 6, fontSize: 11 }}
+          contentStyle={{ background: '#16162a', border: '1px solid var(--border-plus)', borderRadius: 6, fontSize: 11 }}
           formatter={(_, __, props) => [
             `${pName(props.payload.pt)} · ${props.payload.v?.toFixed(1)} mph`,
             props.payload.desc,

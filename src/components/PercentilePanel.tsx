@@ -1,4 +1,4 @@
-import { PercentileGauge } from './PercentileGauge';
+﻿import { PercentileGauge } from './PercentileGauge';
 import type { PercentileEntry } from '../data/percentiles';
 import type { Pitcher, MetricKey } from '../types';
 import { PCT_METRICS } from '../data/constants';
@@ -62,7 +62,7 @@ export function PercentilePanel({ pitcher, percentiles }: Props) {
           paddingLeft: 168,
         }}>
           {/* scale labels over the bar */}
-          <div style={{ gridColumn: '2', display: 'flex', justifyContent: 'space-between', fontSize: 9, color: '#404060', fontWeight: 600, letterSpacing: 0.5 }}>
+          <div style={{ gridColumn: '2', display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'var(--text-4)', fontWeight: 600, letterSpacing: 0.5 }}>
             <span>POOR</span>
             <span>AVERAGE</span>
             <span>GREAT</span>

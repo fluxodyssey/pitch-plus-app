@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo } from 'react';
+﻿import { useRef, useEffect, useMemo } from 'react';
 import { pitchColor } from '../data/constants';
 import type { RawPitch } from '../types';
 
@@ -77,7 +77,7 @@ export function VelocityDistribution({ pitches, pitchTypeNames, width = 720, hei
     function toY(d: number) { return pad.top + H - (d / maxDensity) * H; }
 
     // Grid lines
-    ctx.strokeStyle = '#1e1e2e';
+    ctx.strokeStyle = '#242428';
     ctx.lineWidth = 1;
     const pctTicks = [0, 0.25, 0.5, 0.75, 1.0];
     for (const t of pctTicks) {
@@ -89,13 +89,13 @@ export function VelocityDistribution({ pitches, pitchTypeNames, width = 720, hei
     }
 
     // Velocity axis ticks
-    ctx.fillStyle = '#606080';
+    ctx.fillStyle = '#6f6f78';
     ctx.font = `${10 * dpr / dpr}px monospace`;
     ctx.textAlign = 'center';
     for (let v = Math.ceil(vMin / 5) * 5; v <= vMax; v += 5) {
       const x = toX(v);
       ctx.fillText(`${v}`, x, pad.top + H + 20);
-      ctx.strokeStyle = '#1e1e2e';
+      ctx.strokeStyle = '#242428';
       ctx.lineWidth = 0.5;
       ctx.beginPath();
       ctx.moveTo(x, pad.top + H);
@@ -108,7 +108,7 @@ export function VelocityDistribution({ pitches, pitchTypeNames, width = 720, hei
     ctx.translate(10, pad.top + H / 2);
     ctx.rotate(-Math.PI / 2);
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#606080';
+    ctx.fillStyle = '#6f6f78';
     ctx.font = '10px system-ui';
     ctx.fillText('Frequency', 0, 0);
     ctx.restore();
@@ -142,7 +142,7 @@ export function VelocityDistribution({ pitches, pitchTypeNames, width = 720, hei
     for (let i = 1; i < xs.length; i++) {
       ctx.lineTo(toX(xs[i]!), toY(allCurve[i]!));
     }
-    ctx.strokeStyle = '#606080';
+    ctx.strokeStyle = '#6f6f78';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([4, 3]);
     ctx.stroke();
@@ -150,7 +150,7 @@ export function VelocityDistribution({ pitches, pitchTypeNames, width = 720, hei
 
     // X-axis label
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#606080';
+    ctx.fillStyle = '#6f6f78';
     ctx.font = '10px system-ui';
     ctx.fillText('Velocity (mph)', pad.left + W / 2, height - 4);
 
@@ -166,14 +166,14 @@ export function VelocityDistribution({ pitches, pitchTypeNames, width = 720, hei
       {/* Legend */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', marginTop: 4 }}>
         {types.map((pt) => (
-          <span key={pt} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#a0a0b8' }}>
+          <span key={pt} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#9d9da6' }}>
             <span style={{ width: 18, height: 3, background: pitchColor(pt), borderRadius: 2, flexShrink: 0 }} />
             {pitchTypeNames[pt] ?? pt}
           </span>
         ))}
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#606080' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#6f6f78' }}>
           <svg width="18" height="3" style={{ flexShrink: 0 }}>
-            <line x1="0" y1="1.5" x2="18" y2="1.5" stroke="#606080" strokeWidth="1.5" strokeDasharray="4 3" />
+            <line x1="0" y1="1.5" x2="18" y2="1.5" stroke="#6f6f78" strokeWidth="1.5" strokeDasharray="4 3" />
           </svg>
           All Pitches
         </span>
