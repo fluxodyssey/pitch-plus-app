@@ -69,6 +69,7 @@ Use the `add-app-page` skill to add a new route.
 - **useMemo on per-render lookups**: `SeasonHistory.tsx` and `SimilarPitchers.tsx` use `useMemo` for pitcher lookup tables. Without it, O(n) lookup runs every render.
 - **Canvas vs Recharts**: Recharts for aggregate charts (bars, lines, ≤100 points). Canvas for per-pitch scatter (1000+ points, custom rendering like 1σ ellipses via covariance eigendecomposition). See `MovementProfileChart.tsx`.
 - **Screen-space vs data-space math**: When drawing geometric shapes over scatter plots, do the math in screen pixels, not data units — HB and IVB have non-uniform pixel scales after axis stretching. See the ellipse eigendecomposition in `MovementProfileChart.tsx`.
+- **Modals must portal to `document.body`**: `.card` keeps a filled `fadeSlideIn` transform animation, which makes every card a containing block for `position: fixed` — an un-portaled overlay pins to the card, not the viewport. Use `createPortal` like `MatchupBreakdown.tsx`.
 
 ## Dev workflow
 
