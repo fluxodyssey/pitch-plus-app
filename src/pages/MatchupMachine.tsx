@@ -13,6 +13,8 @@ import { useData, hasMatchupData, MATCHUP_DEFAULT_SEASON } from '../data/useData
 import { useSimilarityData, useBatterOutcomes, useDailySlate, useHrSlate } from '../data/useMatchupData';
 import { projectMatchup } from '../data/matchupEngine';
 import { InlineSearch } from '../components/InlineSearch';
+import { MatchupBreakdown } from '../components/MatchupBreakdown';
+import type { BreakdownTarget } from '../components/MatchupBreakdown';
 import type {
   BatterOutcomesData, DailyMatchupGame, DailyMatchupsDoc, HrSlateDoc, MatchupProjection, SimilarityData,
 } from '../types';
@@ -189,7 +191,7 @@ function BestMatchupsToday({
   similarityData: SimilarityData;
   batterOutcomes: BatterOutcomesData;
 }) {
-  const navigate = useNavigate();
+  const [breakdown, setBreakdown] = useState<BreakdownTarget | null>(null);
   const rows = useMemo(
     () => buildSlateRows(slate, similarityData, batterOutcomes),
     [slate, similarityData, batterOutcomes],
@@ -232,7 +234,7 @@ function BestMatchupsToday({
       </div>
       <p style={{ color: 'var(--text-3)', fontSize: 12, margin: '0 0 12px' }}>
         Every probable starter crossed with the opposing lineup (top {SLATE_HITTERS_PER_TEAM} hitters
-        by PA), ranked by projected hitter advantage. Click a row for the full projection.
+        by PA), ranked by projected hitter advantage. Click a row for the matchup breakdown.
       </p>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -259,7 +261,7 @@ function BestMatchupsToday({
                 <tr
                   key={`${r.pitcherId}-${r.batterId}`}
                   className="table-row-hover"
-                  onClick={() => navigate(`/matchup/${r.pitcherId}/${r.batterId}`)}
+                  onClick={() => setBreakdown({ pitcherId: r.pitcherId, batterId: r.batterId, pitcherName: r.pitcherName })}
                   style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
                 >
                   <td style={{ padding: '8px 10px', color: 'var(--text-4)' }}>{i + 1}</td>
@@ -301,6 +303,14 @@ function BestMatchupsToday({
           </tbody>
         </table>
       </div>
+      {breakdown && (
+        <MatchupBreakdown
+          target={breakdown}
+          similarityData={similarityData}
+          batterOutcomes={batterOutcomes}
+          onClose={() => setBreakdown(null)}
+        />
+      )}
     </div>
   );
 }
@@ -332,8 +342,14 @@ function StaleBadge() {
   );
 }
 
-function HrLeaderboard({ slate }: { slate: HrSlateDoc }) {
-  const navigate = useNavigate();
+function HrLeaderboard({
+  slate, similarityData, batterOutcomes,
+}: {
+  slate: HrSlateDoc;
+  similarityData: SimilarityData;
+  batterOutcomes: BatterOutcomesData;
+}) {
+  const [breakdown, setBreakdown] = useState<BreakdownTarget | null>(null);
   const rows = useMemo(
     () => [...slate.batters].sort((a, b) => b.p_hr_game - a.p_hr_game),
     [slate],
@@ -389,7 +405,7 @@ function HrLeaderboard({ slate }: { slate: HrSlateDoc }) {
               <tr
                 key={`${r.pitcher_id}-${r.batter_id}`}
                 className="table-row-hover"
-                onClick={() => navigate(`/matchup/${r.pitcher_id}/${r.batter_id}`)}
+                onClick={() => setBreakdown({ pitcherId: r.pitcher_id, batterId: r.batter_id, pitcherName: r.pitcher })}
                 style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
               >
                 <td style={{ padding: '7px 10px', color: 'var(--text-4)' }}>{i + 1}</td>
@@ -431,6 +447,14 @@ function HrLeaderboard({ slate }: { slate: HrSlateDoc }) {
           </tbody>
         </table>
       </div>
+      {breakdown && (
+        <MatchupBreakdown
+          target={breakdown}
+          similarityData={similarityData}
+          batterOutcomes={batterOutcomes}
+          onClose={() => setBreakdown(null)}
+        />
+      )}
     </div>
   );
 }
@@ -680,7 +704,11 @@ function MatchupMachineInner() {
                 </div>
               </div>
             ) : (
-              <HrLeaderboard slate={hrSlate} />
+              <HrLeaderboard
+                slate={hrSlate}
+                similarityData={similarityData}
+                batterOutcomes={batterOutcomes}
+              />
             )
           )}
         </>
