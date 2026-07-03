@@ -313,6 +313,14 @@ function localToday(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
+function fairAmerican(p: number): string {
+  // zero-vig American odds for probability p — comparable to sportsbook prices
+  if (p <= 0 || p >= 1) return '—';
+  return p < 0.5
+    ? `+${Math.round((100 * (1 - p)) / p)}`
+    : `-${Math.round((100 * p) / (1 - p))}`;
+}
+
 function StaleBadge() {
   return (
     <span style={{
@@ -331,7 +339,6 @@ function HrLeaderboard({ slate }: { slate: HrSlateDoc }) {
     [slate],
   );
   const stale = slate.date < localToday();  // future-dated slate is fine, not stale
-  const maxP = rows[0]?.p_hr_game ?? 0.01;
   const anyPosted = rows.some(r => r.lineup_posted);
 
   if (rows.length === 0) {
@@ -370,7 +377,7 @@ function HrLeaderboard({ slate }: { slate: HrSlateDoc }) {
               <th style={{ ...th, textAlign: 'left' }}>vs Pitcher</th>
               <th style={{ ...th, textAlign: 'left' }}>Game</th>
               <th style={{ ...th, textAlign: 'right' }}>HR% Today</th>
-              <th style={{ ...th, textAlign: 'left' }}></th>
+              <th style={{ ...th, textAlign: 'right' }}>Fair Odds</th>
               <th style={{ ...th, textAlign: 'right' }}>per PA</th>
               <th style={{ ...th, textAlign: 'right' }}>E[PA]</th>
               <th style={{ ...th, textAlign: 'right' }}>E[HR]</th>
@@ -404,8 +411,8 @@ function HrLeaderboard({ slate }: { slate: HrSlateDoc }) {
                 <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--positive)' }}>
                   {(r.p_hr_game * 100).toFixed(1)}%
                 </td>
-                <td style={{ padding: '7px 4px', width: 110 }}>
-                  <div style={{ width: `${Math.max(2, (r.p_hr_game / maxP) * 100)}px`, height: 7, background: '#14a276', borderRadius: 4 }} />
+                <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--text-1)' }}>
+                  {fairAmerican(r.p_hr_game)}
                 </td>
                 <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--text-2)' }}>
                   {(r.p_hr * 100).toFixed(1)}%
