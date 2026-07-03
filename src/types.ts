@@ -680,6 +680,33 @@ export interface DailyMatchupsDoc {
   games: DailyMatchupGame[];
 }
 
+// ─── Daily HR Slate (models/slate_hr_projection.py) ─────────────────────────
+
+export interface HrSlateRow {
+  batter_id: number;
+  batter: string;
+  hand: string;
+  team: string;               // batting team abbrev
+  slot: number;               // lineup slot 1-9
+  lineup_posted: boolean;     // real lineup vs PA-sorted roster fallback
+  pitcher_id: number;
+  pitcher: string;
+  away: string;
+  home: string;
+  game_time: string | null;   // UTC ISO
+  p_hr: number;               // per-PA P(HR) vs this pitcher
+  expected_pa: number;
+  p_hr_game: number;          // P(≥1 HR today) = 1 − (1 − p_hr)^E[PA]
+  expected_hr: number;
+  confidence: string;
+}
+
+export interface HrSlateDoc {
+  date: string;
+  generated_at: string;
+  batters: HrSlateRow[];
+}
+
 // ─── Per-Pitch-Type Grades ──────────────────────────────────────────────────
 
 export interface PitchTypeGrade {

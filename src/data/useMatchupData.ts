@@ -14,6 +14,7 @@ import type {
   BatterOutcomesData,
   GameGradesData,
   DailyMatchupsDoc,
+  HrSlateDoc,
 } from '../types';
 import { fetchJson } from './fetchJson';
 
@@ -111,24 +112,32 @@ export function useGameGrades(season: Season) {
   return useSeasonFetch(gameGradesFetcher, season);
 }
 
-// ── Daily matchup slate (not season-keyed — one file, today's games) ─────────
+// ── Daily slates (not season-keyed — one file each, today's games) ───────────
 
-let slateCache: DailyMatchupsDoc | 'missing' | null = null;
-let slateInflight: Promise<void> | null = null;
+function makeOneShot<T>(url: string) {
+  let cache: T | 'missing' | null = null;
+  let inflight: Promise<void> | null = null;
 
-export function useDailySlate(): DailyMatchupsDoc | 'missing' | 'loading' {
-  const [, force] = useState(0);
+  return function useOneShot(): T | 'missing' | 'loading' {
+    const [, force] = useState(0);
 
-  useEffect(() => {
-    if (slateCache !== null) return;
-    slateInflight ??= fetchJson<DailyMatchupsDoc>('/data/daily_matchups.json')
-      .then((d) => { slateCache = d; })
-      .catch(() => { slateCache = 'missing'; })
-      .finally(() => { slateInflight = null; });
-    let cancelled = false;
-    slateInflight.then(() => { if (!cancelled) force((n) => n + 1); });
-    return () => { cancelled = true; };
-  }, []);
+    useEffect(() => {
+      if (cache !== null) return;
+      inflight ??= fetchJson<T>(url)
+        .then((d) => { cache = d; })
+        .catch(() => { cache = 'missing'; })
+        .finally(() => { inflight = null; });
+      let cancelled = false;
+      inflight.then(() => { if (!cancelled) force((n) => n + 1); });
+      return () => { cancelled = true; };
+    }, []);
 
-  return slateCache ?? 'loading';
+    return cache ?? 'loading';
+  };
 }
+
+/** Today's games + probables (models/daily_matchups.py). */
+export const useDailySlate = makeOneShot<DailyMatchupsDoc>('/data/daily_matchups.json');
+
+/** Today's per-hitter HR projections (models/slate_hr_projection.py). */
+export const useHrSlate = makeOneShot<HrSlateDoc>('/data/hr_slate.json');

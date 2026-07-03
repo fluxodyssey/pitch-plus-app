@@ -10,11 +10,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useData, hasMatchupData, MATCHUP_DEFAULT_SEASON } from '../data/useData';
-import { useSimilarityData, useBatterOutcomes, useDailySlate } from '../data/useMatchupData';
+import { useSimilarityData, useBatterOutcomes, useDailySlate, useHrSlate } from '../data/useMatchupData';
 import { projectMatchup } from '../data/matchupEngine';
 import { InlineSearch } from '../components/InlineSearch';
 import type {
-  BatterOutcomesData, DailyMatchupGame, DailyMatchupsDoc, MatchupProjection, SimilarityData,
+  BatterOutcomesData, DailyMatchupGame, DailyMatchupsDoc, HrSlateDoc, MatchupProjection, SimilarityData,
 } from '../types';
 
 interface SearchItem { id: number; name: string; team: string; sub?: string }
@@ -195,10 +195,7 @@ function BestMatchupsToday({
     [slate, similarityData, batterOutcomes],
   );
 
-  // local calendar date — toISOString() is UTC and flips "today" mid-evening
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const stale = slate.date !== today;
+  const stale = slate.date !== localToday();
   const nProbables = slate.games.reduce(
     (s, g) => s + (g.away.probable ? 1 : 0) + (g.home.probable ? 1 : 0), 0);
 
@@ -308,6 +305,129 @@ function BestMatchupsToday({
   );
 }
 
+// ── HR leaderboard (today's slate) ───────────────────────────────────────────
+
+function localToday(): string {
+  // local calendar date — toISOString() is UTC and flips "today" mid-evening
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+function StaleBadge() {
+  return (
+    <span style={{
+      background: 'var(--amber-dim)', border: '1px solid var(--amber)',
+      color: 'var(--amber)', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 600,
+    }}>
+      stale — rerun models/slate_hr_projection.py
+    </span>
+  );
+}
+
+function HrLeaderboard({ slate }: { slate: HrSlateDoc }) {
+  const navigate = useNavigate();
+  const rows = useMemo(
+    () => [...slate.batters].sort((a, b) => b.p_hr_game - a.p_hr_game),
+    [slate],
+  );
+  const stale = slate.date !== localToday();
+  const maxP = rows[0]?.p_hr_game ?? 0.01;
+  const anyPosted = rows.some(r => r.lineup_posted);
+
+  if (rows.length === 0) {
+    return <div className="card" style={{ color: 'var(--text-3)', fontSize: 13 }}>No HR projections on the {slate.date} slate.</div>;
+  }
+
+  const th = {
+    padding: '7px 10px', color: 'var(--text-3)', fontWeight: 600, fontSize: 11,
+    textTransform: 'uppercase' as const, letterSpacing: 0.5, whiteSpace: 'nowrap' as const,
+  };
+
+  return (
+    <div className="card">
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+        <div style={{ color: 'var(--text-1)', fontWeight: 700, fontSize: 16 }}>
+          HR Leaderboard — Today
+        </div>
+        <span style={{ color: 'var(--text-3)', fontSize: 12 }}>
+          {slate.date} · {rows.length} hitters
+        </span>
+        {stale && <StaleBadge />}
+      </div>
+      <p style={{ color: 'var(--text-3)', fontSize: 12, margin: '0 0 12px' }}>
+        Chance of hitting a home run today for every projected hitter on the slate:
+        per-PA HR probability vs the probable starter (matchup outcome model) compounded
+        over expected PA by lineup slot. {anyPosted
+          ? '● marks confirmed posted lineups; others use the PA-sorted roster.'
+          : 'Lineups not posted yet — hitters are the PA-sorted top 9 per team.'}
+      </p>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ borderBottom: '2px solid var(--border)' }}>
+              <th style={{ ...th, textAlign: 'left' }}>#</th>
+              <th style={{ ...th, textAlign: 'left' }}>Hitter</th>
+              <th style={{ ...th, textAlign: 'left' }}>vs Pitcher</th>
+              <th style={{ ...th, textAlign: 'left' }}>Game</th>
+              <th style={{ ...th, textAlign: 'right' }}>HR% Today</th>
+              <th style={{ ...th, textAlign: 'left' }}></th>
+              <th style={{ ...th, textAlign: 'right' }}>per PA</th>
+              <th style={{ ...th, textAlign: 'right' }}>E[PA]</th>
+              <th style={{ ...th, textAlign: 'right' }}>E[HR]</th>
+              <th style={{ ...th, textAlign: 'center' }}>Conf</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr
+                key={`${r.pitcher_id}-${r.batter_id}`}
+                className="table-row-hover"
+                onClick={() => navigate(`/matchup/${r.pitcher_id}/${r.batter_id}`)}
+                style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
+              >
+                <td style={{ padding: '7px 10px', color: 'var(--text-4)' }}>{i + 1}</td>
+                <td style={{ padding: '7px 10px', color: 'var(--text-1)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  {r.batter}
+                  <span style={{ color: 'var(--text-3)', fontWeight: 400, marginLeft: 6, fontSize: 12 }}>
+                    {r.team} · {r.hand} · #{r.slot}{r.lineup_posted ? ' ●' : ''}
+                  </span>
+                </td>
+                <td style={{ padding: '7px 10px', color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
+                  {r.pitcher}
+                </td>
+                <td style={{ padding: '7px 10px', color: 'var(--text-3)', whiteSpace: 'nowrap', fontSize: 12 }}>
+                  {r.away} @ {r.home}
+                  {gameTimeLabel(r.game_time) && (
+                    <span style={{ color: 'var(--text-4)', marginLeft: 6 }}>{gameTimeLabel(r.game_time)}</span>
+                  )}
+                </td>
+                <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--positive)' }}>
+                  {(r.p_hr_game * 100).toFixed(1)}%
+                </td>
+                <td style={{ padding: '7px 4px', width: 110 }}>
+                  <div style={{ width: `${Math.max(2, (r.p_hr_game / maxP) * 100)}px`, height: 7, background: '#14a276', borderRadius: 4 }} />
+                </td>
+                <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--text-2)' }}>
+                  {(r.p_hr * 100).toFixed(1)}%
+                </td>
+                <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--text-3)' }}>
+                  {r.expected_pa.toFixed(1)}
+                </td>
+                <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--text-2)' }}>
+                  {r.expected_hr.toFixed(2)}
+                </td>
+                <td style={{ padding: '7px 10px', textAlign: 'center', fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase' }}>
+                  {r.confidence}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ── Season gate ──────────────────────────────────────────────────────────────
 
 function MatchupSeasonGate({ currentSeason, onSwitch }: { currentSeason: number; onSwitch: () => void }) {
@@ -405,6 +525,8 @@ function MatchupMachineInner() {
   const dataLoading = simLoading || boLoading;
   const dataError   = simError ?? boError;
   const slate = useDailySlate();
+  const hrSlate = useHrSlate();
+  const [board, setBoard] = useState<'matchups' | 'hr'>('matchups');
 
   return (
     <div style={{ padding: '24px', maxWidth: 1000, margin: '0 auto' }}>
@@ -491,30 +613,70 @@ function MatchupMachineInner() {
         </div>
       )}
 
-      {/* Today's slate — shown until a specific matchup is selected */}
+      {/* Today's boards — shown until a specific matchup is selected */}
       {!dataLoading && !dataError && similarityData && batterOutcomes
         && (!selectedPitcherId || !selectedBatterId) && (
-        slate === 'loading' ? (
-          <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-3)', fontSize: 13 }}>
-            Loading today's slate…
+        <>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 14, alignItems: 'center' }}>
+            <span style={{ color: 'var(--text-3)', fontSize: 12 }}>Today:</span>
+            {([['matchups', 'Best Matchups'], ['hr', 'HR Leaderboard']] as const).map(([key, label]) => (
+              <button key={key} onClick={() => setBoard(key)}
+                style={{
+                  padding: '5px 14px', fontSize: 12, border: '1px solid',
+                  borderColor: board === key ? 'var(--accent)' : 'var(--border-plus)',
+                  background: board === key ? 'var(--accent-dim)' : 'transparent',
+                  color: board === key ? 'var(--accent)' : 'var(--text-2)',
+                  borderRadius: 4, cursor: 'pointer', fontWeight: board === key ? 600 : 400,
+                }}>
+                {label}
+              </button>
+            ))}
           </div>
-        ) : slate === 'missing' ? (
-          <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-3)' }}>
-            <div style={{ fontSize: 15, color: 'var(--text-2)', marginBottom: 8 }}>
-              No daily slate file found
-            </div>
-            <div style={{ fontSize: 13 }}>
-              Run <code style={{ color: 'var(--accent)' }}>python models/daily_matchups.py</code> to
-              pull today's games and probable starters — or search any matchup above.
-            </div>
-          </div>
-        ) : (
-          <BestMatchupsToday
-            slate={slate}
-            similarityData={similarityData}
-            batterOutcomes={batterOutcomes}
-          />
-        )
+
+          {board === 'matchups' && (
+            slate === 'loading' ? (
+              <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-3)', fontSize: 13 }}>
+                Loading today's slate…
+              </div>
+            ) : slate === 'missing' ? (
+              <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-3)' }}>
+                <div style={{ fontSize: 15, color: 'var(--text-2)', marginBottom: 8 }}>
+                  No daily slate file found
+                </div>
+                <div style={{ fontSize: 13 }}>
+                  Run <code style={{ color: 'var(--accent)' }}>python models/daily_matchups.py</code> to
+                  pull today's games and probable starters — or search any matchup above.
+                </div>
+              </div>
+            ) : (
+              <BestMatchupsToday
+                slate={slate}
+                similarityData={similarityData}
+                batterOutcomes={batterOutcomes}
+              />
+            )
+          )}
+
+          {board === 'hr' && (
+            hrSlate === 'loading' ? (
+              <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-3)', fontSize: 13 }}>
+                Loading HR projections…
+              </div>
+            ) : hrSlate === 'missing' ? (
+              <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-3)' }}>
+                <div style={{ fontSize: 15, color: 'var(--text-2)', marginBottom: 8 }}>
+                  No HR slate file found
+                </div>
+                <div style={{ fontSize: 13 }}>
+                  Run <code style={{ color: 'var(--accent)' }}>python models/slate_hr_projection.py</code> to
+                  project today's home-run chances.
+                </div>
+              </div>
+            ) : (
+              <HrLeaderboard slate={hrSlate} />
+            )
+          )}
+        </>
       )}
 
       {/* Projection results */}

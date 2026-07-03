@@ -13,7 +13,7 @@
 
 Python pipeline writes `public/data/pitchers_{year}.json` → React fetches via `usePitchers` hook → typed as `Pitcher[]` from `src/types.ts`.
 
-Other JSON files: `matchup_outcomes_{year}.json`, `tto_{year}.json`, `similarity_{year}.json`, `batter_outcomes_{year}.json`, `contact_profiles_{year}.json`, `sparklines.json`, `trajectories.json`, `arsenal_matchup_{year}.json`, `catchers_{year}.json`, `challenges_{year}.json` (2026+), `daily_matchups.json` (today's slate — refresh with `python models/daily_matchups.py`).
+Other JSON files: `matchup_outcomes_{year}.json`, `tto_{year}.json`, `similarity_{year}.json`, `batter_outcomes_{year}.json`, `contact_profiles_{year}.json`, `sparklines.json`, `trajectories.json`, `arsenal_matchup_{year}.json`, `catchers_{year}.json`, `challenges_{year}.json` (2026+), `daily_matchups.json` (today's slate — refresh with `python models/daily_matchups.py`), `hr_slate.json` (today's HR chances — refresh with `python models/slate_hr_projection.py`).
 
 ## Type Discipline — Critical
 
