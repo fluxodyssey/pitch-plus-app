@@ -26,6 +26,8 @@ const PitchLocationSim = lazy(() => import('./pages/PitchLocationSimulator').the
 const MatchupMachine   = lazy(() => import('./pages/MatchupMachine').then(m => ({ default: m.MatchupMachine })));
 const Glossary         = lazy(() => import('./pages/Glossary').then(m => ({ default: m.Glossary })));
 const PitchGrades      = lazy(() => import('./pages/PitchGrades').then(m => ({ default: m.PitchGrades })));
+const LineupBoard      = lazy(() => import('./pages/LineupBoard').then(m => ({ default: m.LineupBoard })));
+const CatcherFraming   = lazy(() => import('./pages/CatcherFraming').then(m => ({ default: m.CatcherFraming })));
 
 function PageLoader() {
   return <div className="loading">Loading…</div>;
@@ -114,6 +116,8 @@ function Nav() {
           {matchupAvailable && (
             <NavLink to="/matchup" className={navLinkClass} onClick={closeMenu}>Matchups</NavLink>
           )}
+          <NavLink to="/lineup" className={navLinkClass} onClick={closeMenu}>Lineups</NavLink>
+          <NavLink to="/catchers" className={navLinkClass} onClick={closeMenu}>Catchers</NavLink>
           <NavLink to="/compare" className={navLinkClass} onClick={closeMenu}>Compare</NavLink>
           <NavLink to="/plots" className={navLinkClass} onClick={closeMenu}>Plots</NavLink>
           <NavLink to="/grades" className={navLinkClass} onClick={closeMenu}>Grades</NavLink>
@@ -179,6 +183,9 @@ function AppShell() {
             <Route path="/matchup/:pitcherId/:batterId"  element={<MatchupMachine />} />
             <Route path="/glossary"                      element={<Glossary />} />
             <Route path="/grades"                        element={<PitchGrades />} />
+            <Route path="/lineup"                        element={<LineupBoard />} />
+            <Route path="/lineup/:pitcherId"             element={<LineupBoard />} />
+            <Route path="/catchers"                      element={<CatcherFraming />} />
           </Routes>
         </Suspense>
         </ErrorBoundary>

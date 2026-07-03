@@ -1100,3 +1100,8 @@ input[type="range"] {
   .scores-row { grid-template-columns: repeat(2, 1fr) !important; }
   .pitch-type-grid { grid-template-columns: 1fr !important; }
 }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
