@@ -195,7 +195,7 @@ function BestMatchupsToday({
     [slate, similarityData, batterOutcomes],
   );
 
-  const stale = slate.date !== localToday();
+  const stale = slate.date < localToday();  // future-dated slate is fine, not stale
   const nProbables = slate.games.reduce(
     (s, g) => s + (g.away.probable ? 1 : 0) + (g.home.probable ? 1 : 0), 0);
 
@@ -330,7 +330,7 @@ function HrLeaderboard({ slate }: { slate: HrSlateDoc }) {
     () => [...slate.batters].sort((a, b) => b.p_hr_game - a.p_hr_game),
     [slate],
   );
-  const stale = slate.date !== localToday();
+  const stale = slate.date < localToday();  // future-dated slate is fine, not stale
   const maxP = rows[0]?.p_hr_game ?? 0.01;
   const anyPosted = rows.some(r => r.lineup_posted);
 
